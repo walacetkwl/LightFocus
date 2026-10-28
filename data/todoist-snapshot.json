@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-10-28T07:15:00-03:00",
+  "syncedAt": "2026-10-28T12:25:00-03:00",
   "date": "2026-10-28",
   "timezone": "America/Sao_Paulo",
   "user": {
@@ -20,15 +20,16 @@
       "projectId": "6CrgFRpqRPQVfgjG",
       "projectName": "Hoje · Principal",
       "labels": [],
-      "checked": false,
+      "checked": true,
       "dayOrder": 1,
       "estimatedMinutes": 30,
       "subtasks": [],
-      "addedAt": "2023-08-15T03:49:13.247Z"
+      "addedAt": "2023-08-15T03:49:13.247Z",
+      "completedAt": "2026-10-28T12:02:30-03:00"
     },
     {
       "id": "69hPQpf8Cmm5R4RG",
-      "content": "🔥 Aquecer Leads",
+      "content": "Aquecer Leads",
       "description": "[15]",
       "dueDate": "2026-10-28",
       "recurring": "toda quarta",
@@ -36,15 +37,16 @@
       "projectId": "6CrgFRpqRPQVfgjG",
       "projectName": "Hoje · Principal",
       "labels": [],
-      "checked": false,
+      "checked": true,
       "dayOrder": 2,
       "estimatedMinutes": 15,
       "subtasks": [],
-      "addedAt": "2023-10-11T21:21:17.256Z"
+      "addedAt": "2023-10-11T21:21:17.256Z",
+      "completedAt": "2026-10-28T12:02:39-03:00"
     },
     {
       "id": "6hQXFm953FfHPP9p",
-      "content": "💊Remedio",
+      "content": "Remedio",
       "description": "",
       "dueDate": "2026-10-28",
       "recurring": "todo dia",
@@ -52,15 +54,16 @@
       "projectId": "6CrgFRpqRPQVfgjG",
       "projectName": "Hoje · Principal",
       "labels": [],
-      "checked": false,
+      "checked": true,
       "dayOrder": 3,
       "estimatedMinutes": null,
       "subtasks": [],
-      "addedAt": "2026-09-03T15:39:12.181Z"
+      "addedAt": "2026-09-03T15:39:12.181Z",
+      "completedAt": "2026-10-28T12:02:41-03:00"
     },
     {
       "id": "68QGrWJwP2GMp2PG",
-      "content": "📖 Café leitura",
+      "content": "Café leitura",
       "description": "",
       "dueDate": "2026-10-28",
       "recurring": "todo dia",
@@ -68,27 +71,29 @@
       "projectId": "6CrgFRpqRPQVfgjG",
       "projectName": "Hoje · Principal",
       "labels": [],
-      "checked": false,
+      "checked": true,
       "dayOrder": 4,
       "estimatedMinutes": null,
       "subtasks": [],
-      "addedAt": "2023-04-23T15:08:42.144Z"
+      "addedAt": "2023-04-23T15:08:42.144Z",
+      "completedAt": "2026-10-28T12:03:12-03:00"
     },
     {
       "id": "6WVhw5fhrr6mCMVG",
       "content": "Status de Tarefas",
-      "description": "🔴 Status de Tarefas (28/10, análise da Miss Minutos)\n\nFonte: Notion > Dashboard 🦈 > Tarefas Database Central. Atrasada = vencimento antes de hoje e status diferente de Concluído. Total: 31 atrasadas (7 de e-commerce, 2 de marketing avulsas e 22 roteiros de marketing da Webferragens/Disbrafix).\n\n**🛒 E-commerce (foco)**\n- [Analisa de viabilidade Shopee](https://app.notion.com/368d39cb166e80a6a19ff6cb7ce3cd81) · Ecolife · Daniel · Standby · 110 dias\n- [Ajustes iniciais](https://app.notion.com/33dd39cb166e80f694bfe6788df6ffc5) · Ecolife · Daniel · Standby · 75 dias\n- [Implantação nos Marketplaces](https://app.notion.com/382d39cb166e801083a2ef1f78e04892) · Origem Decor · Daniel · Em Retorno do Cliente · 54 dias\n- [Estruturação de Contas Marketplace](https://app.notion.com/37ad39cb166e80de8f12d78ed83ebcf7) · Kibarato · Daniel + Letícia · A fazer · 47 dias ⚠️ (tem reunião Kibarato hoje 12:15)\n- [Estruturar e acompanhar Ads do Mercado Livre e Shopee](https://app.notion.com/3dad39cb166e81a686f1d5f39f3e5d39) · Souza Morais · Daniel · Fazendo · 42 dias\n- [Abrir e integrar novos canais TikTok, Amazon e Shopee](https://app.notion.com/3c9d39cb166e81468ef5cca1515ad615) · WebFerragens · Daniel · Em Retorno do Cliente · 20 dias\n- [Acelerar vendas na Shopee e no TikTok Shop](https://app.notion.com/3eed39cb166e8162a947f08889ca49b1) · Souza Morais · Daniel · Fazendo · 12 dias\n\n**📣 Marketing**\n- [Pacote de 40 artes — WebFerragens + Disbrafix](https://app.notion.com/3c9d39cb166e81949732c5184dcc51df) · Letícia · Em Retorno do Cliente · 57 dias\n- Roteiros Webferragens/Disbrafix (Letícia + Walace): 10 vencidos em 02/10 (26 dias) e 11 vencidos em 22/10 (6 dias). Links na mensagem da Letícia abaixo.\n\n🧯 Prioridade sugerida: Kibarato (reunião hoje) e as duas da Souza Morais que estão em \"Fazendo\".\n\n---\n**✉️ Rascunho Discord: Daniel** (não enviado, o Walace manda)\n\nFala, Daniel! Tudo certo? Fiz o status das tarefas hoje e essas estão com prazo vencido no Notion:\n\n1. Analisa de viabilidade Shopee (Ecolife), 110 dias: https://app.notion.com/368d39cb166e80a6a19ff6cb7ce3cd81\n2. Ajustes iniciais (Ecolife), 75 dias: https://app.notion.com/33dd39cb166e80f694bfe6788df6ffc5\n3. Implantação nos Marketplaces (Origem Decor), 54 dias: https://app.notion.com/382d39cb166e801083a2ef1f78e04892\n4. Estruturação de Contas Marketplace (Kibarato), 47 dias: https://app.notion.com/37ad39cb166e80de8f12d78ed83ebcf7\n5. Ads do Mercado Livre e Shopee (Souza Morais), 42 dias: https://app.notion.com/3dad39cb166e81a686f1d5f39f3e5d39\n6. Novos canais TikTok, Amazon e Shopee (WebFerragens), 20 dias: https://app.notion.com/3c9d39cb166e81468ef5cca1515ad615\n7. Acelerar vendas Shopee e TikTok Shop (Souza Morais), 12 dias: https://app.notion.com/3eed39cb166e8162a947f08889ca49b1\n\nPode registrar nos comentários de cada tarefa o pedido de mais prazo, com a nova data? E me conta: por que cada uma atrasou? Se alguma estiver travada pelo cliente ou não fizer mais sentido, me avisa que a gente ajusta. A da Kibarato é a mais urgente, temos reunião com eles hoje às 12:15.\n\n---\n**✉️ Rascunho Discord: Letícia** (não enviado, o Walace manda)\n\nOi, Lê! Tudo bem? No status de hoje essas tarefas aparecem com prazo vencido no Notion:\n\n1. Pacote de 40 artes WebFerragens + Disbrafix, 57 dias: https://app.notion.com/3c9d39cb166e81949732c5184dcc51df\n2. Estruturação de Contas Marketplace (Kibarato, junto com o Daniel), 47 dias: https://app.notion.com/37ad39cb166e80de8f12d78ed83ebcf7\n\nRoteiros vencidos em 02/10 (26 dias):\n- ROTEIRO 1 W: https://app.notion.com/3cfd39cb166e80698411c265d722fc4d\n- ROTEIRO 1 D: https://app.notion.com/3cfd39cb166e80a7a66fe1d73fd49819\n- ROTEIRO 2 W: https://app.notion.com/3ddd39cb166e802092def0020851264f\n- ROTEIRO 2 D: https://app.notion.com/3ded39cb166e800281e3f05589306299\n- ROTEIRO 3 D: https://app.notion.com/3ded39cb166e80a8bc38e72d4703c48c\n- ROTEIRO 4 W: https://app.notion.com/3ead39cb166e80e0b079cf2a87e010b4\n- ROTEIRO 4 D: https://app.notion.com/3ead39cb166e80f286e4cdb859294562\n- ROTEIRO 5 W: https://app.notion.com/3ead39cb166e804282ecf2947b268208\n- ROTEIRO 5 D: https://app.notion.com/3ead39cb166e8049a5e2cdfde9aca303\n- ROTEIRO 6D: https://app.notion.com/3ead39cb166e80608b91f0d7e0054257\n\nRoteiros vencidos em 22/10 (6 dias):\n- ROTEIRO 6 W: https://app.notion.com/3fbd39cb166e80669e5cce8dd56f01de\n- ROTEIRO 7 W: https://app.notion.com/400d39cb166e808bb931c55d3ca790e9\n- ROTEIRO 8 D: https://app.notion.com/3fed39cb166e808fac8fe38299598670\n- ROTEIRO 9 D: https://app.notion.com/400d39cb166e8017ac89ff42a128833c\n- ROTEIRO 10 D: https://app.notion.com/3fed39cb166e808da797f645777897ba\n- ROTEIRO 11 D: https://app.notion.com/400d39cb166e805980cff3e3e7da923e\n- ROTEIRO 12 D: https://app.notion.com/400d39cb166e806dabd4e83e6bcac69f\n- ROTEIRO 13 D: https://app.notion.com/400d39cb166e80669015d4d392d37e08\n- ROTEIRO 14 D: https://app.notion.com/400d39cb166e80b7b852db8311bb7060\n- ROTEIRO 15 D: https://app.notion.com/400d39cb166e8017bc2ef652e14fb643\n- ROTEIRO 16 D: https://app.notion.com/400d39cb166e80a1a068d31ae41075f4\n- ROTEIRO 17 D: https://app.notion.com/400d39cb166e80b28022c2eed3bd946f\n\nPode registrar nos comentários de cada tarefa o pedido de mais prazo, com a nova data? E me conta por que cada uma atrasou. Os que estão \"Em Retorno do Cliente\", se já foram enviados, me avisa que a gente atualiza o status.",
+      "description": "Status de Tarefas (28/10, análise da Miss Minutos)\n\nFonte: Notion > Dashboard > Tarefas Database Central. Atrasada = vencimento antes de hoje e status diferente de Concluído. Total: 31 atrasadas (7 de e-commerce, 2 de marketing avulsas e 22 roteiros de marketing da Webferragens/Disbrafix).\n\n** E-commerce (foco)**\n- [Analisa de viabilidade Shopee](https://app.notion.com/368d39cb166e80a6a19ff6cb7ce3cd81) · Ecolife · Daniel · Standby · 110 dias\n- [Ajustes iniciais](https://app.notion.com/33dd39cb166e80f694bfe6788df6ffc5) · Ecolife · Daniel · Standby · 75 dias\n- [Implantação nos Marketplaces](https://app.notion.com/382d39cb166e801083a2ef1f78e04892) · Origem Decor · Daniel · Em Retorno do Cliente · 54 dias\n- [Estruturação de Contas Marketplace](https://app.notion.com/37ad39cb166e80de8f12d78ed83ebcf7) · Kibarato · Daniel + Letícia · A fazer · 47 dias (tem reunião Kibarato hoje 12:15)\n- [Estruturar e acompanhar Ads do Mercado Livre e Shopee](https://app.notion.com/3dad39cb166e81a686f1d5f39f3e5d39) · Souza Morais · Daniel · Fazendo · 42 dias\n- [Abrir e integrar novos canais TikTok, Amazon e Shopee](https://app.notion.com/3c9d39cb166e81468ef5cca1515ad615) · WebFerragens · Daniel · Em Retorno do Cliente · 20 dias\n- [Acelerar vendas na Shopee e no TikTok Shop](https://app.notion.com/3eed39cb166e8162a947f08889ca49b1) · Souza Morais · Daniel · Fazendo · 12 dias\n\n** Marketing**\n- [Pacote de 40 artes — WebFerragens + Disbrafix](https://app.notion.com/3c9d39cb166e81949732c5184dcc51df) · Letícia · Em Retorno do Cliente · 57 dias\n- Roteiros Webferragens/Disbrafix (Letícia + Walace): 10 vencidos em 02/10 (26 dias) e 11 vencidos em 22/10 (6 dias). Links na mensagem da Letícia abaixo.\n\nPrioridade sugerida: Kibarato (reunião hoje) e as duas da Souza Morais que estão em \"Fazendo\".\n\n---\n** Rascunho Discord: Daniel** (não enviado, o Walace manda)\n\nFala, Daniel! Tudo certo? Fiz o status das tarefas hoje e essas estão com prazo vencido no Notion:\n\n1. Analisa de viabilidade Shopee (Ecolife), 110 dias: https://app.notion.com/368d39cb166e80a6a19ff6cb7ce3cd81\n2. Ajustes iniciais (Ecolife), 75 dias: https://app.notion.com/33dd39cb166e80f694bfe6788df6ffc5\n3. Implantação nos Marketplaces (Origem Decor), 54 dias: https://app.notion.com/382d39cb166e801083a2ef1f78e04892\n4. Estruturação de Contas Marketplace (Kibarato), 47 dias: https://app.notion.com/37ad39cb166e80de8f12d78ed83ebcf7\n5. Ads do Mercado Livre e Shopee (Souza Morais), 42 dias: https://app.notion.com/3dad39cb166e81a686f1d5f39f3e5d39\n6. Novos canais TikTok, Amazon e Shopee (WebFerragens), 20 dias: https://app.notion.com/3c9d39cb166e81468ef5cca1515ad615\n7. Acelerar vendas Shopee e TikTok Shop (Souza Morais), 12 dias: https://app.notion.com/3eed39cb166e8162a947f08889ca49b1\n\nPode registrar nos comentários de cada tarefa o pedido de mais prazo, com a nova data? E me conta: por que cada uma atrasou? Se alguma estiver travada pelo cliente ou não fizer mais sentido, me avisa que a gente ajusta. A da Kibarato é a mais urgente, temos reunião com eles hoje às 12:15.\n\n---\n** Rascunho Discord: Letícia** (não enviado, o Walace manda)\n\nOi, Lê! Tudo bem? No status de hoje essas tarefas aparecem com prazo vencido no Notion:\n\n1. Pacote de 40 artes WebFerragens + Disbrafix, 57 dias: https://app.notion.com/3c9d39cb166e81949732c5184dcc51df\n2. Estruturação de Contas Marketplace (Kibarato, junto com o Daniel), 47 dias: https://app.notion.com/37ad39cb166e80de8f12d78ed83ebcf7\n\nRoteiros vencidos em 02/10 (26 dias):\n- ROTEIRO 1 W: https://app.notion.com/3cfd39cb166e80698411c265d722fc4d\n- ROTEIRO 1 D: https://app.notion.com/3cfd39cb166e80a7a66fe1d73fd49819\n- ROTEIRO 2 W: https://app.notion.com/3ddd39cb166e802092def0020851264f\n- ROTEIRO 2 D: https://app.notion.com/3ded39cb166e800281e3f05589306299\n- ROTEIRO 3 D: https://app.notion.com/3ded39cb166e80a8bc38e72d4703c48c\n- ROTEIRO 4 W: https://app.notion.com/3ead39cb166e80e0b079cf2a87e010b4\n- ROTEIRO 4 D: https://app.notion.com/3ead39cb166e80f286e4cdb859294562\n- ROTEIRO 5 W: https://app.notion.com/3ead39cb166e804282ecf2947b268208\n- ROTEIRO 5 D: https://app.notion.com/3ead39cb166e8049a5e2cdfde9aca303\n- ROTEIRO 6D: https://app.notion.com/3ead39cb166e80608b91f0d7e0054257\n\nRoteiros vencidos em 22/10 (6 dias):\n- ROTEIRO 6 W: https://app.notion.com/3fbd39cb166e80669e5cce8dd56f01de\n- ROTEIRO 7 W: https://app.notion.com/400d39cb166e808bb931c55d3ca790e9\n- ROTEIRO 8 D: https://app.notion.com/3fed39cb166e808fac8fe38299598670\n- ROTEIRO 9 D: https://app.notion.com/400d39cb166e8017ac89ff42a128833c\n- ROTEIRO 10 D: https://app.notion.com/3fed39cb166e808da797f645777897ba\n- ROTEIRO 11 D: https://app.notion.com/400d39cb166e805980cff3e3e7da923e\n- ROTEIRO 12 D: https://app.notion.com/400d39cb166e806dabd4e83e6bcac69f\n- ROTEIRO 13 D: https://app.notion.com/400d39cb166e80669015d4d392d37e08\n- ROTEIRO 14 D: https://app.notion.com/400d39cb166e80b7b852db8311bb7060\n- ROTEIRO 15 D: https://app.notion.com/400d39cb166e8017bc2ef652e14fb643\n- ROTEIRO 16 D: https://app.notion.com/400d39cb166e80a1a068d31ae41075f4\n- ROTEIRO 17 D: https://app.notion.com/400d39cb166e80b28022c2eed3bd946f\n\nPode registrar nos comentários de cada tarefa o pedido de mais prazo, com a nova data? E me conta por que cada uma atrasou. Os que estão \"Em Retorno do Cliente\", se já foram enviados, me avisa que a gente atualiza o status.",
       "dueDate": "2026-10-28",
       "recurring": "toda quarta",
       "priority": "p4",
       "projectId": "6CrgFRpqRPQVfgjG",
       "projectName": "Hoje · Principal",
       "labels": [],
-      "checked": false,
+      "checked": true,
       "dayOrder": 5,
       "estimatedMinutes": null,
       "subtasks": [],
-      "addedAt": "2024-10-29T14:21:21.179Z"
+      "addedAt": "2024-10-29T14:21:21.179Z",
+      "completedAt": "2026-10-28T12:03:21-03:00"
     },
     {
       "id": "6hpX6JFHjQ28g5Mp",
@@ -100,11 +105,12 @@
       "projectId": "6CrgFRpqRPQVfgjG",
       "projectName": "Hoje · Principal",
       "labels": [],
-      "checked": false,
+      "checked": true,
       "dayOrder": 6,
       "estimatedMinutes": null,
       "subtasks": [],
-      "addedAt": "2026-10-20T14:24:48.297Z"
+      "addedAt": "2026-10-20T14:24:48.297Z",
+      "completedAt": "2026-10-28T12:03:27-03:00"
     },
     {
       "id": "6hqJ2vpGHrcgxJ2p",
@@ -116,16 +122,17 @@
       "projectId": "6CrgFRpqRPQVfgjG",
       "projectName": "Hoje · Principal",
       "labels": [],
-      "checked": false,
+      "checked": true,
       "dayOrder": 7,
       "estimatedMinutes": null,
       "subtasks": [],
-      "addedAt": "2026-10-23T22:07:55.149Z"
+      "addedAt": "2026-10-23T22:07:55.149Z",
+      "completedAt": "2026-10-28T12:03:29-03:00"
     },
     {
       "id": "6hh7R5m8CgrXMPVG",
       "content": "Gravar Tudo da NuvemShop",
-      "description": "🔥 ESSENCIAL DOMINGO (não pode ficar pra segunda em hipótese alguma — deixar outubro em dia!)",
+      "description": "ESSENCIAL DOMINGO (não pode ficar pra segunda em hipótese alguma — deixar outubro em dia!)",
       "dueDate": "2026-10-28",
       "recurring": false,
       "priority": "p4",
@@ -141,7 +148,7 @@
     {
       "id": "6hXjphC368WrCm7G",
       "content": "3 Conteúdos diarios para o TubaLabs",
-      "description": "🔥 ESSENCIAL DOMINGO: conclusão das remessas de vídeos do Tuba!",
+      "description": "ESSENCIAL DOMINGO: conclusão das remessas de vídeos do Tuba!",
       "dueDate": "2026-10-28",
       "recurring": "todo dia",
       "priority": "p4",
@@ -155,21 +162,21 @@
         {
           "id": "6hq2FJfj4pf9PXwp",
           "content": "Dente não é para abrir garrafa",
-          "description": "Notion: [Notion | Where teams and agents work together](https://app.notion.com/p/3f2d39cb166e81238487eb839399cf8d)\nReferência: https://www.instagram.com/reel/DeKF83Loon-/?stkn=anhvb3BveDBleHk=\n\n🖨️ Impressora: mostrar o abridor impresso em 3D (gancho: \"Você já usou o dente para abrir garrafa? Então olha isso.\")",
+          "description": "Notion: [Notion | Where teams and agents work together](https://app.notion.com/p/3f2d39cb166e81238487eb839399cf8d)\nReferência: https://www.instagram.com/reel/DeKF83Loon-/?stkn=anhvb3BveDBleHk=\n\nImpressora: mostrar o abridor impresso em 3D (gancho: \"Você já usou o dente para abrir garrafa? Então olha isso.\")",
           "priority": "p4",
           "checked": false
         },
         {
           "id": "6hq2FJgJJrJFf2vp",
           "content": "Como fazer ímãs de geladeira",
-          "description": "Notion: [Notion | Where teams and agents work together](https://app.notion.com/p/3f2d39cb166e81a8b52dd341dc72b55f)\nReferência: https://www.instagram.com/reel/Dd91irIMdNZ/?stkn=MWw0bjU1aHJldml4bQ==\n\n🖨️ Impressora: peça impressa + ímã",
+          "description": "Notion: [Notion | Where teams and agents work together](https://app.notion.com/p/3f2d39cb166e81a8b52dd341dc72b55f)\nReferência: https://www.instagram.com/reel/Dd91irIMdNZ/?stkn=MWw0bjU1aHJldml4bQ==\n\nImpressora: peça impressa + ímã",
           "priority": "p4",
           "checked": false
         },
         {
           "id": "6hq2FJhX5qQhhQVp",
           "content": "Meme — irmã curtindo tudo",
-          "description": "Notion: [Notion | Where teams and agents work together](https://app.notion.com/p/3f5d39cb166e81be9734cb8f377608d0)\nReferência: https://www.instagram.com/reel/DeSgeJjSzl2/?cplk=MXVpM21mazg4b3k0aA==\n\n📱 Meme rápido: copiar o timing da referência (alguém próximo curtindo tudo da TubaLabs)",
+          "description": "Notion: [Notion | Where teams and agents work together](https://app.notion.com/p/3f5d39cb166e81be9734cb8f377608d0)\nReferência: https://www.instagram.com/reel/DeSgeJjSzl2/?cplk=MXVpM21mazg4b3k0aA==\n\nMeme rápido: copiar o timing da referência (alguém próximo curtindo tudo da TubaLabs)",
           "priority": "p4",
           "checked": false
         }
@@ -178,7 +185,7 @@
     },
     {
       "id": "6WHPgcr7W6JmFGFp",
-      "content": "🔄 Verificar Novos Contatos",
+      "content": "Verificar Novos Contatos",
       "description": "Responder Direct walace e shark, WhatsB e tbm Bot conversa e ver no contato@shark Tiny gerou [15]",
       "dueDate": "2026-10-28",
       "recurring": "todo dia",
@@ -186,16 +193,17 @@
       "projectId": "6CrgFRpqRPQVfgjG",
       "projectName": "Hoje · Principal",
       "labels": [],
-      "checked": false,
+      "checked": true,
       "dayOrder": 10,
       "estimatedMinutes": 15,
       "subtasks": [],
-      "addedAt": "2024-10-02T17:53:40.017Z"
+      "addedAt": "2024-10-02T17:53:40.017Z",
+      "completedAt": "2026-10-28T12:03:00-03:00"
     },
     {
       "id": "6hpGRM9QRf5WP6PG",
-      "content": "🔴24 TUBA",
-      "description": "🎬 Os 24 vídeos estão nas subtarefas, do mais simples ao mais trabalhoso. Gravar entre hoje e amanhã.\n\n---\n**Notas antigas**\n\nWd 40 pode?\n\nStl do bico wd40\n\nCuidado quando for comorar wd40 tem que ser o superlib\n\nIdeia imantada logo [https://www.instagram.com/reel/DeK7pjfAlyV/?srtk=MTl0YzlhbjF1dTQ1aQ==](https://www.instagram.com/reel/DeK7pjfAlyV/?srtk=MTl0YzlhbjF1dTQ1aQ==)\n\nAtalhos para te ajudar no bambu studio\n\nEt foorecente [https://www.instagram.com/reel/DbgHhqKiKs9/?dlrf=c2d5M2YxbTA3Zndp](https://www.instagram.com/reel/DbgHhqKiKs9/?dlrf=c2d5M2YxbTA3Zndp)\n\nAlça em petg [https://www.instagram.com/reel/DekG9nIq3MO/?dlrf=ejk5eXN5eWJqbXpt](https://www.instagram.com/reel/DekG9nIq3MO/?dlrf=ejk5eXN5eWJqbXpt)\n\nOleo singer",
+      "content": "24 TUBA",
+      "description": "Os 24 vídeos estão nas subtarefas, do mais simples ao mais trabalhoso. Gravar entre hoje e amanhã.\n\n---\n**Notas antigas**\n\nWd 40 pode?\n\nStl do bico wd40\n\nCuidado quando for comorar wd40 tem que ser o superlib\n\nIdeia imantada logo [https://www.instagram.com/reel/DeK7pjfAlyV/?srtk=MTl0YzlhbjF1dTQ1aQ==](https://www.instagram.com/reel/DeK7pjfAlyV/?srtk=MTl0YzlhbjF1dTQ1aQ==)\n\nAtalhos para te ajudar no bambu studio\n\nEt foorecente [https://www.instagram.com/reel/DbgHhqKiKs9/?dlrf=c2d5M2YxbTA3Zndp](https://www.instagram.com/reel/DbgHhqKiKs9/?dlrf=c2d5M2YxbTA3Zndp)\n\nAlça em petg [https://www.instagram.com/reel/DekG9nIq3MO/?dlrf=ejk5eXN5eWJqbXpt](https://www.instagram.com/reel/DekG9nIq3MO/?dlrf=ejk5eXN5eWJqbXpt)\n\nOleo singer",
       "dueDate": "2026-10-28",
       "recurring": false,
       "priority": "p4",
@@ -387,11 +395,12 @@
       "projectId": "6CrgFRpqRPQVfgjG",
       "projectName": "Hoje · Principal",
       "labels": [],
-      "checked": false,
+      "checked": true,
       "dayOrder": 12,
       "estimatedMinutes": null,
       "subtasks": [],
-      "addedAt": "2025-03-26T19:00:30.127Z"
+      "addedAt": "2025-03-26T19:00:30.127Z",
+      "completedAt": "2026-10-28T12:03:00-03:00"
     },
     {
       "id": "6hpJCmh263gP9g2p",
@@ -411,8 +420,8 @@
     },
     {
       "id": "6g7x9HQxvWqPRhjG",
-      "content": "🌻 Seja simples, faça um vídeo por dia",
-      "description": "💪 Quarta de prova à noite? Então o vídeo de hoje é o mais curto da lista: grava cedo, antes da consultoria, e tira isso da cabeça. Feito é melhor que perfeito.\n\n**Shark E-commerce (Gravar Hoje, vídeo curto):** [Relatório de Conciliação Mercado Livre](https://app.notion.com/3c6d39cb166e8001847fc137d1e2ad67)\n\n**Renda com IA (card novo, roteiro de 15 min):** [Recepcionista de IA que atende o telefone: o serviço que negócio local paga todo mês](https://app.notion.com/p/407d39cb166e81498c7fd6506440535c)\nReferências: [TechRandM: 9 serviços de IA com quase zero concorrência](https://techrandm.com/everyones-selling-ai-prompts-these-9-untapped-ai-services-have-almost-no-competi/) | [YouTube: AI voice agents para negócios locais](https://www.youtube.com/watch?v=gr0RqucjGfw) | [X: agência de recepcionista de IA a US$10 mil/mês](https://x.com/BirdVein/status/2112998695750828333) | [X: Mistral Voxtral 3 a 4 centavos por minuto](https://x.com/KNash56325/status/2112941794707079505)",
+      "content": "Seja simples, faça um vídeo por dia",
+      "description": "Quarta de prova à noite? Então o vídeo de hoje é o mais curto da lista: grava cedo, antes da consultoria, e tira isso da cabeça. Feito é melhor que perfeito.\n\n**Shark E-commerce (Gravar Hoje, vídeo curto):** [Relatório de Conciliação Mercado Livre](https://app.notion.com/3c6d39cb166e8001847fc137d1e2ad67)\n\n**Renda com IA (card novo, roteiro de 15 min):** [Recepcionista de IA que atende o telefone: o serviço que negócio local paga todo mês](https://app.notion.com/p/407d39cb166e81498c7fd6506440535c)\nReferências: [TechRandM: 9 serviços de IA com quase zero concorrência](https://techrandm.com/everyones-selling-ai-prompts-these-9-untapped-ai-services-have-almost-no-competi/) | [YouTube: AI voice agents para negócios locais](https://www.youtube.com/watch?v=gr0RqucjGfw) | [X: agência de recepcionista de IA a US$10 mil/mês](https://x.com/BirdVein/status/2112998695750828333) | [X: Mistral Voxtral 3 a 4 centavos por minuto](https://x.com/KNash56325/status/2112941794707079505)",
       "dueDate": "2026-10-28",
       "recurring": "todo dia",
       "priority": "p4",
@@ -483,7 +492,7 @@
     },
     {
       "id": "6Wj72wpPHMvqwHGG",
-      "content": "🐶 Ir no Blade",
+      "content": "Ir no Blade",
       "description": "",
       "dueDate": "2026-10-28",
       "recurring": "toda quarta",
@@ -491,11 +500,12 @@
       "projectId": "6CrgFRpqRPQVfgjG",
       "projectName": "Hoje · Principal",
       "labels": [],
-      "checked": false,
+      "checked": true,
       "dayOrder": 18,
       "estimatedMinutes": null,
       "subtasks": [],
-      "addedAt": "2024-11-25T23:09:56.439Z"
+      "addedAt": "2024-11-25T23:09:56.439Z",
+      "completedAt": "2026-10-28T12:03:00-03:00"
     },
     {
       "id": "6fWw7qv6CGWvc7Gp",
@@ -507,11 +517,12 @@
       "projectId": "6CrgFRpqRPQVfgjG",
       "projectName": "Hoje · Principal",
       "labels": [],
-      "checked": false,
+      "checked": true,
       "dayOrder": 19,
       "estimatedMinutes": null,
       "subtasks": [],
-      "addedAt": "2025-12-18T15:05:34.428Z"
+      "addedAt": "2025-12-18T15:05:34.428Z",
+      "completedAt": "2026-10-28T12:03:00-03:00"
     },
     {
       "id": "6hqF66vgmMgC39Mp",

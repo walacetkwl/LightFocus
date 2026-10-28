@@ -2,44 +2,50 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>LightFocus — estrelando Miss Minutos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Nuvens / Orbs de Respiração Yoga no Fundo -->
+  <!-- Nuvens / Orbs de Respiração Zen no Fundo -->
   <div class="ambient-clouds" aria-hidden="true">
     <div class="cloud-orb cloud-orb-1"></div>
     <div class="cloud-orb cloud-orb-2"></div>
     <div class="cloud-orb cloud-orb-3"></div>
   </div>
 
-  <!-- Camada de Pulso Luminoso Azul Suave (Modo "Presta Atenção" Luminoso p/ Gravação de Vídeo) -->
+  <!-- Efeito Assinatura LightFocus: Pulso Luminoso Suave ao Concluir Tarefa -->
+  <div id="lightfocus-check-pulse" class="lightfocus-check-pulse" aria-hidden="true"></div>
+
+  <!-- Camada de Pulso Luminoso Azul Suave (Modo "Presta Atenção" p/ Gravação de Vídeo) -->
   <div id="attention-light-overlay" class="attention-light-overlay" aria-hidden="true"></div>
   <div id="attention-toast" class="attention-toast-pill" role="status" aria-live="polite">
-    <span>💙</span>
-    <span id="attention-toast-text">Oi, querido! 5 minutinhos se passaram — mantém o foco aqui comigo! ⏰</span>
+    <span class="svg-icon-wrap" aria-hidden="true">
+      <svg class="ui-svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6l2.1-2.1"/><circle cx="12" cy="12" r="4"/></svg>
+    </span>
+    <span id="attention-toast-text">Oi, querido! 5 minutinhos se passaram — mantém o foco aqui comigo!</span>
   </div>
 
   <!-- Canvas de Partículas para Animação da Tarefa Subindo e se Desfazendo -->
   <canvas id="particle-canvas"></canvas>
 
   <!-- ========================================================================
-       SPLASH SCREEN DE ENTRADA ("LightFocus — estrelando Miss Minutos")
+       PORTÃO DE ACESSO & SPLASH SCREEN ("LightFocus — estrelando Miss Minutos")
        ======================================================================== -->
   <section id="splash-screen" class="splash-screen">
     <div class="splash-card">
       <div class="splash-eyebrow">
-        <span>🧘🏻‍♂️ Foco Absoluto · Uma Tarefa por Vez</span>
+        <svg class="ui-svg" viewBox="0 0 24 24" width="14" height="14"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
+        <span>Foco Luminoso · Uma Tarefa por Vez</span>
       </div>
 
       <div class="splash-avatar-stage" id="splash-miss-minutes-container">
         <div class="splash-avatar-glow"></div>
-        <!-- SVG Ilustração Viva da Miss Minutos (com olhinhos que seguem o mouse) -->
-        <svg class="miss-minutes-svg" viewBox="0 0 220 220" width="150" height="150" aria-label="Miss Minutos">
+        <!-- SVG Ilustração Viva da Miss Minutos (com olhinhos que seguem o mouse/toque) -->
+        <svg class="miss-minutes-svg" viewBox="0 0 220 220" width="128" height="128" aria-label="Miss Minutos">
           <defs>
             <radialGradient id="mmBodyGradSplash" cx="38%" cy="32%" r="68%">
               <stop offset="0%" stop-color="#FFB067" />
@@ -52,24 +58,18 @@
               <stop offset="100%" stop-color="#FDE0B6" />
             </radialGradient>
           </defs>
-          <!-- Perninhas estilo cartoon anos 60 -->
           <path d="M 88 182 Q 84 198 78 205" stroke="#EA580C" stroke-width="6" stroke-linecap="round" fill="none" />
           <path d="M 132 182 Q 136 198 142 205" stroke="#EA580C" stroke-width="6" stroke-linecap="round" fill="none" />
           <ellipse cx="73" cy="207" rx="13" ry="6.5" fill="#F97316" stroke="#9A3412" stroke-width="2.5" />
           <ellipse cx="147" cy="207" rx="13" ry="6.5" fill="#F97316" stroke="#9A3412" stroke-width="2.5" />
-          <!-- Bracinhos acenando -->
           <path d="M 38 118 Q 16 102 18 82" stroke="#EA580C" stroke-width="6" stroke-linecap="round" fill="none" />
           <circle cx="18" cy="78" r="9.5" fill="#FFFFFF" stroke="#9A3412" stroke-width="2.5" />
           <path d="M 182 118 Q 204 102 202 82" stroke="#EA580C" stroke-width="6" stroke-linecap="round" fill="none" />
           <circle cx="202" cy="78" r="9.5" fill="#FFFFFF" stroke="#9A3412" stroke-width="2.5" />
-          <!-- Argola superior do relógio -->
           <circle cx="110" cy="18" r="10" fill="none" stroke="#EA580C" stroke-width="5" />
           <rect x="103" y="24" width="14" height="10" rx="4" fill="#EA580C" />
-          <!-- Corpo Redondo Laranja do Relógio -->
           <circle cx="110" cy="108" r="76" fill="url(#mmBodyGradSplash)" stroke="#9A3412" stroke-width="3.5" />
-          <!-- Mostrador Interno Creme -->
           <circle cx="110" cy="108" r="62" fill="url(#mmFaceGradSplash)" stroke="#EA580C" stroke-width="2.5" />
-          <!-- Marcações das 12 Horas -->
           <g stroke="#F97316" stroke-width="3" stroke-linecap="round" opacity="0.72">
             <line x1="110" y1="51" x2="110" y2="58" />
             <line x1="167" y1="108" x2="160" y2="108" />
@@ -84,10 +84,8 @@
             <line x1="61" y1="80" x2="66" y2="83" />
             <line x1="82" y1="59" x2="85" y2="64" />
           </g>
-          <!-- Sobrancelhas simpáticas -->
           <path d="M 74 76 Q 87 68 98 75" stroke="#7C2D12" stroke-width="3.5" stroke-linecap="round" fill="none" />
           <path d="M 122 75 Q 133 68 146 76" stroke="#7C2D12" stroke-width="3.5" stroke-linecap="round" fill="none" />
-          <!-- Olho Esquerdo (Socket + Pupila que segue o mouse) -->
           <g class="mm-eye-socket" data-eye-cx="87" data-eye-cy="96">
             <ellipse cx="87" cy="96" rx="14.5" ry="17" fill="#FFFFFF" stroke="#7C2D12" stroke-width="2.6" />
             <g class="mm-pupil-group">
@@ -96,7 +94,6 @@
               <circle cx="89.5" cy="99" r="1.3" fill="#FFFFFF" />
             </g>
           </g>
-          <!-- Olho Direito (Socket + Pupila que segue o mouse) -->
           <g class="mm-eye-socket" data-eye-cx="133" data-eye-cy="96">
             <ellipse cx="133" cy="96" rx="14.5" ry="17" fill="#FFFFFF" stroke="#7C2D12" stroke-width="2.6" />
             <g class="mm-pupil-group">
@@ -105,30 +102,57 @@
               <circle cx="135.5" cy="99" r="1.3" fill="#FFFFFF" />
             </g>
           </g>
-          <!-- Bochechas coradas -->
           <ellipse cx="69" cy="113" rx="7.5" ry="4.2" fill="#FB923C" opacity="0.45" />
           <ellipse cx="151" cy="113" rx="7.5" ry="4.2" fill="#FB923C" opacity="0.45" />
-          <!-- Narizinho ponteiro central -->
           <circle cx="110" cy="109" r="4.2" fill="#EA580C" />
-          <!-- Sorriso radiante estilo Miss Minutos -->
           <path d="M 84 123 Q 110 146 136 123 Z" fill="#7C2D12" stroke="#7C2D12" stroke-width="2.5" stroke-linejoin="round" />
           <path d="M 96 132 Q 110 141 124 132 Q 110 126 96 132 Z" fill="#FB7185" />
         </svg>
       </div>
 
       <h1 class="splash-title">LightFocus</h1>
-      <p class="splash-subtitle">estrelando Miss Minutos · Adm do Tempo 🧡⏰</p>
+      <p class="splash-subtitle">
+        <svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+        <span>estrelando Miss Minutos · Adm do Tempo</span>
+      </p>
 
       <div class="splash-welcome-bubble" id="splash-welcome-text">
-        “Oi, querido! Organizei sua fila do <strong>Hoje</strong> no Todoist na ordem exata que você planejou. Respira fundo, solta os ombros como num Yoga e vamos focar em <strong>uma única tarefa por vez</strong>!”
+        “Oi, querido! Organizei sua fila do <strong>Hoje</strong> no Todoist na ordem exata que você planejou. Respira fundo e vamos focar em <strong>uma única tarefa por vez</strong>.”
       </div>
 
-      <button id="btn-enter-zen" class="splash-start-btn" type="button">
-        <span>Iniciar Sessão Zen</span>
-        <span>✨</span>
-      </button>
+      <!-- Formulário de Senha (visível quando não autenticado) -->
+      <form id="auth-gate-form" class="auth-gate-box" autocomplete="on">
+        <div class="auth-input-wrap">
+          <span class="auth-lock-icon" aria-hidden="true">
+            <svg class="ui-svg" viewBox="0 0 24 24" width="17" height="17"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          </span>
+          <input
+            id="auth-password-input"
+            class="auth-password-input"
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            placeholder="Senha de acesso do Walace"
+            required
+          />
+        </div>
+        <div id="auth-error-msg" class="auth-error-msg" style="display: none;"></div>
+        <button id="btn-auth-submit" class="splash-start-btn" type="submit">
+          <span>Desbloquear &amp; Iniciar Foco</span>
+          <svg class="ui-svg" viewBox="0 0 24 24" width="17" height="17"><path d="M5 12h14m-6-6l6 6-6 6"/></svg>
+        </button>
+      </form>
+
+      <!-- Botão direto (visível quando a sessão já está autenticada) -->
+      <div id="auth-unlocked-box" style="display: none;">
+        <button id="btn-enter-zen" class="splash-start-btn" type="button">
+          <span>Iniciar Sessão Zen</span>
+          <svg class="ui-svg" viewBox="0 0 24 24" width="17" height="17"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
+        </button>
+      </div>
+
       <div class="splash-meta-hint">
-        Pressione <strong>Enter</strong> ou clique acima · Sincronizado com Todoist do Walace
+        Acesso protegido · Sincronizado com o Todoist do Walace
       </div>
     </div>
   </section>
@@ -137,36 +161,59 @@
        APLICAÇÃO PRINCIPAL (LIGHTFOCUS)
        ======================================================================== -->
   <div class="app-shell">
-    <!-- Top Bar Minimalista -->
+    <!-- Top Bar Minimalista e Responsiva -->
     <header class="top-bar">
       <div class="brand-cluster">
-        <div class="brand-dot" title="Miss Minutos · Adm do Tempo">⏰</div>
-        <span class="brand-name">LightFocus</span>
-        <span class="brand-star">estrelando Miss Minutos</span>
-        <span id="sync-status-badge" class="sync-badge" title="Ordem exata do Hoje no Todoist">
+        <div class="brand-dot" title="Miss Minutos · Adm do Tempo">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="17" height="17"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+        </div>
+        <div class="brand-titles">
+          <span class="brand-name">LightFocus</span>
+          <span class="brand-star">Miss Minutos</span>
+        </div>
+        <button id="btn-quick-sync-header" class="sync-badge" type="button" title="Clique para sincronizar agora com o Todoist">
           <span class="sync-dot"></span>
-          <span id="sync-status-text">Hoje Sincronizado</span>
+          <svg id="header-sync-spinner" class="ui-svg sync-icon" viewBox="0 0 24 24" width="13" height="13"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+          <span id="sync-status-text">Sincronizado</span>
+        </button>
+      </div>
+
+      <!-- Pílula de Gamificação (Nível, XP e Combo de Foco) -->
+      <div class="gamification-top-bar" id="gamification-bar" title="Seu Nível de Foco, XP acumulado e Sequência (Combo) de Hoje">
+        <div class="xp-level-badge">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span id="gamification-level-label">Nível 1 · Brisa</span>
+        </div>
+        <div class="xp-mini-track" aria-hidden="true">
+          <div id="xp-mini-fill" class="xp-mini-fill" style="width: 10%;"></div>
+        </div>
+        <span id="gamification-xp-text" class="xp-value-text">0 XP</span>
+        <span id="gamification-streak-pill" class="streak-combo-pill">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="13" height="13"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <span id="gamification-streak-text">1x</span>
         </span>
       </div>
 
       <div class="top-actions">
         <!-- Menu Discreto: Modo "Presta Atenção" (5 em 5 minutos) -->
         <button id="btn-open-attention-modal" class="glass-pill-btn active-mode" type="button" title="Lembrete suave a cada 5 minutos quando o Play estiver ativo">
-          <span id="attention-mode-icon">✨</span>
-          <span>Presta Atenção: <strong id="attention-mode-label">Luz + Som</strong></span>
-          <span id="attention-countdown-badge" class="attention-countdown-tag">Aguardando Play</span>
+          <span id="attention-mode-icon" class="btn-svg-slot">
+            <svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6l2.1-2.1"/><circle cx="12" cy="12" r="4"/></svg>
+          </span>
+          <span class="pill-btn-label"><span class="hide-xs">Presta Atenção: </span><strong id="attention-mode-label">Luz + Som</strong></span>
+          <span id="attention-countdown-badge" class="attention-countdown-tag">Play</span>
         </button>
 
-        <!-- Botão Relatório de Tempos (Miss Minutos) -->
-        <button id="btn-open-times-modal" class="glass-pill-btn" type="button" title="Tempos reais por tarefa salvos para a Miss Minutos">
-          <span>📊</span>
-          <span>Tempos (<span id="header-focused-minutes">0m</span>)</span>
+        <!-- Botão Relatório de Tempos & Conquistas -->
+        <button id="btn-open-times-modal" class="glass-pill-btn" type="button" title="Tempos reais por tarefa e conquistas do dia">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          <span class="pill-btn-label">Tempos (<span id="header-focused-minutes">0m</span>)</span>
         </button>
 
-        <!-- Botão Fila do Hoje & Sync Todoist -->
-        <button id="btn-open-queue-modal" class="glass-pill-btn" type="button" title="Ver fila na ordem exata do Hoje e sincronizar com Todoist">
-          <span>📋</span>
-          <span>Fila Hoje (<span id="header-queue-count">0/0</span>)</span>
+        <!-- Botão Planejamento do Dia & Fila do Hoje -->
+        <button id="btn-open-queue-modal" class="glass-pill-btn btn-highlight-plan" type="button" title="Planejamento de tempo por tarefa e sincronização com Todoist">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.5"/><circle cx="3.5" cy="12" r="1.5"/><circle cx="3.5" cy="18" r="1.5"/></svg>
+          <span class="pill-btn-label">Planejar Dia (<span id="header-queue-count">0/0</span>)</span>
         </button>
       </div>
     </header>
@@ -175,35 +222,70 @@
     <main class="main-workspace">
       <!-- Centro Zen: Uma Única Tarefa por Vez -->
       <section class="zen-center-stage" aria-live="polite">
-        <article id="single-task-card" class="single-task-card">
+        <article id="single-task-card" class="single-task-card focus-card">
           <div class="task-meta-row">
             <div class="task-badges">
-              <span id="task-order-badge" class="badge-pill badge-order">Tarefa #1 de 25</span>
-              <span id="task-recurring-badge" class="badge-pill badge-recurring" style="display: none;">🔄 Recorrente</span>
-              <span id="task-estimate-badge" class="badge-pill badge-estimate" style="display: none;">⏱️ Meta: 30 min</span>
-              <span id="task-avg-badge" class="badge-pill badge-avg" style="display: none;">📊 Média: --</span>
+              <span id="task-order-badge" class="badge-pill badge-order">Tarefa #1</span>
+              <span id="task-recurring-badge" class="badge-pill badge-recurring" style="display: none;"></span>
+              <button id="task-estimate-badge" class="badge-pill badge-estimate" type="button" title="Clique para ajustar a estimativa de tempo desta tarefa">
+                <svg class="ui-svg" viewBox="0 0 24 24" width="13" height="13"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+                <span id="task-estimate-badge-text">Definir tempo</span>
+              </button>
+              <span id="task-avg-badge" class="badge-pill badge-avg" style="display: none;"></span>
             </div>
-            <span id="task-date-label" style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted);">Hoje · Ordem Exata Todoist</span>
+            <span id="task-date-label" class="task-origin-label">Hoje · Todoist</span>
           </div>
 
-          <!-- Título da Tarefa Atual -->
-          <h2 id="task-title" class="task-title">Carregando sua tarefa do Hoje...</h2>
+          <!-- Seletor Rápido Inline de Tempo Estimado no Card Principal -->
+          <div id="card-inline-estimator" class="card-inline-estimator" style="display: none;">
+            <span class="estimator-label">Tempo médio p/ esta tarefa:</span>
+            <div class="estimator-pills">
+              <button type="button" class="est-pill-btn" data-est-min="5">5m</button>
+              <button type="button" class="est-pill-btn" data-est-min="10">10m</button>
+              <button type="button" class="est-pill-btn" data-est-min="15">15m</button>
+              <button type="button" class="est-pill-btn" data-est-min="25">25m</button>
+              <button type="button" class="est-pill-btn" data-est-min="30">30m</button>
+              <button type="button" class="est-pill-btn" data-est-min="45">45m</button>
+              <button type="button" class="est-pill-btn" data-est-min="60">60m</button>
+              <input id="card-custom-est-input" class="est-custom-input" type="number" min="1" max="480" placeholder="min" />
+            </div>
+          </div>
 
-          <!-- Descrição / Notas (Oculto quando vazio) -->
-          <div id="task-description-box" class="task-description-box" style="display: none;"></div>
+          <!-- Título da Tarefa Atual (Com Ícone SVG Categorizado + Proporção Suave) -->
+          <div class="task-title-row">
+            <button id="btn-check-circle-main" class="btn-check-circle" type="button" title="Concluir tarefa com pulso luminoso">
+              <svg class="ui-svg" viewBox="0 0 24 24" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <h2 id="task-title" class="task-title">Carregando sua tarefa do Hoje...</h2>
+          </div>
+
+          <!-- Descrição / Notas Estruturadas (Responsiva, Sem Cortar Bordas, Com Expandir/Recolher) -->
+          <div id="task-description-wrapper" class="task-description-wrapper" style="display: none;">
+            <div id="task-description-box" class="task-description-box task-description"></div>
+            <button id="btn-toggle-desc-expand" class="desc-expand-btn" type="button" style="display: none;">
+              <span id="desc-expand-text">Ver descrição completa</span>
+              <svg id="desc-expand-icon" class="ui-svg" viewBox="0 0 24 24" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </div>
 
           <!-- Subtarefas (Oculto quando não há subtarefas) -->
           <div id="subtasks-box" class="subtasks-box" style="display: none;">
             <div class="subtasks-header">
-              <span>📑 Subtarefas desta atividade</span>
-              <span id="subtasks-counter">0/0</span>
+              <span class="subtasks-header-title">
+                <svg class="ui-svg" viewBox="0 0 24 24" width="14" height="14"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <span>Subtarefas desta atividade</span>
+              </span>
+              <span id="subtasks-counter" class="subtasks-counter-pill">0/0</span>
             </div>
             <div id="subtasks-list" class="subtasks-list"></div>
           </div>
 
-          <!-- Painel do Cronômetro da Tarefa -->
+          <!-- Painel do Cronômetro da Tarefa (Mais Leve e Suave) -->
           <div class="timer-zen-panel">
             <div class="timer-display-row">
+              <div class="timer-ring-indicator" aria-hidden="true">
+                <svg class="ui-svg" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+              </div>
               <span id="timer-digits" class="timer-digits">00:00</span>
               <span id="timer-status-pill" class="timer-status-pill">Pronto p/ focar</span>
             </div>
@@ -212,35 +294,48 @@
             </div>
           </div>
 
-          <!-- Dois Controles Principais: Play no Cronômetro OU Concluído Direto -->
+          <!-- Controles Principais Compactos e Suaves -->
           <div class="task-primary-actions">
             <button id="btn-toggle-timer" class="action-btn btn-play-timer" type="button">
-              <div class="action-btn-main">
-                <span id="btn-timer-icon">▶</span>
-                <span id="btn-timer-text">Play no Tempo</span>
+              <span id="btn-timer-icon" class="action-icon-circle">
+                <svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>
+              </span>
+              <div class="action-btn-copy">
+                <span id="btn-timer-text" class="action-btn-main">Iniciar Foco</span>
+                <span id="btn-timer-sub" class="action-btn-sub">Cronômetro + lembrete 5 min</span>
               </div>
-              <span id="btn-timer-sub" class="action-btn-sub">Inicia cronômetro + modo Presta Atenção (5 min)</span>
             </button>
 
             <button id="btn-complete-task" class="action-btn btn-complete-task" type="button">
-              <div class="action-btn-main">
-                <span>✓</span>
-                <span id="btn-complete-text">Concluir Direto</span>
+              <span class="action-icon-circle complete-circle">
+                <svg class="ui-svg" viewBox="0 0 24 24" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+              <div class="action-btn-copy">
+                <span id="btn-complete-text" class="action-btn-main">Concluir Tarefa</span>
+                <span id="btn-complete-sub" class="action-btn-sub">Sincroniza no Todoist + Pulso de Luz</span>
               </div>
-              <span id="btn-complete-sub" class="action-btn-sub">Concluir sem iniciar tempo (ou salvar tempo rodado)</span>
             </button>
           </div>
 
-          <!-- Navegação discreta caso queira espiar ou pular temporariamente -->
+          <!-- Navegação discreta -->
           <div class="task-footer-nav">
-            <button id="btn-prev-task" class="nav-link-btn" type="button">← Anterior</button>
-            <span id="zen-breathing-hint">🧘🏻‍♂️ Uma coisa de cada vez · O tempo trabalha a seu favor</span>
-            <button id="btn-skip-task" class="nav-link-btn" type="button">Pular p/ depois →</button>
+            <button id="btn-prev-task" class="nav-link-btn" type="button">
+              <svg class="ui-svg" viewBox="0 0 24 24" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+              <span>Anterior</span>
+            </button>
+            <span id="zen-breathing-hint" class="zen-breathing-hint">
+              <svg class="ui-svg" viewBox="0 0 24 24" width="13" height="13"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
+              <span>Uma coisa de cada vez</span>
+            </span>
+            <button id="btn-skip-task" class="nav-link-btn" type="button">
+              <span>Próxima</span>
+              <svg class="ui-svg" viewBox="0 0 24 24" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
           </div>
         </article>
       </section>
 
-      <!-- Barra Lateral Gamificada com a Miss Minutos (Olhinhos Seguindo o Mouse) -->
+      <!-- Barra Lateral Gamificada com a Miss Minutos (Adaptável Mobile/Desktop) -->
       <aside class="miss-minutes-sidebar" aria-label="Progresso do Dia com a Miss Minutos">
         <div class="mm-sidebar-header">
           <div class="mm-sidebar-title">Jornada do Hoje</div>
@@ -249,21 +344,30 @@
 
         <!-- Balão de fala vivo da Miss Minutos -->
         <div id="mm-speech-bubble" class="mm-speech-bubble">
-          “Oi, querido! Vamos começar pela primeira da fila? Dá um Play ou conclui direto se já tiver feito! 🧡”
+          “Oi, querido! Vamos começar pela próxima da fila? Dá um Play no foco ou conclui direto!”
         </div>
 
-        <!-- Barra Vertical: Vermelho (Base) -> Amarelo (Meio) -> Azul Suave (Topo) -->
+        <!-- Barra de Subida: Vermelho (Base) -> Amarelo (Meio) -> Azul Suave (Topo) -->
         <div class="mm-progress-arena">
           <div class="mm-zone-labels">
-            <span class="zone-tag-blue">100% · Azul Zen ✨</span>
-            <span class="zone-tag-yellow">50% · No Ritmo ⚡</span>
-            <span class="zone-tag-red">0% · Início 🔴</span>
+            <span class="zone-tag zone-tag-blue">
+              <span class="zone-dot dot-blue"></span>
+              <span>100% · Azul Zen</span>
+            </span>
+            <span class="zone-tag zone-tag-yellow">
+              <span class="zone-dot dot-yellow"></span>
+              <span>50% · No Ritmo</span>
+            </span>
+            <span class="zone-tag zone-tag-red">
+              <span class="zone-dot dot-red"></span>
+              <span>0% · Início</span>
+            </span>
           </div>
 
           <div class="mm-vertical-track" id="mm-vertical-track">
-            <!-- Avatar da Miss Minutos que sobe na barra e segue o mouse com os olhinhos -->
-            <div id="mm-climber-marker" class="mm-climber-marker" style="bottom: 0%;" title="Clique para um incentivo da Miss Minutos!">
-              <svg id="mm-sidebar-svg" viewBox="0 0 220 220" width="96" height="96">
+            <!-- Avatar da Miss Minutos que sobe na barra e segue o mouse/toque com os olhinhos -->
+            <div id="mm-climber-marker" class="mm-climber-marker" style="bottom: 0%;" title="Toque para um incentivo da Miss Minutos!">
+              <svg id="mm-sidebar-svg" viewBox="0 0 220 220" width="84" height="84">
                 <defs>
                   <radialGradient id="mmBodyGradSide" cx="38%" cy="32%" r="68%">
                     <stop offset="0%" stop-color="#FFB067" />
@@ -276,39 +380,30 @@
                     <stop offset="100%" stop-color="#FDE0B6" />
                   </radialGradient>
                 </defs>
-                <!-- Estrelinhas de alegria (visíveis na faixa azul ou ao comemorar) -->
                 <g id="mm-sparkles" opacity="0">
                   <path d="M 24 38 L 28 48 L 38 52 L 28 56 L 24 66 L 20 56 L 10 52 L 20 48 Z" fill="#38BDF8" />
                   <path d="M 196 34 L 199 42 L 207 45 L 199 48 L 196 56 L 193 48 L 185 45 L 193 42 Z" fill="#FACC15" />
                 </g>
-                <!-- Perninhas -->
                 <path d="M 88 182 Q 84 198 78 205" stroke="#EA580C" stroke-width="6.5" stroke-linecap="round" fill="none" />
                 <path d="M 132 182 Q 136 198 142 205" stroke="#EA580C" stroke-width="6.5" stroke-linecap="round" fill="none" />
                 <ellipse cx="73" cy="207" rx="13" ry="6.5" fill="#F97316" stroke="#9A3412" stroke-width="2.5" />
                 <ellipse cx="147" cy="207" rx="13" ry="6.5" fill="#F97316" stroke="#9A3412" stroke-width="2.5" />
-                <!-- Bracinhos dinâmicos -->
                 <path id="mm-arm-left" d="M 38 118 Q 18 130 22 148" stroke="#EA580C" stroke-width="6.5" stroke-linecap="round" fill="none" />
                 <circle id="mm-hand-left" cx="22" cy="150" r="9.5" fill="#FFFFFF" stroke="#9A3412" stroke-width="2.5" />
                 <path id="mm-arm-right" d="M 182 118 Q 202 130 198 148" stroke="#EA580C" stroke-width="6.5" stroke-linecap="round" fill="none" />
                 <circle id="mm-hand-right" cx="198" cy="150" r="9.5" fill="#FFFFFF" stroke="#9A3412" stroke-width="2.5" />
-                <!-- Argola topo -->
                 <circle cx="110" cy="18" r="10" fill="none" stroke="#EA580C" stroke-width="5" />
                 <rect x="103" y="24" width="14" height="10" rx="4" fill="#EA580C" />
-                <!-- Corpo do Relógio -->
                 <circle id="mm-clock-body" cx="110" cy="108" r="76" fill="url(#mmBodyGradSide)" stroke="#9A3412" stroke-width="4" />
-                <!-- Mostrador -->
                 <circle cx="110" cy="108" r="62" fill="url(#mmFaceGradSide)" stroke="#EA580C" stroke-width="2.5" />
-                <!-- Marcações de Hora -->
                 <g stroke="#F97316" stroke-width="3" stroke-linecap="round" opacity="0.7">
                   <line x1="110" y1="51" x2="110" y2="58" />
                   <line x1="167" y1="108" x2="160" y2="108" />
                   <line x1="110" y1="165" x2="110" y2="158" />
                   <line x1="53" y1="108" x2="60" y2="108" />
                 </g>
-                <!-- Sobrancelhas dinâmicas conforme a faixa (vermelha = preocupada, amarela = animando, azul = radiante) -->
                 <path id="mm-brow-left" d="M 72 80 Q 86 74 98 72" stroke="#7C2D12" stroke-width="4" stroke-linecap="round" fill="none" />
                 <path id="mm-brow-right" d="M 122 72 Q 134 74 148 80" stroke="#7C2D12" stroke-width="4" stroke-linecap="round" fill="none" />
-                <!-- Olho Esquerdo (segue o mouse) -->
                 <g class="mm-eye-socket" data-eye-cx="87" data-eye-cy="97">
                   <ellipse cx="87" cy="97" rx="15" ry="17.5" fill="#FFFFFF" stroke="#7C2D12" stroke-width="2.8" />
                   <g class="mm-pupil-group">
@@ -317,7 +412,6 @@
                     <circle cx="89.5" cy="100" r="1.4" fill="#FFFFFF" />
                   </g>
                 </g>
-                <!-- Olho Direito (segue o mouse) -->
                 <g class="mm-eye-socket" data-eye-cx="133" data-eye-cy="97">
                   <ellipse cx="133" cy="97" rx="15" ry="17.5" fill="#FFFFFF" stroke="#7C2D12" stroke-width="2.8" />
                   <g class="mm-pupil-group">
@@ -326,14 +420,10 @@
                     <circle cx="135.5" cy="100" r="1.4" fill="#FFFFFF" />
                   </g>
                 </g>
-                <!-- Gotinha de preocupação (aparece só na faixa vermelha inicial) -->
                 <path id="mm-sweat-drop" d="M 156 76 Q 162 86 156 92 Q 150 86 156 76 Z" fill="#38BDF8" opacity="0.85" />
-                <!-- Bochechas -->
                 <ellipse cx="68" cy="114" rx="7.5" ry="4.2" fill="#FB923C" opacity="0.45" />
                 <ellipse cx="152" cy="114" rx="7.5" ry="4.2" fill="#FB923C" opacity="0.45" />
-                <!-- Narizinho -->
                 <circle cx="110" cy="110" r="4.2" fill="#EA580C" />
-                <!-- Boca dinâmica (muda entre triste/preocupada no vermelho, sorriso médio no amarelo, e sorrisão aberto no azul) -->
                 <path id="mm-mouth-sad" d="M 90 136 Q 110 124 130 136" stroke="#7C2D12" stroke-width="4" stroke-linecap="round" fill="none" />
                 <path id="mm-mouth-medium" d="M 88 126 Q 110 142 132 126" stroke="#7C2D12" stroke-width="4" stroke-linecap="round" fill="none" style="display: none;" />
                 <g id="mm-mouth-happy" style="display: none;">
@@ -345,9 +435,13 @@
           </div>
         </div>
 
+        <!-- Conquistas Rápidas do Dia (SVG Badges) -->
+        <div id="sidebar-badges-row" class="sidebar-badges-row" title="Suas conquistas desbloqueadas hoje"></div>
+
         <!-- Status do Humor da Miss Minutos -->
         <div id="mm-mood-pill" class="mm-mood-pill mood-red">
-          😟 Faixa Vermelha · Miss Minutos preocupada
+          <span class="zone-dot dot-red"></span>
+          <span id="mm-mood-text">Faixa Inicial · Miss Minutos pronta</span>
         </div>
       </aside>
     </main>
@@ -356,11 +450,13 @@
     <footer class="bottom-bar">
       <div class="lofi-corner-player">
         <button id="btn-lofi-toggle" class="lofi-disc-btn" type="button" title="Play / Pause Lo-Fi">
-          <span id="lofi-play-icon">▶</span>
+          <span id="lofi-play-icon" class="btn-svg-slot">
+            <svg class="ui-svg" viewBox="0 0 24 24" width="16" height="16"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>
+          </span>
         </button>
         <div class="lofi-info">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span id="lofi-station-name" class="lofi-station-name">Lo-Fi Yoga & Chillhop</span>
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <span id="lofi-station-name" class="lofi-station-name">Lo-Fi Yoga &amp; Chillhop</span>
             <div id="lofi-eq" class="lofi-eq" aria-hidden="true">
               <span></span><span></span><span></span>
             </div>
@@ -368,14 +464,22 @@
           <span id="lofi-station-sub" class="lofi-station-sub">Curadoria Zen · Toque para iniciar</span>
         </div>
         <div class="lofi-controls">
-          <button id="btn-lofi-prev" class="lofi-mini-btn" type="button" title="Estação anterior">⏮</button>
-          <button id="btn-lofi-next" class="lofi-mini-btn" type="button" title="Próxima estação Lo-Fi">⏭</button>
+          <button id="btn-lofi-prev" class="lofi-mini-btn" type="button" title="Estação anterior">
+            <svg class="ui-svg" viewBox="0 0 24 24" width="14" height="14"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+          </button>
+          <button id="btn-lofi-next" class="lofi-mini-btn" type="button" title="Próxima estação Lo-Fi">
+            <svg class="ui-svg" viewBox="0 0 24 24" width="14" height="14"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+          </button>
           <input id="lofi-volume" class="lofi-volume-slider" type="range" min="0" max="100" value="45" title="Volume do Lo-Fi" />
         </div>
       </div>
 
-      <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 14px;">
-        <span>Atalhos: <strong>Espaço</strong> Play/Pause Tempo · <strong> Alt+C</strong> Concluir Tarefa</span>
+      <div class="footer-shortcuts">
+        <span>Atalhos: <strong>Espaço</strong> Play/Pause · <strong>Alt+C</strong> Concluir</span>
+        <button id="btn-logout-lock" class="lock-session-btn" type="button" title="Trancar sessão com senha">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="13" height="13"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          <span>Trancar</span>
+        </button>
       </div>
     </footer>
   </div>
@@ -386,48 +490,65 @@
   <div id="modal-attention" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-sheet">
       <div class="modal-header">
-        <h3 class="modal-title">🔔 Modo “Presta Atenção” (a cada 5 min)</h3>
-        <button class="modal-close-btn" data-close-modal="modal-attention" type="button">✕</button>
+        <h3 class="modal-title">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="19" height="19"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span>Modo “Presta Atenção” (a cada 5 min)</span>
+        </h3>
+        <button class="modal-close-btn" data-close-modal="modal-attention" type="button" aria-label="Fechar">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
-      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
-        Só funciona quando <strong>há uma tarefa rodando no cronômetro (Play ativo)</strong>. A cada 5 minutos focados, a Miss Minutos envia um lembrete suave para você não se perder em outra aba:
+      <p class="modal-desc-text">
+        Só funciona quando <strong>há uma tarefa rodando no cronômetro (Play ativo)</strong>. A cada intervalo focado, a Miss Minutos envia um lembrete suave para você manter o foco:
       </p>
 
       <div class="attention-mode-grid">
         <div class="mode-option-card selected" data-attention-mode="both">
-          <div class="mode-option-title">✨ Luminoso + Sonoro</div>
-          <div class="mode-option-desc">Pulso azul celeste suave na tela + nota de piano bem light e fluida.</div>
+          <div class="mode-option-title">
+            <svg class="ui-svg" viewBox="0 0 24 24" width="16" height="16"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
+            <span>Luminoso + Sonoro</span>
+          </div>
+          <div class="mode-option-desc">Pulso azul celeste suave na tela + nota de piano Rhodes bem leve e fluida.</div>
         </div>
 
         <div class="mode-option-card" data-attention-mode="light">
-          <div class="mode-option-title">💙 Apenas Modo Luminoso</div>
+          <div class="mode-option-title">
+            <svg class="ui-svg" viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <span>Apenas Modo Luminoso</span>
+          </div>
           <div class="mode-option-desc"><strong>Ideal p/ gravação de vídeo!</strong> Silêncio total: a tela dá um pulso azul suave em fade-in e fade-out.</div>
         </div>
 
         <div class="mode-option-card" data-attention-mode="sound">
-          <div class="mode-option-title">🎹 Apenas Modo Sonoro</div>
-          <div class="mode-option-desc">Apenas o acorde de piano zen suave a cada 5 minutos, sem alterar o brilho da tela.</div>
+          <div class="mode-option-title">
+            <svg class="ui-svg" viewBox="0 0 24 24" width="16" height="16"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <span>Apenas Modo Sonoro</span>
+          </div>
+          <div class="mode-option-desc">Apenas o acorde de piano zen suave, sem alterar a iluminação da tela.</div>
         </div>
 
         <div class="mode-option-card" data-attention-mode="off">
-          <div class="mode-option-title">🌙 Desligado</div>
-          <div class="mode-option-desc">Nenhum alerta automático durante o cronômetro.</div>
+          <div class="mode-option-title">
+            <svg class="ui-svg" viewBox="0 0 24 24" width="16" height="16"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span>Desligado</span>
+          </div>
+          <div class="mode-option-desc">Nenhum lembrete automático durante o cronômetro.</div>
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #e2e8f0; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+      <div class="modal-footer-row">
+        <div class="interval-select-group">
           <label for="attention-interval-select"><strong>Intervalo:</strong></label>
-          <select id="attention-interval-select" style="padding: 6px 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-family: var(--font-sans);">
+          <select id="attention-interval-select" class="clean-select">
             <option value="300" selected>A cada 5 minutos (Padrão)</option>
             <option value="180">A cada 3 minutos</option>
             <option value="600">A cada 10 minutos</option>
           </select>
         </div>
 
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 8px;">
           <button id="btn-test-attention-now" class="small-secondary-btn" type="button">
-            ⚡ Testar Efeito Agora
+            Testar Pulso Agora
           </button>
           <button class="small-primary-btn" data-close-modal="modal-attention" type="button">
             Pronto
@@ -438,75 +559,110 @@
   </div>
 
   <!-- ========================================================================
-       MODAL 2: FILA DO HOJE (ORDEM EXATA TODOIST) & CONEXÃO API
+       MODAL 2: PLANEJAMENTO DO DIA, MÉDIA DE TEMPO POR TAREFA & SYNC TODOIST
        ======================================================================== -->
   <div id="modal-queue" class="modal-backdrop" role="dialog" aria-modal="true">
-    <div class="modal-sheet">
+    <div class="modal-sheet modal-sheet-wide">
       <div class="modal-header">
-        <h3 class="modal-title">📋 Fila do Hoje · Ordem Exata do Todoist</h3>
-        <button class="modal-close-btn" data-close-modal="modal-queue" type="button">✕</button>
+        <h3 class="modal-title">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="19" height="19"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Planejamento do Dia · Fila do Hoje</span>
+        </h3>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="btn-sync-drawer-top" class="small-secondary-btn" type="button" title="Sincronizar status e ordem exata com o Todoist">
+            <svg class="ui-svg" viewBox="0 0 24 24" width="14" height="14"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+            <span>Sincronizar Todoist</span>
+          </button>
+          <button class="modal-close-btn" data-close-modal="modal-queue" type="button" aria-label="Fechar">
+            <svg class="ui-svg" viewBox="0 0 24 24" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
       </div>
-      <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.45;">
-        As tarefas abaixo seguem <strong>exatamente a mesma ordem visual do seu Hoje no Todoist</strong>. Clique em qualquer tarefa caso queira focar nela agora:
+
+      <!-- Barra de Resumo do Planejamento do Dia -->
+      <div class="planning-summary-banner">
+        <div class="plan-stat-box">
+          <span class="plan-stat-label">FILA DO HOJE</span>
+          <strong id="plan-stat-tasks" class="plan-stat-value">0 pendentes · 0 concluídas</strong>
+        </div>
+        <div class="plan-stat-box">
+          <span class="plan-stat-label">TEMPO PLANEJADO RESTANTE</span>
+          <strong id="plan-stat-minutes" class="plan-stat-value plan-blue">0m planejados</strong>
+        </div>
+        <div class="plan-stat-box">
+          <span class="plan-stat-label">PREVISÃO DE TÉRMINO</span>
+          <strong id="plan-stat-eta" class="plan-stat-value plan-orange">--:--</strong>
+        </div>
+      </div>
+
+      <p class="modal-desc-text" style="margin-bottom: 10px;">
+        Defina a <strong>média de minutos</strong> de cada tarefa para planejar seu dia, dê check direto ou clique no título para focar nela agora:
       </p>
 
       <div id="queue-list-container" class="queue-list"></div>
 
-      <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
-        <div style="font-size: 0.84rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">
-          🔗 Sincronização Ao Vivo com Todoist (Sync API v9)
+      <div class="todoist-sync-config-box">
+        <div class="sync-config-title">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span>Conexão Direta Todoist (Sync API v9 Bidirecional)</span>
         </div>
-        <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 8px;">
-          As tarefas de Hoje do projeto principal (<code>6CrgFRpqRPQVfgjG</code>) já estão carregadas. Para sincronização bidirecional direta pelo navegador, cole opcionalmente seu Token da API do Todoist (Configurações → Integrações → Desenvolvedor):
+        <p class="sync-config-sub">
+          Concluir, reabrir, estimar tempo e atualizar a ordem sincronizam direto com o seu Todoist. Se quiser vincular sua chave pessoal da API do Todoist (Configurações → Integrações → Desenvolvedor), cole abaixo:
         </p>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <input id="todoist-token-input" class="input-field" type="password" placeholder="Token da API do Todoist (opcional — já sincronizado via conector)" style="margin-top: 0;" />
-          <button id="btn-sync-todoist-now" class="small-primary-btn" type="button" style="white-space: nowrap;">
-            🔄 Sincronizar
+        <div class="sync-input-row">
+          <input id="todoist-token-input" class="input-field" type="password" placeholder="Token da API do Todoist (salvo com segurança no servidor)" />
+          <button id="btn-sync-todoist-now" class="small-primary-btn" type="button">
+            Salvar &amp; Sincronizar
           </button>
         </div>
-        <div id="sync-feedback-msg" style="font-size: 0.78rem; color: #047857; margin-top: 8px; display: none;"></div>
+        <div id="sync-feedback-msg" class="sync-feedback-msg" style="display: none;"></div>
       </div>
     </div>
   </div>
 
   <!-- ========================================================================
-       MODAL 3: REGISTRO DE TEMPO POR TAREFA (INTEGRAÇÃO MISS MINUTOS 5H30)
+       MODAL 3: REGISTRO DE TEMPO & GAMIFICAÇÃO (INTEGRAÇÃO MISS MINUTOS 5H30)
        ======================================================================== -->
   <div id="modal-times" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-sheet">
       <div class="modal-header">
-        <h3 class="modal-title">📊 Tempos por Tarefa · Integração Miss Minutos</h3>
-        <button class="modal-close-btn" data-close-modal="modal-times" type="button">✕</button>
-      </div>
-      <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
-        Todo tempo focado com o <strong>Play</strong> é salvo automaticamente e sincronizado para a <strong>Miss Minutos</strong> ler antes do feedback das <strong>5h30 da manhã</strong> em:<br />
-        <code style="font-size: 0.74rem; background: #f1f5f9; padding: 3px 7px; border-radius: 6px; color: #0369a1;">/cursor/stores/store-5b2033df-0366-49bc-b749-db89d38460ab/lightfocus-times.json</code>
-      </p>
-
-      <div id="times-summary-cards" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px;">
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px; text-align: center;">
-          <div style="font-size: 0.74rem; color: var(--text-muted); font-weight: 700;">TEMPO FOCADO HOJE</div>
-          <div id="stat-today-minutes" style="font-size: 1.35rem; font-weight: 800; color: #0284c7; margin-top: 2px;">0 min</div>
-        </div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px; text-align: center;">
-          <div style="font-size: 0.74rem; color: var(--text-muted); font-weight: 700;">CONCLUÍDAS C/ TIMER</div>
-          <div id="stat-timed-count" style="font-size: 1.35rem; font-weight: 800; color: #10b981; margin-top: 2px;">0</div>
-        </div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px; text-align: center;">
-          <div style="font-size: 0.74rem; color: var(--text-muted); font-weight: 700;">CONCLUÍDAS DIRETO</div>
-          <div id="stat-quick-count" style="font-size: 1.35rem; font-weight: 800; color: #f97316; margin-top: 2px;">0</div>
-        </div>
+        <h3 class="modal-title">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="19" height="19"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          <span>Tempos &amp; Conquistas · Miss Minutos</span>
+        </h3>
+        <button class="modal-close-btn" data-close-modal="modal-times" type="button" aria-label="Fechar">
+          <svg class="ui-svg" viewBox="0 0 24 24" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
 
-      <div style="font-size: 0.82rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
-        Histórico de Sessões & Médias Reais por Tarefa:
+      <div id="times-summary-cards" class="times-summary-grid">
+        <div class="times-stat-card">
+          <div class="times-stat-label">TEMPO FOCADO HOJE</div>
+          <div id="stat-today-minutes" class="times-stat-num stat-blue">0 min</div>
+        </div>
+        <div class="times-stat-card">
+          <div class="times-stat-label">CONCLUÍDAS C/ TIMER</div>
+          <div id="stat-timed-count" class="times-stat-num stat-green">0</div>
+        </div>
+        <div class="times-stat-card">
+          <div class="times-stat-label">CONCLUÍDAS DIRETO</div>
+          <div id="stat-quick-count" class="times-stat-num stat-orange">0</div>
+        </div>
       </div>
-      <div id="times-log-list" class="queue-list" style="max-height: 240px;"></div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid #e2e8f0;">
+      <!-- Grade de Conquistas Gamificadas (SVG Badges) -->
+      <div class="section-subtitle">Conquistas do Dia (Gamificação Zen)</div>
+      <div id="achievements-modal-grid" class="achievements-modal-grid"></div>
+
+      <div class="section-subtitle" style="margin-top: 14px;">
+        Histórico de Sessões &amp; Médias Reais por Tarefa:
+      </div>
+      <div id="times-log-list" class="queue-list" style="max-height: 220px;"></div>
+
+      <div class="modal-footer-row">
         <button id="btn-export-times-json" class="small-secondary-btn" type="button">
-          ⬇️ Baixar lightfocus-times.json
+          <svg class="ui-svg" viewBox="0 0 24 24" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Baixar lightfocus-times.json</span>
         </button>
         <button class="small-primary-btn" data-close-modal="modal-times" type="button">
           Fechar
@@ -517,7 +673,7 @@
 
   <!-- Snapshot Real Inicial do Todoist do Walace -->
   <script src="tasks-seed.js"></script>
-  <!-- Lógica Principal do LightFocus -->
+  <!-- Lógica Principal do LightFocus v2 -->
   <script src="app.js"></script>
 </body>
 </html>

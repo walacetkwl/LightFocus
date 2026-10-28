@@ -1,1706 +1,1192 @@
-/* ==========================================================================
-   LightFocus — estrelando Miss Minutos (app.js)
-   - Tarefa única no centro + animação de dissolução/nuvem subindo ao concluir
-   - Sincronização em tempo real com Todoist (ordem exata do Hoje / day_order)
-   - Barra lateral gamificada (Vermelho -> Amarelo -> Azul) com olhinhos seguindo o mouse
-   - Modo "Presta Atenção" (a cada 5 min quando Play ativo: Luminoso, Sonoro ou Ambos)
-   - Player Lo-Fi no cantinho (Web Audio Chillhop Sintetizado + Streams Reais)
-   - Log de tempo real por tarefa sincronizado para a Miss Minutos (5h30)
-   ========================================================================== */
-
+/**
+ * LightFocus v2 — Foco Leve · Estrelinha da Miss Minutos
+ * 100% SVGs (Zero Emojis), Proteção por Senha, Pulso Luminoso ao Concluir,
+ * Sincronização Bidirecional Todoist + Estimativa de Tempo por Tarefa + Gamificação
+ */
 (function () {
   'use strict';
 
   const STORAGE_KEYS = {
-    TIMES: 'lightfocus_times_v1',
-    COMPLETED_IDS: 'lightfocus_completed_ids_v1',
-    SUBTASKS_DONE: 'lightfocus_subtasks_done_v1',
-    ATTENTION_MODE: 'lightfocus_attention_mode_v1',
-    ATTENTION_INTERVAL: 'lightfocus_attention_interval_v1',
-    TODOIST_TOKEN: 'lightfocus_todoist_token_v1',
-    LOFI_VOLUME: 'lightfocus_lofi_volume_v1'
+    AUTH_TOKEN: 'lightfocus_auth_token',
+    COMPLETED_TODAY: 'lightfocus_completed_today_v2',
+    CURRENT_INDEX: 'lightfocus_current_idx_v2',
+    ATTENTION_ENABLED: 'lightfocus_attention_5m_v2',
+    LOFI_VOLUME: 'lightfocus_lofi_vol_v2',
+    LOFI_STATION: 'lightfocus_lofi_station_v2',
+    TASK_TIMES_LOCAL: 'lightfocus_task_times_cache_v2',
+    ESTIMATES_LOCAL: 'lightfocus_estimates_cache_v2',
+    GAMIFICATION: 'lightfocus_gamification_v2'
   };
 
+  const SVG_ICONS = {
+    check: '<svg class="ui-svg" width="14" height="14" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+    flame: '<svg class="ui-svg" width="15" height="15" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
+    star: '<svg class="ui-svg" width="15" height="15" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    zap: '<svg class="ui-svg" width="15" height="15" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    award: '<svg class="ui-svg" width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>',
+    clock: '<svg class="ui-svg" width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+  };
+
+  const BADGE_DEFS = [
+    { id: 'first_check', name: 'Primeiro Pulso', desc: 'Concluiu a 1ª tarefa do dia', icon: SVG_ICONS.zap, check: (g, doneCount) => doneCount >= 1 },
+    { id: 'combo_3', name: 'Fluxo Contínuo', desc: 'Sequência de 3 tarefas concluídas', icon: SVG_ICONS.flame, check: (g, doneCount) => g.streak >= 3 || doneCount >= 3 },
+    { id: 'focus_25m', name: 'Imersão Pura', desc: '25+ minutos de foco cronometrado', icon: SVG_ICONS.clock, check: (g, doneCount, focusSec) => focusSec >= 1500 },
+    { id: 'half_day', name: 'Meio Caminho Zen', desc: '50% da fila do Hoje concluída', icon: SVG_ICONS.star, check: (g, doneCount, focusSec, pct) => pct >= 50 },
+    { id: 'master_day', name: 'Mestre do Tempo', desc: '100% da fila do Hoje concluída', icon: SVG_ICONS.award, check: (g, doneCount, focusSec, pct) => pct >= 100 }
+  ];
+
+  const FOCUS_LEVELS = [
+    { minXp: 0, title: 'Nível 1 · Brisa Calma' },
+    { minXp: 150, title: 'Nível 2 · Ritmo Fluido' },
+    { minXp: 350, title: 'Nível 3 · Foco Solar' },
+    { minXp: 650, title: 'Nível 4 · Guardião TVA' },
+    { minXp: 1000, title: 'Nível 5 · Mestre do Tempo' }
+  ];
+
+  // Remove qualquer emoji nativo que venha nos textos do Todoist para manter 100% SVGs limpos
+  function stripEmojis(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]/gu, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function formatCleanDescription(raw) {
+    const cleaned = stripEmojis(raw || '');
+    if (!cleaned) return '';
+    const lines = cleaned.split(/\r?\n/);
+    return lines
+      .map((line) => {
+        let safe = escapeHtml(line.trim());
+        if (!safe) return '<div style="height:6px"></div>';
+        safe = safe.replace(
+          /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+          '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+        );
+        safe = safe.replace(
+          /(^|\s)(https?:\/\/[^\s<]+)/g,
+          '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>'
+        );
+        safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        if (/^#{1,3}\s+/.test(safe)) {
+          return '<div style="font-weight:700;color:#0f172a;margin-top:6px;">' + safe.replace(/^#{1,3}\s+/, '') + '</div>';
+        }
+        return '<div>' + safe + '</div>';
+      })
+      .join('');
+  }
+
   const state = {
+    authToken: localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || '',
+    authenticated: false,
     tasks: [],
     currentIndex: 0,
     completedIds: new Set(),
-    subtasksDone: {},
+    estimates: {},
     timerRunning: false,
     timerSeconds: 0,
-    timerStartedAt: null,
-    timerIntervalId: null,
-    attentionMode: localStorage.getItem(STORAGE_KEYS.ATTENTION_MODE) || 'both',
-    attentionIntervalSec: Number(localStorage.getItem(STORAGE_KEYS.ATTENTION_INTERVAL) || 300),
-    attentionElapsedSec: 0,
-    todoistToken: localStorage.getItem(STORAGE_KEYS.TODOIST_TOKEN) || '',
-    timesData: {
-      app: 'LightFocus',
-      owner: 'Walace Messias',
-      agent: 'Miss Minutos · Adm do Tempo',
-      timezone: 'America/Sao_Paulo',
-      sessions: [],
-      taskAverages: {},
-      dailySummary: {}
-    },
+    timerInterval: null,
+    activeTaskStartedAt: null,
+    attentionEnabled: true,
+    attentionRemainingSec: 300,
+    attentionInterval: null,
+    lofiPlaying: false,
+    lofiStationIdx: 0,
+    lofiVolume: 0.35,
     audioCtx: null,
-    lofi: {
-      playing: false,
-      stationIndex: 0,
-      volume: Number(localStorage.getItem(STORAGE_KEYS.LOFI_VOLUME) ?? 45) / 100,
-      audioEl: null,
-      synthTimer: null,
-      noiseNode: null,
-      masterGain: null,
-      chordStep: 0
-    }
+    lofiNodes: null,
+    historyData: { tasks: {}, sessions: [] },
+    gamification: { xp: 0, streak: 0, lastDate: '' },
+    descExpanded: false
   };
 
-  const LOFI_STATIONS = [
-    {
-      name: 'Lo-Fi Yoga & Chillhop (Zen Synth)',
-      sub: 'Acordes Rhodes & Vinil Suave · Zero Falha',
-      type: 'synth'
-    },
-    {
-      name: 'SomaFM · Groove Salad Chill',
-      sub: 'Ambient / Downtempo Beats',
-      type: 'stream',
-      url: 'https://ice2.somafm.com/groovesalad-128-mp3'
-    },
-    {
-      name: 'SomaFM · Drone Zone Zen',
-      sub: 'Foco Profundo & Meditação',
-      type: 'stream',
-      url: 'https://ice2.somafm.com/dronezone-128-mp3'
-    },
-    {
-      name: 'Nightride · ChillSynth FM',
-      sub: 'Lo-Fi & Warm Synthwave',
-      type: 'stream',
-      url: 'https://stream.nightride.fm/chillsynth.mp3'
-    }
-  ];
-
-  const MISS_MINUTOS_QUOTES = {
-    startRed: [
-      '“Oi, querido! Vamos começar pela primeira da fila? Dá um Play ou conclui direto se já tiver feito! 🧡”',
-      '“Respira fundo igual num Yoga, Walace! Uma tarefa por vez e a gente chega no azul rapidinho! ⏰”'
-    ],
-    celebrateRed: [
-      '“Boa, querido! Primeiro passo dado! Já estou subindo aqui na barra! 🧡”',
-      '“Isso aí! Uma já foi pro espaço! Mantém esse ritmo gostoso! ✨”',
-      '“Adorei ver essa tarefa subindo igual nuvem! Vamos pra próxima? ⏰”'
-    ],
-    celebrateYellow: [
-      '“Olha a gente na faixa amarela, Walace! Já passamos de um terço do dia! ⚡🧡”',
-      '“Que orgulho! Seu foco hoje está lindo de ver, querido! Continue assim! 🌟”',
-      '“Mais uma concluída com leveza! Estamos quase chegando no céu azul! ✨”'
-    ],
-    celebrateBlue: [
-      '“UAAAU! Faixa Azul Zen atingida! Você está voando hoje, Walace! 💙✨”',
-      '“Impecável, querido! Estou radiante aqui no topo da barra vendo você zerar tudo! 🥳⏰”',
-      '“Quase lá! Esse é o poder de focar em uma única coisa de cada vez! 💙🧡”'
-    ],
-    allDone: [
-      '“ZEROU O HOJE, QUERIDO!! 🎉💙 100% concluído! Pode descansar em paz que amanhã às 5h30 eu te trago o balanço!”'
-    ]
-  };
-
-  // ==========================================================================
-  // Utilitários de Data, Formatação e Áudio Zen (Web Audio API)
-  // ==========================================================================
-  function getTodayStr() {
-    const fmt = new Intl.DateTimeFormat('sv-SE', {
-      timeZone: 'America/Sao_Paulo',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    return fmt.format(new Date());
+  function getTodayKey() {
+    return new Date().toLocaleDateString('sv-SE');
   }
 
-  function formatMMSS(totalSeconds) {
-    const s = Math.max(0, Math.floor(totalSeconds));
-    const hrs = Math.floor(s / 3600);
-    const mins = Math.floor((s % 3600) / 60);
-    const secs = s % 60;
-    if (hrs > 0) {
-      return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  function authHeaders(extra) {
+    const h = Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+    if (state.authToken) h['x-lightfocus-auth'] = state.authToken;
+    return h;
   }
 
-  function ensureAudioContext() {
-    if (!state.audioCtx) {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) {
-        state.audioCtx = new AudioContextClass();
+  async function apiFetch(url, options) {
+    const opts = Object.assign({}, options || {});
+    opts.headers = authHeaders(opts.headers);
+    return fetch(url, opts);
+  }
+
+  function loadLocalState() {
+    try {
+      const savedCompleted = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPLETED_TODAY) || '{}');
+      const today = getTodayKey();
+      if (savedCompleted.date === today && Array.isArray(savedCompleted.ids)) {
+        state.completedIds = new Set(savedCompleted.ids);
       }
+      const savedEst = JSON.parse(localStorage.getItem(STORAGE_KEYS.ESTIMATES_LOCAL) || '{}');
+      if (savedEst && typeof savedEst === 'object') state.estimates = savedEst;
+
+      const savedGam = JSON.parse(localStorage.getItem(STORAGE_KEYS.GAMIFICATION) || '{}');
+      if (savedGam && typeof savedGam === 'object') {
+        state.gamification.xp = Number(savedGam.xp) || 0;
+        state.gamification.streak = savedGam.lastDate === today ? (Number(savedGam.streak) || 0) : 0;
+        state.gamification.lastDate = today;
+      }
+      const savedHistory = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASK_TIMES_LOCAL) || '{}');
+      if (savedHistory && savedHistory.tasks) state.historyData = savedHistory;
+    } catch (_) {}
+  }
+
+  function saveLocalState() {
+    try {
+      const today = getTodayKey();
+      localStorage.setItem(
+        STORAGE_KEYS.COMPLETED_TODAY,
+        JSON.stringify({ date: today, ids: Array.from(state.completedIds) })
+      );
+      localStorage.setItem(STORAGE_KEYS.ESTIMATES_LOCAL, JSON.stringify(state.estimates));
+      localStorage.setItem(STORAGE_KEYS.GAMIFICATION, JSON.stringify(state.gamification));
+    } catch (_) {}
+  }
+
+  // Sons Sintetizados Web Audio API (Suaves & Zen)
+  function ensureAudioCtx() {
+    if (!state.audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) state.audioCtx = new AudioContext();
     }
     if (state.audioCtx && state.audioCtx.state === 'suspended') {
-      state.audioCtx.resume().catch(() => {});
+      state.audioCtx.resume();
     }
     return state.audioCtx;
   }
 
-  // Som suave e orgânico ao concluir tarefa (acorde harpa/celesta zen)
-  function playZenCompletionSound() {
-    const ctx = ensureAudioContext();
-    if (!ctx) return;
-
-    const now = ctx.currentTime;
-    // Acorde Fmaj9 celestial (F4, A4, C5, E5, G5)
-    const freqs = [349.23, 440.0, 523.25, 659.25, 783.99];
-    freqs.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const osc2 = ctx.createOscillator();
-      const filter = ctx.createBiquadFilter();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc2.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, now + i * 0.065);
-      osc2.frequency.setValueAtTime(freq * 2, now + i * 0.065);
-
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(1800, now);
-
-      const start = now + i * 0.065;
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.linearRampToValueAtTime(0.075 / (1 + i * 0.15), start + 0.045);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 2.2);
-
-      osc.connect(filter);
-      osc2.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(start);
-      osc2.start(start);
-      osc.stop(start + 2.3);
-      osc2.stop(start + 2.3);
-    });
-  }
-
-  // Som suave de piano Rhodes/Felt para o Modo "Presta Atenção" (5 em 5 min)
-  function playGentlePianoAttentionChord() {
-    const ctx = ensureAudioContext();
-    if (!ctx) return;
-
-    const now = ctx.currentTime;
-    // Acorde Cmaj7 / Gmaj7 super macio e aveludado
-    const notes = [261.63, 329.63, 392.0, 493.88, 587.33];
-    notes.forEach((freq, idx) => {
-      const osc = ctx.createOscillator();
-      const subOsc = ctx.createOscillator();
-      const filter = ctx.createBiquadFilter();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      subOsc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, now + idx * 0.09);
-      subOsc.frequency.setValueAtTime(freq * 0.5, now + idx * 0.09);
-
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(1100, now);
-
-      const t0 = now + idx * 0.09;
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.linearRampToValueAtTime(0.06, t0 + 0.08);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 3.4);
-
-      osc.connect(filter);
-      subOsc.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(t0);
-      subOsc.start(t0);
-      osc.stop(t0 + 3.5);
-      subOsc.stop(t0 + 3.5);
-    });
-  }
-
-  // ==========================================================================
-  // Animação de Partículas / Nuvem Subindo ao Concluir Tarefa
-  // ==========================================================================
-  const particleCanvas = document.getElementById('particle-canvas');
-  const pCtx = particleCanvas ? particleCanvas.getContext('2d') : null;
-  let particles = [];
-  let particleAnimId = null;
-
-  function resizeParticleCanvas() {
-    if (!particleCanvas) return;
-    particleCanvas.width = window.innerWidth;
-    particleCanvas.height = window.innerHeight;
-  }
-  window.addEventListener('resize', resizeParticleCanvas);
-  resizeParticleCanvas();
-
-  function triggerTaskDissolveParticles(cardElement) {
-    if (!particleCanvas || !pCtx || !cardElement) return;
-    const rect = cardElement.getBoundingClientRect();
-    const colors = [
-      'rgba(56, 189, 248, 0.78)',
-      'rgba(249, 115, 22, 0.72)',
-      'rgba(250, 204, 21, 0.75)',
-      'rgba(16, 185, 129, 0.72)',
-      'rgba(255, 255, 255, 0.92)'
-    ];
-
-    for (let i = 0; i < 68; i++) {
-      particles.push({
-        x: rect.left + Math.random() * rect.width,
-        y: rect.top + Math.random() * rect.height,
-        vx: (Math.random() - 0.5) * 1.8,
-        vy: -(1.6 + Math.random() * 3.4),
-        radius: 4 + Math.random() * 14,
-        alpha: 0.85 + Math.random() * 0.15,
-        decay: 0.008 + Math.random() * 0.011,
-        color: colors[Math.floor(Math.random() * colors.length)]
+  function playZenCompleteSound() {
+    try {
+      const ctx = ensureAudioCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      [528, 660, 792, 1056].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.11, now + idx * 0.08 + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.95);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 1.0);
       });
-    }
-
-    if (!particleAnimId) {
-      animateParticles();
-    }
+    } catch (_) {}
   }
 
-  function animateParticles() {
-    if (!pCtx || !particleCanvas) return;
-    pCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.x += p.vx + Math.sin(p.y * 0.03) * 0.5;
-      p.y += p.vy;
-      p.radius *= 1.004;
-      p.alpha -= p.decay;
-
-      if (p.alpha <= 0.01) {
-        particles.splice(i, 1);
-        continue;
-      }
-
-      pCtx.save();
-      pCtx.globalAlpha = Math.max(0, p.alpha);
-      pCtx.beginPath();
-      pCtx.fillStyle = p.color;
-      pCtx.shadowColor = p.color;
-      pCtx.shadowBlur = 12;
-      pCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-      pCtx.fill();
-      pCtx.restore();
-    }
-
-    if (particles.length > 0) {
-      particleAnimId = requestAnimationFrame(animateParticles);
-    } else {
-      pCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
-      particleAnimId = null;
-    }
-  }
-
-  // ==========================================================================
-  // Olhinhos da Miss Minutos Seguindo o Cursor do Mouse (mousemove)
-  // ==========================================================================
-  function setupEyeTracking() {
-    const sockets = document.querySelectorAll('.mm-eye-socket');
-    if (!sockets.length) return;
-
-    window.addEventListener('mousemove', (e) => {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-
-      sockets.forEach((socket) => {
-        const pupilGroup = socket.querySelector('.mm-pupil-group');
-        const svg = socket.ownerSVGElement;
-        if (!pupilGroup || !svg) return;
-
-        const rect = socket.getBoundingClientRect();
-        if (rect.width === 0 && rect.height === 0) return;
-
-        const eyeCenterX = rect.left + rect.width / 2;
-        const eyeCenterY = rect.top + rect.height / 2;
-
-        const dx = mouseX - eyeCenterX;
-        const dy = mouseY - eyeCenterY;
-        const angle = Math.atan2(dy, dx);
-        const dist = Math.min(5.2, Math.hypot(dx, dy) / 36);
-
-        const offsetX = Math.cos(angle) * dist;
-        const offsetY = Math.sin(angle) * dist;
-
-        pupilGroup.style.transform = `translate(${offsetX.toFixed(2)}px, ${offsetY.toFixed(2)}px)`;
+  function playAttentionBell() {
+    try {
+      const ctx = ensureAudioCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      [432, 648].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.14);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.14);
+        gain.gain.exponentialRampToValueAtTime(0.09, now + idx * 0.14 + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.14 + 1.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.14);
+        osc.stop(now + idx * 0.14 + 1.45);
       });
-    });
+    } catch (_) {}
   }
 
-  // ==========================================================================
-  // Carregamento e Sincronização das Tarefas (Ordem Exata do Hoje)
-  // ==========================================================================
-  function loadLocalStorageState() {
-    try {
-      const savedCompleted = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPLETED_IDS) || '[]');
-      if (Array.isArray(savedCompleted)) {
-        state.completedIds = new Set(savedCompleted.map(String));
-      }
-    } catch (e) {}
-
-    try {
-      const savedSub = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUBTASKS_DONE) || '{}');
-      if (savedSub && typeof savedSub === 'object') {
-        state.subtasksDone = savedSub;
-      }
-    } catch (e) {}
-
-    try {
-      const savedTimes = JSON.parse(localStorage.getItem(STORAGE_KEYS.TIMES) || 'null');
-      if (savedTimes && Array.isArray(savedTimes.sessions)) {
-        state.timesData = savedTimes;
-      }
-    } catch (e) {}
+  // Pulso Luminoso Assinatura LightFocus a cada Check!
+  function triggerCheckLightPulse() {
+    const el = document.getElementById('lightfocus-check-pulse');
+    if (!el) return;
+    el.classList.remove('pulsing-check');
+    void el.offsetWidth;
+    el.classList.add('pulsing-check');
+  }
+  function formatDuration(sec) {
+    const s = Math.max(0, Math.floor(sec || 0));
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
   }
 
-  function saveCompletedToStorage() {
-    try {
-      localStorage.setItem(STORAGE_KEYS.COMPLETED_IDS, JSON.stringify(Array.from(state.completedIds)));
-      localStorage.setItem(STORAGE_KEYS.SUBTASKS_DONE, JSON.stringify(state.subtasksDone));
-    } catch (e) {}
+  function formatMinutesHuman(min) {
+    const m = Math.max(0, Math.round(min || 0));
+    if (m < 60) return m + 'm';
+    const h = Math.floor(m / 60);
+    const rem = m % 60;
+    return rem > 0 ? (h + 'h ' + rem + 'm') : (h + 'h');
   }
 
-  function recomputeLocalTimesAggregates() {
-    const sessions = Array.isArray(state.timesData.sessions) ? state.timesData.sessions : [];
-    const taskMap = {};
-    const dailyMap = {};
-
-    sessions.forEach((s) => {
-      const key = s.taskId || s.content || 'unknown';
-      if (!taskMap[key]) {
-        taskMap[key] = {
-          taskId: s.taskId || null,
-          content: s.content || 'Tarefa',
-          totalSessions: 0,
-          timedSessions: 0,
-          completedWithoutTimerCount: 0,
-          totalSeconds: 0,
-          averageSeconds: 0,
-          averageMinutes: 0
-        };
-      }
-      const entry = taskMap[key];
-      entry.totalSessions += 1;
-      const dur = Math.max(0, Number(s.durationSeconds || 0));
-      if (s.completedWithoutTimer || dur === 0) {
-        entry.completedWithoutTimerCount += 1;
-      } else {
-        entry.timedSessions += 1;
-        entry.totalSeconds += dur;
-      }
-
-      const dKey = s.date || getTodayStr();
-      if (!dailyMap[dKey]) {
-        dailyMap[dKey] = {
-          date: dKey,
-          completedTasksCount: 0,
-          timedTasksCount: 0,
-          quickCompletedCount: 0,
-          totalFocusedSeconds: 0,
-          totalFocusedMinutes: 0
-        };
-      }
-      const day = dailyMap[dKey];
-      day.completedTasksCount += 1;
-      if (s.completedWithoutTimer || dur === 0) {
-        day.quickCompletedCount += 1;
-      } else {
-        day.timedTasksCount += 1;
-        day.totalFocusedSeconds += dur;
-      }
-      day.totalFocusedMinutes = Number((day.totalFocusedSeconds / 60).toFixed(1));
-    });
-
-    Object.keys(taskMap).forEach((k) => {
-      const t = taskMap[k];
-      if (t.timedSessions > 0) {
-        t.averageSeconds = Math.round(t.totalSeconds / t.timedSessions);
-        t.averageMinutes = Number((t.averageSeconds / 60).toFixed(1));
-      }
-    });
-
-    state.timesData.taskAverages = taskMap;
-    state.timesData.dailySummary = dailyMap;
-    state.timesData.updatedAt = new Date().toISOString();
-    try {
-      localStorage.setItem(STORAGE_KEYS.TIMES, JSON.stringify(state.timesData));
-    } catch (e) {}
+  function getTaskEstimate(task) {
+    if (!task) return 15;
+    if (state.estimates[task.id] != null) return Number(state.estimates[task.id]) || 15;
+    if (task.estimatedMinutes != null) return Number(task.estimatedMinutes) || 15;
+    return 15;
   }
 
-  function applySnapshotTasks(snapshot) {
-    if (!snapshot || !Array.isArray(snapshot.tasks)) return;
-    const tasks = snapshot.tasks.slice().sort((a, b) => {
-      const oA = Number(a.dayOrder ?? 9999);
-      const oB = Number(b.dayOrder ?? 9999);
-      return oA - oB;
-    });
-
-    tasks.forEach((t) => {
-      if (t.checked) {
-        state.completedIds.add(String(t.id));
-      }
-    });
-
-    state.tasks = tasks;
-    // Posiciona na primeira tarefa ainda não concluída
-    const firstPendingIdx = state.tasks.findIndex((t) => !state.completedIds.has(String(t.id)));
-    state.currentIndex = firstPendingIdx >= 0 ? firstPendingIdx : 0;
-
-    renderCurrentTask(false);
-    updateMissMinutosSidebar(false);
-    updateHeaderStats();
-  }
-
-  async function initTasksAndTimes() {
-    loadLocalStorageState();
-
-    // 1. Carrega snapshot inicial embutido (tasks-seed.js)
-    if (window.LIGHTFOCUS_INITIAL_SNAPSHOT) {
-      applySnapshotTasks(window.LIGHTFOCUS_INITIAL_SNAPSHOT);
-    }
-
-    // 2. Se o servidor local Node estiver ativo, sincroniza estado e tempos
+  async function setTaskEstimate(taskId, minutes) {
+    const cleanMin = Math.max(1, Math.min(480, Math.round(Number(minutes) || 15)));
+    state.estimates[taskId] = cleanMin;
+    const t = state.tasks.find((x) => String(x.id) === String(taskId));
+    if (t) t.estimatedMinutes = cleanMin;
+    saveLocalState();
+    renderCurrentTask();
+    renderPlanningSummary();
     try {
-      const [tasksRes, timesRes] = await Promise.all([
-        fetch('/api/tasks', { headers: state.todoistToken ? { 'X-Todoist-Token': state.todoistToken } : {} }),
-        fetch('/api/times')
-      ]);
-      if (tasksRes.ok) {
-        const tJson = await tasksRes.json();
-        if (tJson && tJson.snapshot) {
-          applySnapshotTasks(tJson.snapshot);
-        }
-      }
-      if (timesRes.ok) {
-        const tmJson = await timesRes.json();
-        if (tmJson && tmJson.data && Array.isArray(tmJson.data.sessions)) {
-          // Mescla sessões locais com as do servidor
-          const serverSessions = tmJson.data.sessions;
-          const localSessions = state.timesData.sessions || [];
-          const byId = new Map();
-          serverSessions.forEach((s) => byId.set(s.sessionId || `${s.taskId}_${s.endedAt}`, s));
-          localSessions.forEach((s) => byId.set(s.sessionId || `${s.taskId}_${s.endedAt}`, s));
-          state.timesData.sessions = Array.from(byId.values());
-          recomputeLocalTimesAggregates();
-          updateHeaderStats();
-        }
-      }
-    } catch (err) {
-      // Rodando em modo estático (GitHub Pages): se o usuário tiver colado token Todoist, sincroniza direto
-      if (state.todoistToken) {
-        syncDirectlyWithTodoistBrowser(state.todoistToken).catch(() => {});
-      }
-    }
-  }
-
-  async function syncDirectlyWithTodoistBrowser(token) {
-    const syncBadgeText = document.getElementById('sync-status-text');
-    if (syncBadgeText) syncBadgeText.textContent = 'Sincronizando...';
-
-    // Tenta via backend primeiro
-    try {
-      const res = await fetch('/api/sync', {
+      await apiFetch('/api/tasks/estimate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, saveToken: true })
+        body: JSON.stringify({ taskId: String(taskId), estimatedMinutes: cleanMin })
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.snapshot) {
-          applySnapshotTasks(data.snapshot);
-          if (syncBadgeText) syncBadgeText.textContent = 'Hoje Sincronizado';
-          return data.snapshot;
-        }
+    } catch (_) {}
+  }
+
+  async function loadTasksFromServer(forceSync) {
+    const syncIcon = document.getElementById('sync-icon');
+    const syncText = document.getElementById('sync-text');
+    if (syncIcon) syncIcon.classList.add('spinning');
+    if (syncText) syncText.textContent = 'Sincronizando Todoist...';
+
+    try {
+      const endpoint = forceSync ? '/api/sync' : '/api/tasks';
+      const res = await apiFetch(endpoint, { method: forceSync ? 'POST' : 'GET' });
+      if (res.status === 401) {
+        showAuthLock();
+        return;
       }
-    } catch (e) {
-      // Continua para chamada direta do navegador (GitHub Pages)
-    }
-
-    const body = new URLSearchParams({
-      sync_token: '*',
-      resource_types: JSON.stringify(['items', 'day_orders', 'projects'])
-    });
-    const resp = await fetch('https://api.todoist.com/sync/v9/sync', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: body.toString()
-    });
-    if (!resp.ok) {
-      throw new Error(`Todoist API respondeu ${resp.status}`);
-    }
-    const syncData = await resp.json();
-    const todayStr = getTodayStr();
-    const items = (syncData.items || []).filter((item) => !item.checked && !item.is_deleted);
-    const dayOrders = syncData.day_orders || {};
-
-    const childrenByParent = {};
-    items.forEach((item) => {
-      if (item.parent_id) {
-        const pid = String(item.parent_id);
-        if (!childrenByParent[pid]) childrenByParent[pid] = [];
-        childrenByParent[pid].push({
-          id: String(item.id),
-          content: item.content,
-          checked: Boolean(item.checked),
-          childOrder: Number(item.child_order ?? 9999)
+      const data = await res.json();
+      if (Array.isArray(data.tasks) && data.tasks.length > 0) {
+        state.tasks = data.tasks.map((t, idx) => ({
+          ...t,
+          orderIndex: idx + 1,
+          title: stripEmojis(t.title || t.content || 'Tarefa'),
+          description: stripEmojis(t.description || ''),
+          subtasks: Array.isArray(t.subtasks)
+            ? t.subtasks.map((s) => ({ ...s, title: stripEmojis(s.title || s.content || '') }))
+            : []
+        }));
+        state.tasks.forEach((t) => {
+          if (t.completed) state.completedIds.add(String(t.id));
+          if (t.estimatedMinutes) state.estimates[t.id] = t.estimatedMinutes;
         });
       }
-    });
-
-    const todayTop = items.filter((item) => {
-      if (item.parent_id) return false;
-      const dueDate = item.due && item.due.date ? String(item.due.date).slice(0, 10) : null;
-      return dueDate && dueDate <= todayStr;
-    });
-
-    const hasExplicitDayOrders = todayTop.some((item) => dayOrders[String(item.id)] !== undefined);
-    todayTop.sort((a, b) => {
-      if (hasExplicitDayOrders) {
-        const dA = dayOrders[String(a.id)] ?? 999999;
-        const dB = dayOrders[String(b.id)] ?? 999999;
-        if (dA !== dB) return dA - dB;
+      if (syncText) {
+        syncText.textContent = data.liveSync ? 'Todoist Ao Vivo' : 'Todoist Sincronizado';
       }
-      return Number(a.child_order ?? 999999) - Number(b.child_order ?? 999999);
-    });
+    } catch (_) {
+      if (Array.isArray(window.LIGHTFOCUS_TASKS_SEED) && state.tasks.length === 0) {
+        state.tasks = window.LIGHTFOCUS_TASKS_SEED.map((t, idx) => ({
+          ...t,
+          orderIndex: idx + 1,
+          title: stripEmojis(t.title || ''),
+          description: stripEmojis(t.description || '')
+        }));
+      }
+    } finally {
+      if (syncIcon) syncIcon.classList.remove('spinning');
+    }
 
-    const formatted = todayTop.map((item, idx) => {
-      const desc = item.description || '';
-      const estMatch = desc.match(/\[(\d+)\]/) || desc.match(/(\d+)\s*min/i);
-      return {
-        id: String(item.id),
-        content: item.content,
-        description: desc,
-        dueDate: item.due && item.due.date ? String(item.due.date).slice(0, 10) : todayStr,
-        recurring: item.due && item.due.is_recurring ? (item.due.string || 'recorrente') : false,
-        priority: `p${5 - Number(item.priority || 1)}`,
-        projectId: String(item.project_id || '6CrgFRpqRPQVfgjG'),
-        checked: false,
-        dayOrder: idx + 1,
-        estimatedMinutes: estMatch ? parseInt(estMatch[1], 10) : null,
-        subtasks: childrenByParent[String(item.id)] || []
-      };
-    });
+    try {
+      const hRes = await apiFetch('/api/history');
+      if (hRes.ok) {
+        const hData = await hRes.json();
+        if (hData && hData.tasks) state.historyData = hData;
+      }
+    } catch (_) {}
 
-    const snapshot = {
-      syncedAt: new Date().toISOString(),
-      date: todayStr,
-      totalToday: formatted.length,
-      tasks: formatted
-    };
-    applySnapshotTasks(snapshot);
-    if (syncBadgeText) syncBadgeText.textContent = 'Hoje Sincronizado (Live)';
-    return snapshot;
+    selectFirstPendingIfNeeded();
+    renderAll();
   }
 
-  // ==========================================================================
-  // Renderização da Tarefa Única no Centro & Markdown Leve
-  // ==========================================================================
-  function formatMarkdownLinks(text) {
-    if (!text) return '';
-    let safe = String(text)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    // Markdown links [label](url)
-    safe = safe.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1 ↗</a>');
-    // Raw URLs
-    safe = safe.replace(/(^|[\s(])(https?:\/\/[^\s)<]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2 ↗</a>');
-    // Bold **text**
-    safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    return safe.replace(/\n/g, '<br />');
+  function selectFirstPendingIfNeeded() {
+    if (!state.tasks.length) return;
+    if (state.currentIndex >= state.tasks.length) state.currentIndex = 0;
+    const curr = state.tasks[state.currentIndex];
+    if (curr && state.completedIds.has(String(curr.id))) {
+      const nextIdx = state.tasks.findIndex((t) => !state.completedIds.has(String(t.id)));
+      if (nextIdx !== -1) state.currentIndex = nextIdx;
+    }
   }
 
-  function renderCurrentTask(animateEnter) {
+  function getTotalFocusSecondsToday() {
+    const today = getTodayKey();
+    let sum = 0;
+    const sessions = (state.historyData && state.historyData.sessions) || [];
+    sessions.forEach((s) => {
+      if (s.date === today) sum += Number(s.durationSeconds) || 0;
+    });
+    return sum + state.timerSeconds;
+  }
+
+  function renderGamification() {
+    const total = state.tasks.length || 1;
+    const doneCount = state.tasks.filter((t) => state.completedIds.has(String(t.id))).length;
+    const pct = Math.min(100, Math.round((doneCount / total) * 100));
+    const focusSec = getTotalFocusSecondsToday();
+
+    const xp = state.gamification.xp || doneCount * 50 + Math.floor(focusSec / 60) * 5;
+    state.gamification.xp = xp;
+
+    let currentLevel = FOCUS_LEVELS[0];
+    let nextLevel = FOCUS_LEVELS[1];
+    for (let i = 0; i < FOCUS_LEVELS.length; i++) {
+      if (xp >= FOCUS_LEVELS[i].minXp) {
+        currentLevel = FOCUS_LEVELS[i];
+        nextLevel = FOCUS_LEVELS[i + 1] || null;
+      }
+    }
+
+    const lvlLabel = document.getElementById('gamification-level-label');
+    const xpFill = document.getElementById('xp-mini-fill');
+    const xpText = document.getElementById('gamification-xp-text');
+    const streakText = document.getElementById('gamification-streak-text');
+
+    if (lvlLabel) lvlLabel.textContent = currentLevel.title;
+    if (xpText) xpText.textContent = xp + ' XP';
+    if (streakText) streakText.textContent = Math.max(1, state.gamification.streak || doneCount) + 'x';
+    if (xpFill) {
+      if (!nextLevel) {
+        xpFill.style.width = '100%';
+      } else {
+        const span = nextLevel.minXp - currentLevel.minXp;
+        const prog = Math.min(100, Math.round(((xp - currentLevel.minXp) / span) * 100));
+        xpFill.style.width = prog + '%';
+      }
+    }
+
+    const mmDone = document.getElementById('mm-completed-count');
+    const mmTotal = document.getElementById('mm-total-count');
+    const mmFill = document.getElementById('mm-bar-fill');
+    const mmPct = document.getElementById('mm-percent-badge');
+    const mmSpeech = document.getElementById('mm-speech-bubble');
+    const mmFocusTime = document.getElementById('mm-total-focus-time');
+
+    if (mmDone) mmDone.textContent = String(doneCount);
+    if (mmTotal) mmTotal.textContent = String(state.tasks.length);
+    if (mmFill) mmFill.style.height = pct + '%';
+    if (mmPct) mmPct.textContent = pct + '% do Hoje';
+    if (mmFocusTime) mmFocusTime.textContent = formatMinutesHuman(Math.round(focusSec / 60));
+
+    if (mmSpeech) {
+      if (pct === 100 && state.tasks.length > 0) {
+        mmSpeech.textContent = 'Linha do tempo 100% limpa, Walace! Todas as tarefas do Hoje concluídas.';
+      } else if (state.timerRunning) {
+        mmSpeech.textContent = 'Relógio rodando suave. Foco só nesta tarefa agora!';
+      } else if (doneCount > 0) {
+        mmSpeech.textContent = 'Excelente ritmo! Já concluímos ' + doneCount + ' de ' + state.tasks.length + ' tarefas hoje.';
+      } else {
+        mmSpeech.textContent = 'Respira fundo, Walace. Uma tarefa por vez, sem pressa!';
+      }
+    }
+
+    // Renderiza insígnias SVG na barra lateral e no modal
+    const sideRow = document.getElementById('sidebar-badges-row');
+    const modalGrid = document.getElementById('achievements-modal-grid');
+    if (sideRow) {
+      sideRow.innerHTML = BADGE_DEFS.map((b) => {
+        const unlocked = b.check(state.gamification, doneCount, focusSec, pct);
+        return (
+          '<div class="badge-icon-circle ' +
+          (unlocked ? 'unlocked' : '') +
+          '" title="' +
+          escapeHtml(b.name + ': ' + b.desc) +
+          '">' +
+          b.icon +
+          '</div>'
+        );
+      }).join('');
+    }
+    if (modalGrid) {
+      modalGrid.innerHTML = BADGE_DEFS.map((b) => {
+        const unlocked = b.check(state.gamification, doneCount, focusSec, pct);
+        return (
+          '<div class="ach-card ' +
+          (unlocked ? 'unlocked' : '') +
+          '">' +
+          '<div class="badge-icon-circle ' +
+          (unlocked ? 'unlocked' : '') +
+          '">' +
+          b.icon +
+          '</div>' +
+          '<div><div style="font-size:0.82rem;font-weight:700;">' +
+          escapeHtml(b.name) +
+          '</div><div style="font-size:0.72rem;color:#64748b;">' +
+          escapeHtml(b.desc) +
+          '</div></div></div>'
+        );
+      }).join('');
+    }
+  }
+
+  function renderCurrentTask() {
     const card = document.getElementById('single-task-card');
-    const orderBadge = document.getElementById('task-order-badge');
-    const recurringBadge = document.getElementById('task-recurring-badge');
-    const estimateBadge = document.getElementById('task-estimate-badge');
-    const avgBadge = document.getElementById('task-avg-badge');
-    const titleEl = document.getElementById('task-title');
-    const descBox = document.getElementById('task-description-box');
-    const subtasksBox = document.getElementById('subtasks-box');
-    const subtasksList = document.getElementById('subtasks-list');
-    const subtasksCounter = document.getElementById('subtasks-counter');
-    const prevBtn = document.getElementById('btn-prev-task');
-    const skipBtn = document.getElementById('btn-skip-task');
+    const celeb = document.getElementById('all-done-celebration');
+    if (!state.tasks.length) return;
 
-    stopTaskTimer(true);
-
-    const total = state.tasks.length;
-    const completedCount = state.tasks.filter((t) => state.completedIds.has(String(t.id))).length;
-
-    if (total === 0 || completedCount >= total) {
-      if (orderBadge) orderBadge.textContent = `🎉 Dia Concluído (${completedCount}/${total})`;
-      if (recurringBadge) recurringBadge.style.display = 'none';
-      if (estimateBadge) estimateBadge.style.display = 'none';
-      if (avgBadge) avgBadge.style.display = 'none';
-      if (titleEl) {
-        titleEl.innerHTML = '✨ Todas as tarefas do Hoje foram concluídas, Walace!';
-      }
-      if (descBox) {
-        descBox.style.display = 'block';
-        descBox.innerHTML = 'Você zerou a sua fila do Hoje com foco absoluto. A <strong>Miss Minutos</strong> já salvou todas as suas métricas para o feedback das 5h30 da manhã! 🧡⏰';
-      }
-      if (subtasksBox) subtasksBox.style.display = 'none';
+    const pendingCount = state.tasks.filter((t) => !state.completedIds.has(String(t.id))).length;
+    if (pendingCount === 0) {
+      if (card) card.style.display = 'none';
+      if (celeb) celeb.style.display = 'flex';
       return;
     }
+    if (card) card.style.display = 'flex';
+    if (celeb) celeb.style.display = 'none';
 
-    // Garante que currentIndex aponte para uma tarefa válida
-    if (state.currentIndex < 0 || state.currentIndex >= total) {
-      state.currentIndex = 0;
-    }
+    const task = state.tasks[state.currentIndex] || state.tasks[0];
+    const isCompleted = state.completedIds.has(String(task.id));
+    const estMin = getTaskEstimate(task);
 
-    const task = state.tasks[state.currentIndex];
-    const isDone = state.completedIds.has(String(task.id));
+    const orderText = document.getElementById('task-order-text');
+    const recBadge = document.getElementById('task-recurring-badge');
+    const recText = document.getElementById('task-recurring-text');
+    const estText = document.getElementById('task-estimate-badge-text');
+    const avgBadge = document.getElementById('task-avg-badge');
+    const avgText = document.getElementById('task-avg-text');
+    const titleEl = document.getElementById('task-title');
+    const checkCircle = document.getElementById('btn-check-circle-main');
+    const descWrapper = document.getElementById('task-description-wrapper');
+    const descBox = document.getElementById('task-description-box');
+    const expandBtn = document.getElementById('btn-toggle-desc-expand');
 
-    if (orderBadge) {
-      orderBadge.textContent = `Tarefa #${task.dayOrder || state.currentIndex + 1} de ${total}${isDone ? ' (Concluída ✓)' : ''}`;
-    }
-
-    if (recurringBadge) {
-      if (task.recurring) {
-        recurringBadge.style.display = 'inline-flex';
-        recurringBadge.textContent = `🔄 ${task.recurring}`;
+    if (orderText) orderText.textContent = '#' + (state.currentIndex + 1) + ' de ' + state.tasks.length + ' Hoje';
+    if (recBadge) {
+      if (task.isRecurring) {
+        recBadge.style.display = 'inline-flex';
+        if (recText) recText.textContent = stripEmojis(task.recurringString || 'Recorrente');
       } else {
-        recurringBadge.style.display = 'none';
+        recBadge.style.display = 'none';
       }
     }
+    if (estText) estText.textContent = 'Est: ' + estMin + 'm';
 
-    if (estimateBadge) {
-      if (task.estimatedMinutes) {
-        estimateBadge.style.display = 'inline-flex';
-        estimateBadge.textContent = `⏱️ Meta: ${task.estimatedMinutes} min`;
-      } else {
-        estimateBadge.style.display = 'none';
-      }
-    }
-
+    const histEntry = state.historyData && state.historyData.tasks && state.historyData.tasks[task.title];
     if (avgBadge) {
-      const avgEntry =
-        (state.timesData.taskAverages && state.timesData.taskAverages[task.id]) ||
-        (state.timesData.taskAverages && state.timesData.taskAverages[task.content]);
-      if (avgEntry && avgEntry.averageMinutes > 0) {
+      if (histEntry && histEntry.averageSeconds > 0) {
         avgBadge.style.display = 'inline-flex';
-        avgBadge.textContent = `📊 Sua Média: ${avgEntry.averageMinutes} min`;
+        if (avgText) avgText.textContent = 'Média: ' + formatMinutesHuman(Math.round(histEntry.averageSeconds / 60));
       } else {
         avgBadge.style.display = 'none';
       }
     }
 
-    if (titleEl) {
-      titleEl.innerHTML = formatMarkdownLinks(task.content);
+    if (titleEl) titleEl.textContent = stripEmojis(task.title);
+    if (checkCircle) {
+      checkCircle.classList.toggle('checked', isCompleted);
     }
 
-    const cleanDesc = String(task.description || '').replace(/^\[\d+\]\s*/, '').trim();
-    if (descBox) {
+    // Descrição formatada limpa sem cortar bordas no celular
+    const cleanDesc = formatCleanDescription(task.description || '');
+    if (descWrapper && descBox) {
       if (cleanDesc) {
-        descBox.style.display = 'block';
-        descBox.innerHTML = formatMarkdownLinks(cleanDesc);
+        descWrapper.style.display = 'flex';
+        descBox.innerHTML = cleanDesc;
+        descBox.classList.toggle('expanded', state.descExpanded);
+        if (expandBtn) {
+          const isLong = (task.description || '').length > 180 || (task.description || '').split('\n').length > 4;
+          expandBtn.style.display = isLong ? 'inline-flex' : 'none';
+          const expTxt = document.getElementById('desc-expand-text');
+          if (expTxt) expTxt.textContent = state.descExpanded ? 'Recolher detalhes' : 'Expandir detalhes';
+        }
       } else {
-        descBox.style.display = 'none';
-        descBox.innerHTML = '';
+        descWrapper.style.display = 'none';
       }
     }
 
-    if (subtasksBox && subtasksList && subtasksCounter) {
+    // Subtarefas
+    const subBox = document.getElementById('subtasks-box');
+    const subList = document.getElementById('subtasks-list');
+    const subCount = document.getElementById('subtasks-counter');
+    if (subBox && subList) {
       const subs = Array.isArray(task.subtasks) ? task.subtasks : [];
       if (subs.length > 0) {
-        subtasksBox.style.display = 'block';
-        const doneSubCount = subs.filter((st) => state.subtasksDone[st.id] || st.checked).length;
-        subtasksCounter.textContent = `${doneSubCount}/${subs.length}`;
-        subtasksList.innerHTML = '';
-
-        subs.forEach((st) => {
-          const checked = Boolean(state.subtasksDone[st.id] || st.checked);
-          const itemDiv = document.createElement('label');
-          itemDiv.className = `subtask-item${checked ? ' done' : ''}`;
-          itemDiv.style.cursor = 'pointer';
-          itemDiv.innerHTML = `
-            <input type="checkbox" ${checked ? 'checked' : ''} style="margin-top: 3px; accent-color: #f97316; cursor: pointer;" />
-            <span>${formatMarkdownLinks(st.content)}</span>
-          `;
-          const checkbox = itemDiv.querySelector('input');
-          checkbox.addEventListener('change', () => {
-            state.subtasksDone[st.id] = checkbox.checked;
-            saveCompletedToStorage();
-            itemDiv.classList.toggle('done', checkbox.checked);
-            const newCount = subs.filter((s) => state.subtasksDone[s.id] || s.checked).length;
-            subtasksCounter.textContent = `${newCount}/${subs.length}`;
-          });
-          subtasksList.appendChild(itemDiv);
-        });
+        subBox.style.display = 'block';
+        const doneSubs = subs.filter((s) => s.completed).length;
+        if (subCount) subCount.textContent = doneSubs + '/' + subs.length;
+        subList.innerHTML = subs
+          .map(
+            (s) =>
+              '<div class="subtask-item ' +
+              (s.completed ? 'done' : '') +
+              '">' +
+              SVG_ICONS.check +
+              '<span>' +
+              escapeHtml(stripEmojis(s.title)) +
+              '</span></div>'
+          )
+          .join('');
       } else {
-        subtasksBox.style.display = 'none';
+        subBox.style.display = 'none';
       }
     }
 
+    const prevBtn = document.getElementById('btn-prev-task');
+    const nextBtn = document.getElementById('btn-next-task');
     if (prevBtn) prevBtn.disabled = state.currentIndex <= 0;
-    if (skipBtn) skipBtn.disabled = total <= 1;
+    if (nextBtn) nextBtn.disabled = state.currentIndex >= state.tasks.length - 1;
 
     updateTimerUI();
-
-    if (animateEnter && card) {
-      card.classList.remove('task-completing-float-up');
-      card.classList.remove('task-entering-zen');
-      void card.offsetWidth;
-      card.classList.add('task-entering-zen');
-    }
   }
-
-  // ==========================================================================
-  // Cronômetro da Tarefa + Modo "Presta Atenção" (a cada 5 minutos)
-  // ==========================================================================
   function updateTimerUI() {
-    const digitsEl = document.getElementById('timer-digits');
-    const statusPill = document.getElementById('timer-status-pill');
-    const btnToggle = document.getElementById('btn-toggle-timer');
-    const btnIcon = document.getElementById('btn-timer-icon');
-    const btnText = document.getElementById('btn-timer-text');
-    const btnSub = document.getElementById('btn-timer-sub');
-    const completeText = document.getElementById('btn-complete-text');
-    const completeSub = document.getElementById('btn-complete-sub');
-    const card = document.getElementById('single-task-card');
-    const track = document.getElementById('timer-progress-track');
+    const digits = document.getElementById('timer-digits');
+    const pill = document.getElementById('timer-status-pill');
     const fill = document.getElementById('timer-progress-fill');
+    const btnPlay = document.getElementById('btn-play-timer');
+    const btnLabel = document.getElementById('play-btn-label');
+    const btnSub = document.getElementById('play-btn-sub');
+    const iconPlay = document.getElementById('icon-play');
+    const iconPause = document.getElementById('icon-pause');
+    const card = document.getElementById('single-task-card');
 
-    if (digitsEl) {
-      digitsEl.textContent = formatMMSS(state.timerSeconds);
-      digitsEl.classList.toggle('running', state.timerRunning);
+    if (digits) {
+      digits.textContent = formatDuration(state.timerSeconds);
+      digits.classList.toggle('running', state.timerRunning);
     }
-
-    if (statusPill) {
-      if (state.timerRunning) {
-        statusPill.textContent = '⏱️ Focando agora';
-        statusPill.classList.add('running');
-      } else if (state.timerSeconds > 0) {
-        statusPill.textContent = '⏸ Pausado';
-        statusPill.classList.remove('running');
-      } else {
-        statusPill.textContent = 'Pronto p/ focar';
-        statusPill.classList.remove('running');
-      }
+    if (pill) {
+      pill.textContent = state.timerRunning ? 'Em foco leve...' : 'Pronto para iniciar';
+      pill.classList.toggle('running', state.timerRunning);
     }
+    if (btnPlay) btnPlay.classList.toggle('is-running', state.timerRunning);
+    if (btnLabel) btnLabel.textContent = state.timerRunning ? 'Pausar Tempo' : 'Iniciar Foco';
+    if (btnSub) btnSub.textContent = state.timerRunning ? 'Cronômetro ativo' : 'Dar Play na tarefa';
+    if (iconPlay) iconPlay.style.display = state.timerRunning ? 'none' : 'inline-block';
+    if (iconPause) iconPause.style.display = state.timerRunning ? 'inline-block' : 'none';
+    if (card) card.classList.toggle('timer-running', state.timerRunning);
 
-    if (card) {
-      card.classList.toggle('timer-running', state.timerRunning);
-    }
-
-    if (btnToggle && btnIcon && btnText && btnSub) {
-      btnToggle.classList.toggle('is-running', state.timerRunning);
-      if (state.timerRunning) {
-        btnIcon.textContent = '⏸';
-        btnText.textContent = 'Pausar Tempo';
-        btnSub.textContent = 'Cronômetro ativo · Presta Atenção monitorando';
-      } else if (state.timerSeconds > 0) {
-        btnIcon.textContent = '▶';
-        btnText.textContent = 'Retomar Tempo';
-        btnSub.textContent = `Já focado: ${formatMMSS(state.timerSeconds)}`;
-      } else {
-        btnIcon.textContent = '▶';
-        btnText.textContent = 'Play no Tempo';
-        btnSub.textContent = 'Inicia cronômetro + modo Presta Atenção (5 min)';
-      }
-    }
-
-    if (completeText && completeSub) {
-      if (state.timerSeconds > 0 || state.timerRunning) {
-        completeText.textContent = `Concluir (${formatMMSS(state.timerSeconds)})`;
-        completeSub.textContent = 'Salva o tempo focado p/ Miss Minutos e avança';
-      } else {
-        completeText.textContent = 'Concluir Direto';
-        completeSub.textContent = 'Concluir sem iniciar tempo (vapt-vupt)';
-      }
-    }
-
-    const currentTask = state.tasks[state.currentIndex];
-    if (track && fill && currentTask && currentTask.estimatedMinutes) {
-      track.style.display = 'block';
-      const targetSec = currentTask.estimatedMinutes * 60;
-      const pct = Math.min(100, (state.timerSeconds / targetSec) * 100);
-      fill.style.width = `${pct.toFixed(1)}%`;
-    } else if (track) {
-      track.style.display = 'none';
-    }
-
-    updateAttentionCountdownBadge();
-  }
-
-  function updateAttentionCountdownBadge() {
-    const badge = document.getElementById('attention-countdown-badge');
-    const iconEl = document.getElementById('attention-mode-icon');
-    const labelEl = document.getElementById('attention-mode-label');
-
-    const modeMap = {
-      both: { icon: '✨', label: 'Luz + Som' },
-      light: { icon: '💙', label: 'Só Luz (Vídeo)' },
-      sound: { icon: '🎹', label: 'Só Piano' },
-      off: { icon: '🌙', label: 'Desligado' }
-    };
-    const m = modeMap[state.attentionMode] || modeMap.both;
-    if (iconEl) iconEl.textContent = m.icon;
-    if (labelEl) labelEl.textContent = m.label;
-
-    if (!badge) return;
-    if (state.attentionMode === 'off') {
-      badge.textContent = 'Off';
-      return;
-    }
-    if (!state.timerRunning) {
-      badge.textContent = 'Aguardando Play';
-      return;
-    }
-    const remaining = Math.max(0, state.attentionIntervalSec - state.attentionElapsedSec);
-    badge.textContent = formatMMSS(remaining);
-  }
-
-  function triggerAttentionReminder(isManualTest) {
-    if (!isManualTest && (state.attentionMode === 'off' || !state.timerRunning)) return;
-
-    const effectiveMode = state.attentionMode === 'off' && isManualTest ? 'both' : state.attentionMode;
-    const overlay = document.getElementById('attention-light-overlay');
-    const toast = document.getElementById('attention-toast');
-    const toastText = document.getElementById('attention-toast-text');
-    const currentTask = state.tasks[state.currentIndex];
-
-    // 1. Modo Luminoso (Pulso azul suave em fade-in/fade-out — ideal para gravação de vídeo)
-    if (effectiveMode === 'light' || effectiveMode === 'both') {
-      if (overlay) {
-        overlay.classList.remove('pulsing');
-        void overlay.offsetWidth;
-        overlay.classList.add('pulsing');
-      }
-    }
-
-    // 2. Modo Sonoro (Acorde de piano Rhodes/Felt suave)
-    if (effectiveMode === 'sound' || effectiveMode === 'both') {
-      playGentlePianoAttentionChord();
-    }
-
-    // 3. Toast suave + frase na Miss Minutos
-    if (toast && toastText) {
-      const minsFocused = Math.max(1, Math.round(state.timerSeconds / 60));
-      toastText.textContent = isManualTest
-        ? '💙 Teste do Modo Presta Atenção: pulso luminoso azul suave + piano zen!'
-        : `💙 Oi, querido! ${minsFocused} min focados em "${currentTask ? currentTask.content.slice(0, 38) : 'sua tarefa'}" — continua comigo! ⏰`;
-      toast.classList.add('visible');
-      setTimeout(() => {
-        toast.classList.remove('visible');
-      }, 4600);
-    }
-  }
-
-  function toggleTaskTimer() {
-    ensureAudioContext();
-    if (state.timerRunning) {
-      state.timerRunning = false;
-      if (state.timerIntervalId) {
-        clearInterval(state.timerIntervalId);
-        state.timerIntervalId = null;
-      }
-      updateTimerUI();
-      return;
-    }
-
-    if (!state.timerStartedAt) {
-      state.timerStartedAt = new Date().toISOString();
-    }
-    state.timerRunning = true;
-    state.timerIntervalId = setInterval(() => {
-      state.timerSeconds += 1;
-      if (state.attentionMode !== 'off') {
-        state.attentionElapsedSec += 1;
-        if (state.attentionElapsedSec >= state.attentionIntervalSec) {
-          state.attentionElapsedSec = 0;
-          triggerAttentionReminder(false);
-        }
-      }
-      updateTimerUI();
-    }, 1000);
-
-    updateTimerUI();
-  }
-
-  function stopTaskTimer(resetSeconds) {
-    state.timerRunning = false;
-    if (state.timerIntervalId) {
-      clearInterval(state.timerIntervalId);
-      state.timerIntervalId = null;
-    }
-    state.attentionElapsedSec = 0;
-    if (resetSeconds) {
-      state.timerSeconds = 0;
-      state.timerStartedAt = null;
-    }
-    updateTimerUI();
-  }
-
-  // ==========================================================================
-  // Conclusão da Tarefa (Com ou Sem Tempo) + Barra Gamificada da Miss Minutos
-  // ==========================================================================
-  async function completeCurrentTask() {
-    if (!state.tasks.length) return;
     const task = state.tasks[state.currentIndex];
+    const estSec = getTaskEstimate(task) * 60;
+    if (fill) {
+      const pct = Math.min(100, Math.round((state.timerSeconds / Math.max(60, estSec)) * 100));
+      fill.style.width = pct + '%';
+    }
+  }
+
+  function toggleTimer() {
+    ensureAudioCtx();
+    if (state.timerRunning) {
+      pauseTimer();
+    } else {
+      startTimer();
+    }
+  }
+
+  function startTimer() {
+    if (state.timerRunning) return;
+    state.timerRunning = true;
+    if (!state.activeTaskStartedAt) state.activeTaskStartedAt = new Date().toISOString();
+    state.timerInterval = setInterval(() => {
+      state.timerSeconds += 1;
+      updateTimerUI();
+      if (state.timerSeconds % 15 === 0) renderGamification();
+    }, 1000);
+    updateTimerUI();
+    renderGamification();
+  }
+
+  function pauseTimer() {
+    state.timerRunning = false;
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+    updateTimerUI();
+    renderGamification();
+  }
+
+  async function completeTaskById(taskId, fromMainCard) {
+    const task = state.tasks.find((t) => String(t.id) === String(taskId));
     if (!task) return;
 
-    ensureAudioContext();
-
-    const durationSeconds = state.timerSeconds;
-    const completedWithoutTimer = durationSeconds === 0;
-    const startedAt = state.timerStartedAt || new Date().toISOString();
-    const endedAt = new Date().toISOString();
-
-    stopTaskTimer(false);
-
-    // 1. Dispara som zen suave + partículas subindo + animação do card se desfazendo para cima
-    playZenCompletionSound();
-    const card = document.getElementById('single-task-card');
-    if (card) {
-      triggerTaskDissolveParticles(card);
-      card.classList.remove('task-entering-zen');
-      card.classList.add('task-completing-float-up');
-    }
-
-    // 2. Marca tarefa como concluída e registra sessão de tempo
-    state.completedIds.add(String(task.id));
-    saveCompletedToStorage();
-
-    const sessionEntry = {
-      sessionId: `lf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      taskId: String(task.id),
-      content: task.content,
-      projectId: task.projectId || '6CrgFRpqRPQVfgjG',
-      date: getTodayStr(),
-      startedAt,
-      endedAt,
-      durationSeconds,
-      durationMinutes: Number((durationSeconds / 60).toFixed(2)),
-      estimatedMinutes: task.estimatedMinutes || null,
-      completed: true,
-      completedWithoutTimer
-    };
-
-    state.timesData.sessions.push(sessionEntry);
-    recomputeLocalTimesAggregates();
-    updateHeaderStats();
-
-    // 3. Atualiza a Barra Gamificada da Miss Minutos com comemoração!
-    updateMissMinutosSidebar(true);
-
-    // 4. Sincroniza conclusão e tempo com o servidor local (que grava no store da Miss Minutos) e/ou Todoist API
-    syncTaskCompletionRemote(task, sessionEntry);
-
-    // 5. Após a tarefa dissolver suavemente para cima, traz a próxima da fila
-    setTimeout(() => {
-      const nextIdx = findNextPendingTaskIndex(state.currentIndex);
-      if (nextIdx >= 0) {
-        state.currentIndex = nextIdx;
-      }
-      stopTaskTimer(true);
-      renderCurrentTask(true);
-    }, 820);
-  }
-
-  function findNextPendingTaskIndex(fromIndex) {
-    const total = state.tasks.length;
-    for (let i = fromIndex + 1; i < total; i++) {
-      if (!state.completedIds.has(String(state.tasks[i].id))) return i;
-    }
-    for (let i = 0; i < total; i++) {
-      if (!state.completedIds.has(String(state.tasks[i].id))) return i;
-    }
-    return -1;
-  }
-
-  async function syncTaskCompletionRemote(task, sessionEntry) {
-    // Envia para /api/tasks/complete se backend Node estiver rodando
-    try {
-      const resp = await fetch('/api/tasks/complete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(state.todoistToken ? { 'X-Todoist-Token': state.todoistToken } : {})
-        },
-        body: JSON.stringify({
-          ...sessionEntry,
-          token: state.todoistToken || undefined
-        })
-      });
-      if (resp.ok) return;
-    } catch (e) {
-      // Se estiver no GitHub Pages estático e houver token do Todoist no navegador, fecha direto na Sync API v9
-      if (state.todoistToken) {
-        try {
-          const uuid = (crypto && crypto.randomUUID) ? crypto.randomUUID() : `uuid_${Date.now()}`;
-          const body = new URLSearchParams({
-            commands: JSON.stringify([{ type: 'item_close', uuid, args: { id: String(task.id) } }])
-          });
-          await fetch('https://api.todoist.com/sync/v9/sync', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${state.todoistToken}`,
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: body.toString()
-          });
-        } catch (err) {}
-      }
-    }
-  }
-
-  // ==========================================================================
-  // Barra Lateral Gamificada da Miss Minutos (Vermelho -> Amarelo -> Azul)
-  // ==========================================================================
-  function updateMissMinutosSidebar(celebrateNow) {
-    const total = state.tasks.length || 1;
-    const completedCount = state.tasks.filter((t) => state.completedIds.has(String(t.id))).length;
-    const pct = Math.min(100, Math.round((completedCount / total) * 100));
-
-    const summaryEl = document.getElementById('mm-progress-summary');
-    const marker = document.getElementById('mm-climber-marker');
-    const moodPill = document.getElementById('mm-mood-pill');
-    const speechBubble = document.getElementById('mm-speech-bubble');
-
-    const mouthSad = document.getElementById('mm-mouth-sad');
-    const mouthMedium = document.getElementById('mm-mouth-medium');
-    const mouthHappy = document.getElementById('mm-mouth-happy');
-    const browLeft = document.getElementById('mm-brow-left');
-    const browRight = document.getElementById('mm-brow-right');
-    const sweatDrop = document.getElementById('mm-sweat-drop');
-    const sparkles = document.getElementById('mm-sparkles');
-    const armLeft = document.getElementById('mm-arm-left');
-    const armRight = document.getElementById('mm-arm-right');
-    const handLeft = document.getElementById('mm-hand-left');
-    const handRight = document.getElementById('mm-hand-right');
-
-    if (summaryEl) {
-      summaryEl.textContent = `${completedCount} de ${state.tasks.length} concluídas (${pct}%)`;
-    }
-
-    if (marker) {
-      // Sobe na barra vertical de 0% (base vermelha) até 100% (topo azul suave)
-      marker.style.bottom = `${pct}%`;
-      if (celebrateNow) {
-        marker.classList.remove('celebrate-jump');
-        void marker.offsetWidth;
-        marker.classList.add('celebrate-jump');
-      }
-    }
-
-    // Define faixa de humor da Miss Minutos:
-    // 0% a 33% = Faixa Vermelha (preocupada/triste)
-    // 34% a 74% = Faixa Amarela (média/animando)
-    // 75% a 100% = Faixa Azul (super feliz/radiante)
-    let zone = 'red';
-    if (pct >= 75) {
-      zone = 'blue';
-    } else if (pct >= 34) {
-      zone = 'yellow';
-    }
-
-    // Se acabou de concluir uma tarefa, ela comemora feliz!
-    const showHappyFace = zone === 'blue' || celebrateNow;
-
-    if (mouthSad && mouthMedium && mouthHappy) {
-      mouthSad.style.display = (!showHappyFace && zone === 'red') ? 'block' : 'none';
-      mouthMedium.style.display = (!showHappyFace && zone === 'yellow') ? 'block' : 'none';
-      mouthHappy.style.display = showHappyFace ? 'block' : 'none';
-    }
-
-    if (sweatDrop) {
-      sweatDrop.style.opacity = (zone === 'red' && !celebrateNow) ? '0.85' : '0';
-    }
-
-    if (sparkles) {
-      sparkles.style.opacity = (zone === 'blue' || celebrateNow) ? '1' : '0';
-    }
-
-    if (browLeft && browRight) {
-      if (zone === 'red' && !celebrateNow) {
-        // Sobrancelhas caídas preocupadas
-        browLeft.setAttribute('d', 'M 72 82 Q 86 74 98 72');
-        browRight.setAttribute('d', 'M 122 72 Q 134 74 148 82');
-      } else {
-        // Sobrancelhas arqueadas alegres
-        browLeft.setAttribute('d', 'M 74 75 Q 87 66 98 74');
-        browRight.setAttribute('d', 'M 122 74 Q 133 66 146 75');
-      }
-    }
-
-    if (armLeft && armRight && handLeft && handRight) {
-      if (zone === 'blue' || celebrateNow) {
-        // Bracinhos levantados comemorando!
-        armLeft.setAttribute('d', 'M 38 118 Q 14 96 18 74');
-        handLeft.setAttribute('cy', '70');
-        handLeft.setAttribute('cx', '18');
-        armRight.setAttribute('d', 'M 182 118 Q 206 96 202 74');
-        handRight.setAttribute('cy', '70');
-        handRight.setAttribute('cx', '202');
-      } else if (zone === 'yellow') {
-        armLeft.setAttribute('d', 'M 38 118 Q 18 112 18 98');
-        handLeft.setAttribute('cy', '96');
-        handLeft.setAttribute('cx', '18');
-        armRight.setAttribute('d', 'M 182 118 Q 202 112 202 98');
-        handRight.setAttribute('cy', '96');
-        handRight.setAttribute('cx', '202');
-      } else {
-        armLeft.setAttribute('d', 'M 38 118 Q 18 130 22 148');
-        handLeft.setAttribute('cy', '150');
-        handLeft.setAttribute('cx', '22');
-        armRight.setAttribute('d', 'M 182 118 Q 202 130 198 148');
-        handRight.setAttribute('cy', '150');
-        handRight.setAttribute('cx', '198');
-      }
-    }
-
-    if (moodPill) {
-      moodPill.className = 'mm-mood-pill';
-      if (zone === 'blue') {
-        moodPill.classList.add('mood-blue');
-        moodPill.textContent = '💙 Faixa Azul Zen · Miss Minutos radiante!';
-      } else if (zone === 'yellow') {
-        moodPill.classList.add('mood-yellow');
-        moodPill.textContent = '⚡ Faixa Amarela · Miss Minutos animada!';
-      } else {
-        moodPill.classList.add('mood-red');
-        moodPill.textContent = '😟 Faixa Vermelha · Miss Minutos quer subir!';
-      }
-    }
-
-    if (speechBubble) {
-      let pool = MISS_MINUTOS_QUOTES.startRed;
-      if (completedCount >= state.tasks.length && state.tasks.length > 0) {
-        pool = MISS_MINUTOS_QUOTES.allDone;
-      } else if (celebrateNow || completedCount > 0) {
-        if (zone === 'blue') pool = MISS_MINUTOS_QUOTES.celebrateBlue;
-        else if (zone === 'yellow') pool = MISS_MINUTOS_QUOTES.celebrateYellow;
-        else pool = MISS_MINUTOS_QUOTES.celebrateRed;
-      }
-      const chosen = pool[Math.floor(Math.random() * pool.length)];
-      speechBubble.textContent = chosen;
-
-      if (celebrateNow) {
-        speechBubble.classList.add('celebrating');
-        setTimeout(() => speechBubble.classList.remove('celebrating'), 1800);
-      }
-    }
-  }
-
-  // ==========================================================================
-  // Player Lo-Fi no Cantinho (Synth Zen Rhodes + Streams Ao Vivo)
-  // ==========================================================================
-  function updateLofiUI() {
-    const btnToggle = document.getElementById('btn-lofi-toggle');
-    const playIcon = document.getElementById('lofi-play-icon');
-    const nameEl = document.getElementById('lofi-station-name');
-    const subEl = document.getElementById('lofi-station-sub');
-    const eqEl = document.getElementById('lofi-eq');
-
-    const station = LOFI_STATIONS[state.lofi.stationIndex] || LOFI_STATIONS[0];
-    if (nameEl) nameEl.textContent = station.name;
-    if (subEl) {
-      subEl.textContent = state.lofi.playing ? `🎵 Tocando · ${station.sub}` : station.sub;
-    }
-    if (btnToggle) btnToggle.classList.toggle('playing', state.lofi.playing);
-    if (playIcon) playIcon.textContent = state.lofi.playing ? '⏸' : '▶';
-    if (eqEl) eqEl.classList.toggle('playing', state.lofi.playing);
-  }
-
-  function stopLofiEngine() {
-    if (state.lofi.synthTimer) {
-      clearInterval(state.lofi.synthTimer);
-      state.lofi.synthTimer = null;
-    }
-    if (state.lofi.noiseNode) {
+    const alreadyDone = state.completedIds.has(String(task.id));
+    if (alreadyDone && !fromMainCard) {
+      // Desmarcar e reabrir no Todoist
+      state.completedIds.delete(String(task.id));
+      task.completed = false;
+      saveLocalState();
+      renderAll();
       try {
-        state.lofi.noiseNode.stop();
-        state.lofi.noiseNode.disconnect();
-      } catch (e) {}
-      state.lofi.noiseNode = null;
-    }
-    if (state.lofi.audioEl) {
-      try {
-        state.lofi.audioEl.pause();
-        state.lofi.audioEl.src = '';
-      } catch (e) {}
-    }
-  }
-
-  function startLofiSynth() {
-    const ctx = ensureAudioContext();
-    if (!ctx) return;
-
-    if (!state.lofi.masterGain) {
-      state.lofi.masterGain = ctx.createGain();
-      state.lofi.masterGain.connect(ctx.destination);
-    }
-    state.lofi.masterGain.gain.setValueAtTime(state.lofi.volume * 0.25, ctx.currentTime);
-
-    // Textura suave de vinil / chuva zen bem baixinha
-    const bufferSize = ctx.sampleRate * 2;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * 0.035;
-    }
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    noise.loop = true;
-
-    const noiseFilter = ctx.createBiquadFilter();
-    noiseFilter.type = 'bandpass';
-    noiseFilter.frequency.setValueAtTime(950, ctx.currentTime);
-    noiseFilter.Q.setValueAtTime(0.7, ctx.currentTime);
-
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.16, ctx.currentTime);
-
-    noise.connect(noiseFilter);
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(state.lofi.masterGain);
-    noise.start();
-    state.lofi.noiseNode = noise;
-
-    // Progressão de acordes Lo-Fi Jazz (Fmaj7 -> Em7 -> Dm9 -> Cmaj7)
-    const chords = [
-      [174.61, 261.63, 349.23, 440.0, 523.25], // Fmaj7
-      [164.81, 246.94, 329.63, 392.0, 493.88], // Em7
-      [146.83, 220.0, 293.66, 349.23, 440.0, 523.25], // Dm9
-      [130.81, 196.0, 261.63, 329.63, 392.0, 493.88] // Cmaj7
-    ];
-
-    const playNextChord = () => {
-      if (!state.lofi.playing) return;
-      const now = ctx.currentTime;
-      const chord = chords[state.lofi.chordStep % chords.length];
-      state.lofi.chordStep += 1;
-
-      chord.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const filter = ctx.createBiquadFilter();
-        const gain = ctx.createGain();
-
-        osc.type = i === 0 ? 'sine' : 'triangle';
-        // Leve detune estilo fita cassete Lo-Fi
-        osc.frequency.setValueAtTime(freq + (Math.random() - 0.5) * 0.8, now + i * 0.04);
-
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(720, now);
-
-        const t0 = now + i * 0.04;
-        gain.gain.setValueAtTime(0.0001, t0);
-        gain.gain.linearRampToValueAtTime(i === 0 ? 0.22 : 0.11, t0 + 0.35);
-        gain.gain.exponentialRampToValueAtTime(0.001, t0 + 3.4);
-
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(state.lofi.masterGain);
-
-        osc.start(t0);
-        osc.stop(t0 + 3.5);
-      });
-    };
-
-    playNextChord();
-    state.lofi.synthTimer = setInterval(playNextChord, 3400);
-  }
-
-  function startCurrentLofiStation() {
-    stopLofiEngine();
-    const station = LOFI_STATIONS[state.lofi.stationIndex] || LOFI_STATIONS[0];
-
-    if (station.type === 'synth') {
-      startLofiSynth();
-      updateLofiUI();
+        await apiFetch('/api/tasks/uncomplete', {
+          method: 'POST',
+          body: JSON.stringify({ taskId: String(task.id) })
+        });
+      } catch (_) {}
       return;
     }
 
-    if (!state.lofi.audioEl) {
-      state.lofi.audioEl = new Audio();
-      state.lofi.audioEl.crossOrigin = 'anonymous';
+    // Dispara o pulso luminoso assinatura do LightFocus e som zen!
+    triggerCheckLightPulse();
+    playZenCompleteSound();
+
+    const elapsed = fromMainCard ? Math.max(1, state.timerSeconds) : getTaskEstimate(task) * 60;
+    pauseTimer();
+
+    state.completedIds.add(String(task.id));
+    task.completed = true;
+    state.gamification.xp = (state.gamification.xp || 0) + 60;
+    state.gamification.streak = (state.gamification.streak || 0) + 1;
+    state.gamification.lastDate = getTodayKey();
+    saveLocalState();
+
+    // Sincronização bidirecional real com o Todoist + registro de tempo
+    apiFetch('/api/tasks/complete', {
+      method: 'POST',
+      body: JSON.stringify({ taskId: String(task.id), taskTitle: task.title })
+    }).catch(() => {});
+
+    apiFetch('/api/log-time', {
+      method: 'POST',
+      body: JSON.stringify({
+        taskId: String(task.id),
+        taskTitle: task.title,
+        durationSeconds: elapsed,
+        startedAt: state.activeTaskStartedAt || new Date().toISOString(),
+        completedAt: new Date().toISOString()
+      })
+    }).catch(() => {});
+
+    state.timerSeconds = 0;
+    state.activeTaskStartedAt = null;
+    state.descExpanded = false;
+
+    if (fromMainCard) {
+      const card = document.getElementById('single-task-card');
+      if (card) card.classList.add('task-completing-float-up');
+      setTimeout(() => {
+        if (card) {
+          card.classList.remove('task-completing-float-up');
+          card.classList.add('task-entering-zen');
+          setTimeout(() => card.classList.remove('task-entering-zen'), 550);
+        }
+        selectFirstPendingIfNeeded();
+        renderAll();
+      }, 680);
+    } else {
+      selectFirstPendingIfNeeded();
+      renderAll();
     }
-    state.lofi.audioEl.src = station.url;
-    state.lofi.audioEl.volume = state.lofi.volume;
-    state.lofi.audioEl.play().catch(() => {
-      // Fallback imediato para o Synth Lo-Fi caso o stream externo falhe
-      state.lofi.stationIndex = 0;
-      startLofiSynth();
-      updateLofiUI();
+  }
+
+  function renderPlanningSummary() {
+    const pending = state.tasks.filter((t) => !state.completedIds.has(String(t.id)));
+    const totalMin = pending.reduce((acc, t) => acc + getTaskEstimate(t), 0);
+    const etaDate = new Date(Date.now() + totalMin * 60000);
+    const etaStr =
+      String(etaDate.getHours()).padStart(2, '0') + ':' + String(etaDate.getMinutes()).padStart(2, '0');
+
+    const elTasks = document.getElementById('plan-stat-tasks');
+    const elMin = document.getElementById('plan-stat-minutes');
+    const elEta = document.getElementById('plan-stat-eta');
+    if (elTasks) elTasks.textContent = String(pending.length);
+    if (elMin) elMin.textContent = formatMinutesHuman(totalMin);
+    if (elEta) elEta.textContent = pending.length > 0 ? etaStr : 'Concluído';
+  }
+
+  function renderQueueDrawer() {
+    renderPlanningSummary();
+    const container = document.getElementById('queue-list-container');
+    if (!container) return;
+
+    container.innerHTML = state.tasks
+      .map((t, idx) => {
+        const done = state.completedIds.has(String(t.id));
+        const isCurrent = idx === state.currentIndex && !done;
+        const est = getTaskEstimate(t);
+        return (
+          '<div class="queue-item-v2 ' +
+          (isCurrent ? 'active-current ' : '') +
+          (done ? 'completed-row' : '') +
+          '" data-idx="' +
+          idx +
+          '">' +
+          '<div class="queue-left">' +
+          '<button class="queue-check-btn ' +
+          (done ? 'checked' : '') +
+          '" data-check-id="' +
+          escapeHtml(t.id) +
+          '" title="Concluir ou reabrir no Todoist">' +
+          SVG_ICONS.check +
+          '</button>' +
+          '<div class="queue-title-wrap" data-select-idx="' +
+          idx +
+          '">' +
+          '<div class="queue-title-text">#' +
+          (idx + 1) +
+          ' · ' +
+          escapeHtml(stripEmojis(t.title)) +
+          '</div>' +
+          '</div></div>' +
+          '<div class="queue-right-est">' +
+          '<input type="number" min="1" max="480" class="queue-est-input" data-est-id="' +
+          escapeHtml(t.id) +
+          '" value="' +
+          est +
+          '" title="Minutos estimados" />' +
+          '<span class="queue-est-unit">min</span>' +
+          '</div></div>'
+        );
+      })
+      .join('');
+
+    container.querySelectorAll('[data-check-id]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-check-id');
+        completeTaskById(id, false);
+      });
     });
+
+    container.querySelectorAll('[data-select-idx]').forEach((el) => {
+      el.addEventListener('click', () => {
+        const idx = Number(el.getAttribute('data-select-idx'));
+        if (!Number.isNaN(idx)) {
+          pauseTimer();
+          state.currentIndex = idx;
+          state.timerSeconds = 0;
+          state.descExpanded = false;
+          renderAll();
+          const modal = document.getElementById('modal-queue');
+          if (modal) modal.style.display = 'none';
+        }
+      });
+    });
+
+    container.querySelectorAll('[data-est-id]').forEach((inp) => {
+      inp.addEventListener('change', () => {
+        const id = inp.getAttribute('data-est-id');
+        setTaskEstimate(id, inp.value);
+      });
+    });
+  }
+
+  function renderHistoryModal() {
+    const container = document.getElementById('history-content-container');
+    if (!container) return;
+    const tasksMap = (state.historyData && state.historyData.tasks) || {};
+    const entries = Object.values(tasksMap);
+    if (entries.length === 0) {
+      container.innerHTML =
+        '<div style="padding:18px;text-align:center;color:#64748b;font-size:0.85rem;">Nenhuma tarefa cronometrada concluída ainda hoje.</div>';
+      return;
+    }
+    container.innerHTML = entries
+      .map(
+        (item) =>
+          '<div class="queue-item-v2">' +
+          '<div class="queue-title-text">' +
+          escapeHtml(stripEmojis(item.taskTitle || 'Tarefa')) +
+          '</div>' +
+          '<div style="font-family:var(--font-mono);font-size:0.78rem;font-weight:700;color:#0369a1;">' +
+          'Média: ' +
+          formatMinutesHuman(Math.round((item.averageSeconds || 0) / 60)) +
+          ' (' +
+          (item.completionsCount || 1) +
+          'x)</div></div>'
+      )
+      .join('');
+  }
+
+  function renderAll() {
+    renderCurrentTask();
+    renderGamification();
+    renderQueueDrawer();
+  }
+
+  // Modo Presta Atenção (5 min)
+  function startAttentionLoop() {
+    if (state.attentionInterval) clearInterval(state.attentionInterval);
+    state.attentionInterval = setInterval(() => {
+      if (!state.attentionEnabled) return;
+      state.attentionRemainingSec -= 1;
+      if (state.attentionRemainingSec <= 0) {
+        triggerAttentionPulse();
+        state.attentionRemainingSec = 300;
+      }
+      const tag = document.getElementById('attention-countdown');
+      if (tag) tag.textContent = formatDuration(state.attentionRemainingSec);
+    }, 1000);
+  }
+
+  function triggerAttentionPulse() {
+    playAttentionBell();
+    const overlay = document.getElementById('attention-light-overlay');
+    const toast = document.getElementById('attention-toast');
+    if (overlay) {
+      overlay.classList.remove('pulsing');
+      void overlay.offsetWidth;
+      overlay.classList.add('pulsing');
+    }
+    if (toast) {
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 5200);
+    }
+  }
+
+  // Lo-Fi Ambient Synth
+  const LOFI_STATIONS = [
+    { name: 'Chuva Suave & Rhodes Zen', baseFreq: 220 },
+    { name: 'Brisa Celeste 432Hz', baseFreq: 216 },
+    { name: 'Noite Calma na TVA', baseFreq: 196 }
+  ];
+
+  function toggleLofi() {
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    if (state.lofiPlaying) {
+      stopLofi();
+    } else {
+      startLofi();
+    }
+  }
+
+  function startLofi() {
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    stopLofi();
+    const st = LOFI_STATIONS[state.lofiStationIdx % LOFI_STATIONS.length];
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc1.type = 'sine';
+    osc2.type = 'triangle';
+    osc1.frequency.value = st.baseFreq;
+    osc2.frequency.value = st.baseFreq * 1.5;
+    gain.gain.value = state.lofiVolume * 0.08;
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(ctx.destination);
+    osc1.start();
+    osc2.start();
+    state.lofiNodes = { osc1, osc2, gain };
+    state.lofiPlaying = true;
     updateLofiUI();
   }
 
-  function toggleLofiPlayback() {
-    ensureAudioContext();
-    state.lofi.playing = !state.lofi.playing;
-    if (state.lofi.playing) {
-      startCurrentLofiStation();
-    } else {
-      stopLofiEngine();
-      updateLofiUI();
+  function stopLofi() {
+    if (state.lofiNodes) {
+      try {
+        state.lofiNodes.osc1.stop();
+        state.lofiNodes.osc2.stop();
+      } catch (_) {}
+      state.lofiNodes = null;
     }
+    state.lofiPlaying = false;
+    updateLofiUI();
   }
 
-  // ==========================================================================
-  // Modais: Fila do Hoje, Tempos da Miss Minutos e Presta Atenção
-  // ==========================================================================
-  function updateHeaderStats() {
-    const queueCountEl = document.getElementById('header-queue-count');
-    const focusedMinEl = document.getElementById('header-focused-minutes');
-
-    const total = state.tasks.length;
-    const completed = state.tasks.filter((t) => state.completedIds.has(String(t.id))).length;
-    if (queueCountEl) {
-      queueCountEl.textContent = `${completed}/${total}`;
-    }
-
-    const todayStr = getTodayStr();
-    const todaySessions = (state.timesData.sessions || []).filter((s) => s.date === todayStr);
-    const totalSec = todaySessions.reduce((acc, s) => acc + Math.max(0, Number(s.durationSeconds || 0)), 0);
-    const mins = Math.round(totalSec / 60);
-    if (focusedMinEl) {
-      focusedMinEl.textContent = `${mins}m`;
-    }
+  function updateLofiUI() {
+    const st = LOFI_STATIONS[state.lofiStationIdx % LOFI_STATIONS.length];
+    const nameEl = document.getElementById('lofi-station-name');
+    const playIcon = document.getElementById('lofi-icon-play');
+    const pauseIcon = document.getElementById('lofi-icon-pause');
+    if (nameEl) nameEl.textContent = st.name;
+    if (playIcon) playIcon.style.display = state.lofiPlaying ? 'none' : 'inline-block';
+    if (pauseIcon) pauseIcon.style.display = state.lofiPlaying ? 'inline-block' : 'none';
   }
 
-  function renderQueueModalList() {
-    const container = document.getElementById('queue-list-container');
-    if (!container) return;
-    container.innerHTML = '';
-
-    state.tasks.forEach((t, idx) => {
-      const done = state.completedIds.has(String(t.id));
-      const isCurrent = idx === state.currentIndex;
-      const div = document.createElement('div');
-      div.className = `queue-item${isCurrent ? ' current' : ''}${done ? ' completed' : ''}`;
-      div.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
-          <span style="font-weight:800; color:var(--mm-orange-dark); min-width:28px;">#${t.dayOrder || idx + 1}</span>
-          <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;">${t.content}</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-          ${t.estimatedMinutes ? `<span style="font-size:0.74rem; color:#047857; font-weight:700;">${t.estimatedMinutes}m</span>` : ''}
-          <span style="font-size:0.78rem; font-weight:700; color:${done ? '#10b981' : isCurrent ? '#f97316' : '#64748b'};">
-            ${done ? '✓ Concluída' : isCurrent ? '🎯 Em Foco' : 'Focar →'}
-          </span>
-        </div>
-      `;
-      div.addEventListener('click', () => {
-        state.currentIndex = idx;
-        renderCurrentTask(true);
-        closeModal('modal-queue');
+  // Olhinhos da Miss Minutos seguindo o cursor
+  function setupEyeTracking() {
+    document.addEventListener('mousemove', (e) => {
+      const pairs = [
+        ['mm-pupil-left', 'mm-pupil-right', 'mm-shine-left', 'mm-shine-right'],
+        ['splash-pupil-left', 'splash-pupil-right', null, null]
+      ];
+      pairs.forEach(([lId, rId, slId, srId]) => {
+        const l = document.getElementById(lId);
+        const r = document.getElementById(rId);
+        if (!l || !r) return;
+        const rect = l.getBoundingClientRect();
+        if (!rect.width) return;
+        const dx = (e.clientX - rect.left) / window.innerWidth;
+        const dy = (e.clientY - rect.top) / window.innerHeight;
+        const ox = Math.max(-3.5, Math.min(3.5, dx * 7));
+        const oy = Math.max(-3.5, Math.min(3.5, dy * 7));
+        l.setAttribute('transform', 'translate(' + ox.toFixed(1) + ',' + oy.toFixed(1) + ')');
+        r.setAttribute('transform', 'translate(' + ox.toFixed(1) + ',' + oy.toFixed(1) + ')');
+        if (slId && srId) {
+          const sl = document.getElementById(slId);
+          const sr = document.getElementById(srId);
+          if (sl) sl.setAttribute('transform', 'translate(' + ox.toFixed(1) + ',' + oy.toFixed(1) + ')');
+          if (sr) sr.setAttribute('transform', 'translate(' + ox.toFixed(1) + ',' + oy.toFixed(1) + ')');
+        }
       });
-      container.appendChild(div);
     });
   }
 
-  function renderTimesModal() {
-    const todayStr = getTodayStr();
-    const sessions = Array.isArray(state.timesData.sessions) ? state.timesData.sessions : [];
-    const todaySessions = sessions.filter((s) => s.date === todayStr);
-
-    const totalSecToday = todaySessions.reduce((acc, s) => acc + Number(s.durationSeconds || 0), 0);
-    const timedCount = todaySessions.filter((s) => !s.completedWithoutTimer && Number(s.durationSeconds || 0) > 0).length;
-    const quickCount = todaySessions.filter((s) => s.completedWithoutTimer || Number(s.durationSeconds || 0) === 0).length;
-
-    const statMinEl = document.getElementById('stat-today-minutes');
-    const statTimedEl = document.getElementById('stat-timed-count');
-    const statQuickEl = document.getElementById('stat-quick-count');
-    const logList = document.getElementById('times-log-list');
-
-    if (statMinEl) statMinEl.textContent = `${(totalSecToday / 60).toFixed(1)} min`;
-    if (statTimedEl) statTimedEl.textContent = String(timedCount);
-    if (statQuickEl) statQuickEl.textContent = String(quickCount);
-
-    if (!logList) return;
-    logList.innerHTML = '';
-
-    if (sessions.length === 0) {
-      logList.innerHTML = `
-        <div style="padding:18px; text-align:center; color:var(--text-muted); font-size:0.86rem;">
-          Nenhuma tarefa concluída ainda nesta sessão. Assim que você usar o <strong>Play</strong> ou <strong>Concluir</strong>, os tempos aparecem aqui e no arquivo da Miss Minutos! ⏰
-        </div>
-      `;
-      return;
-    }
-
-    sessions
-      .slice()
-      .reverse()
-      .forEach((s) => {
-        const row = document.createElement('div');
-        row.className = 'queue-item';
-        row.style.cursor = 'default';
-        const durLabel = s.completedWithoutTimer || !s.durationSeconds
-          ? 'Concluída direto (sem timer)'
-          : `⏱️ ${formatMMSS(s.durationSeconds)} (${s.durationMinutes} min)`;
-        row.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:2px;">
-            <strong style="font-size:0.86rem; color:#0f172a;">${s.content}</strong>
-            <span style="font-size:0.74rem; color:var(--text-muted);">Data: ${s.date} · ID: ${s.taskId}</span>
-          </div>
-          <span style="font-size:0.8rem; font-weight:700; color:${s.completedWithoutTimer ? '#f97316' : '#0284c7'};">
-            ${durLabel}
-          </span>
-        `;
-        logList.appendChild(row);
-      });
-  }
-
-  function openModal(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (id === 'modal-queue') renderQueueModalList();
-    if (id === 'modal-times') renderTimesModal();
-    el.classList.add('open');
-  }
-
-  function closeModal(id) {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('open');
-  }
-
-  // ==========================================================================
-  // Inicialização & Eventos de Interface
-  // ==========================================================================
-  function bindEvents() {
-    // Splash screen -> Iniciar Sessão Zen
-    const btnEnterZen = document.getElementById('btn-enter-zen');
+  function showAuthLock() {
     const splash = document.getElementById('splash-screen');
-    if (btnEnterZen && splash) {
-      btnEnterZen.addEventListener('click', () => {
-        ensureAudioContext();
-        splash.classList.add('hidden');
-      });
-    }
+    const form = document.getElementById('auth-gate-form');
+    const unlocked = document.getElementById('auth-unlocked-box');
+    if (splash) splash.classList.remove('hidden');
+    if (form) form.style.display = 'flex';
+    if (unlocked) unlocked.style.display = 'none';
+  }
 
-    // Play / Pause no Cronômetro da tarefa
-    const btnToggleTimer = document.getElementById('btn-toggle-timer');
-    if (btnToggleTimer) {
-      btnToggleTimer.addEventListener('click', toggleTaskTimer);
-    }
-
-    // Concluir Tarefa (com ou sem tempo)
-    const btnCompleteTask = document.getElementById('btn-complete-task');
-    if (btnCompleteTask) {
-      btnCompleteTask.addEventListener('click', completeCurrentTask);
-    }
-
-    // Navegação Anterior / Pular
-    const btnPrev = document.getElementById('btn-prev-task');
-    const btnSkip = document.getElementById('btn-skip-task');
-    if (btnPrev) {
-      btnPrev.addEventListener('click', () => {
-        if (state.currentIndex > 0) {
-          state.currentIndex -= 1;
-          renderCurrentTask(true);
-        }
-      });
-    }
-    if (btnSkip) {
-      btnSkip.addEventListener('click', () => {
-        if (state.tasks.length > 1) {
-          state.currentIndex = (state.currentIndex + 1) % state.tasks.length;
-          renderCurrentTask(true);
-        }
-      });
-    }
-
-    // Clique na Miss Minutos da barra lateral -> frase de incentivo + pulinho
-    const climber = document.getElementById('mm-climber-marker');
-    if (climber) {
-      climber.addEventListener('click', () => {
-        updateMissMinutosSidebar(true);
-      });
-    }
-
-    // Botões de abrir Modais
-    const btnOpenAttention = document.getElementById('btn-open-attention-modal');
-    const btnOpenTimes = document.getElementById('btn-open-times-modal');
-    const btnOpenQueue = document.getElementById('btn-open-queue-modal');
-    if (btnOpenAttention) btnOpenAttention.addEventListener('click', () => openModal('modal-attention'));
-    if (btnOpenTimes) btnOpenTimes.addEventListener('click', () => openModal('modal-times'));
-    if (btnOpenQueue) btnOpenQueue.addEventListener('click', () => openModal('modal-queue'));
-
-    // Fechar Modais
-    document.querySelectorAll('[data-close-modal]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        closeModal(btn.getAttribute('data-close-modal'));
-      });
-    });
-    document.querySelectorAll('.modal-backdrop').forEach((backdrop) => {
-      backdrop.addEventListener('click', (e) => {
-        if (e.target === backdrop) backdrop.classList.remove('open');
-      });
-    });
-
-    // Seleção do Modo "Presta Atenção"
-    const modeCards = document.querySelectorAll('.mode-option-card');
-    modeCards.forEach((card) => {
-      if (card.getAttribute('data-attention-mode') === state.attentionMode) {
-        card.classList.add('selected');
-      } else {
-        card.classList.remove('selected');
+  async function checkInitialAuth() {
+    try {
+      const res = await apiFetch('/api/auth/verify');
+      const data = await res.json();
+      if (data && data.authenticated) {
+        state.authenticated = true;
+        const form = document.getElementById('auth-gate-form');
+        const unlocked = document.getElementById('auth-unlocked-box');
+        if (form) form.style.display = 'none';
+        if (unlocked) unlocked.style.display = 'block';
+        await loadTasksFromServer(false);
+        return;
       }
-      card.addEventListener('click', () => {
-        const mode = card.getAttribute('data-attention-mode');
-        state.attentionMode = mode;
-        localStorage.setItem(STORAGE_KEYS.ATTENTION_MODE, mode);
-        modeCards.forEach((c) => c.classList.toggle('selected', c === card));
-        updateAttentionCountdownBadge();
-      });
-    });
+    } catch (_) {}
+    showAuthLock();
+  }
 
-    const intervalSelect = document.getElementById('attention-interval-select');
-    if (intervalSelect) {
-      intervalSelect.value = String(state.attentionIntervalSec);
-      intervalSelect.addEventListener('change', () => {
-        state.attentionIntervalSec = Number(intervalSelect.value || 300);
-        state.attentionElapsedSec = 0;
-        localStorage.setItem(STORAGE_KEYS.ATTENTION_INTERVAL, String(state.attentionIntervalSec));
-        updateAttentionCountdownBadge();
+  function bindEvents() {
+    const authForm = document.getElementById('auth-gate-form');
+    if (authForm) {
+      authForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const inp = document.getElementById('auth-password-input');
+        const err = document.getElementById('auth-error-msg');
+        const password = inp ? inp.value : '';
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+          });
+          const data = await res.json();
+          if (res.ok && data.ok) {
+            state.authToken = data.token;
+            state.authenticated = true;
+            localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, data.token);
+            if (err) err.style.display = 'none';
+            const splash = document.getElementById('splash-screen');
+            if (splash) splash.classList.add('hidden');
+            ensureAudioCtx();
+            await loadTasksFromServer(false);
+          } else {
+            if (err) err.style.display = 'block';
+          }
+        } catch (_) {
+          if (err) err.style.display = 'block';
+        }
       });
     }
 
-    const btnTestAttention = document.getElementById('btn-test-attention-now');
-    if (btnTestAttention) {
-      btnTestAttention.addEventListener('click', () => {
-        ensureAudioContext();
-        triggerAttentionReminder(true);
+    const startBtn = document.getElementById('splash-start-btn');
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
+        ensureAudioCtx();
+        const splash = document.getElementById('splash-screen');
+        if (splash) splash.classList.add('hidden');
+      });
+    }
+
+    const lockBtn = document.getElementById('btn-logout-lock');
+    if (lockBtn) {
+      lockBtn.addEventListener('click', async () => {
+        pauseTimer();
+        await apiFetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        state.authToken = '';
+        state.authenticated = false;
+        showAuthLock();
+      });
+    }
+
+    const playBtn = document.getElementById('btn-play-timer');
+    if (playBtn) playBtn.addEventListener('click', toggleTimer);
+
+    const compBtn = document.getElementById('btn-complete-task');
+    if (compBtn) {
+      compBtn.addEventListener('click', () => {
+        const t = state.tasks[state.currentIndex];
+        if (t) completeTaskById(t.id, true);
+      });
+    }
+
+    const mainCheck = document.getElementById('btn-check-circle-main');
+    if (mainCheck) {
+      mainCheck.addEventListener('click', () => {
+        const t = state.tasks[state.currentIndex];
+        if (t) completeTaskById(t.id, true);
+      });
+    }
+
+    const prevBtn = document.getElementById('btn-prev-task');
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        if (state.currentIndex > 0) {
+          pauseTimer();
+          state.currentIndex -= 1;
+          state.timerSeconds = 0;
+          state.descExpanded = false;
+          renderAll();
+        }
+      });
+    }
+
+    const nextBtn = document.getElementById('btn-next-task');
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        if (state.currentIndex < state.tasks.length - 1) {
+          pauseTimer();
+          state.currentIndex += 1;
+          state.timerSeconds = 0;
+          state.descExpanded = false;
+          renderAll();
+        }
+      });
+    }
+
+    const expandBtn = document.getElementById('btn-toggle-desc-expand');
+    if (expandBtn) {
+      expandBtn.addEventListener('click', () => {
+        state.descExpanded = !state.descExpanded;
+        renderCurrentTask();
+      });
+    }
+
+    // Estimador inline no card
+    const estBadge = document.getElementById('task-estimate-badge');
+    const inlineEst = document.getElementById('card-inline-estimator');
+    if (estBadge && inlineEst) {
+      estBadge.addEventListener('click', () => {
+        inlineEst.style.display = inlineEst.style.display === 'none' ? 'flex' : 'none';
+      });
+    }
+    document.querySelectorAll('.est-pill-btn[data-est-min]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const t = state.tasks[state.currentIndex];
+        if (!t) return;
+        setTaskEstimate(t.id, btn.getAttribute('data-est-min'));
+        if (inlineEst) inlineEst.style.display = 'none';
+      });
+    });
+    const customEstInp = document.getElementById('card-custom-est-input');
+    if (customEstInp) {
+      customEstInp.addEventListener('change', () => {
+        const t = state.tasks[state.currentIndex];
+        if (!t) return;
+        setTaskEstimate(t.id, customEstInp.value);
       });
     }
 
     // Sincronização manual Todoist
-    const tokenInput = document.getElementById('todoist-token-input');
-    const btnSyncNow = document.getElementById('btn-sync-todoist-now');
-    const feedbackEl = document.getElementById('sync-feedback-msg');
-    if (tokenInput && state.todoistToken) {
-      tokenInput.value = state.todoistToken;
+    const syncBadge = document.getElementById('todoist-sync-badge');
+    const syncDrawerBtn = document.getElementById('btn-sync-drawer-top');
+    if (syncBadge) syncBadge.addEventListener('click', () => loadTasksFromServer(true));
+    if (syncDrawerBtn) syncDrawerBtn.addEventListener('click', () => loadTasksFromServer(true));
+
+    // Modais
+    const openQueue = document.getElementById('btn-open-queue');
+    const closeQueue = document.getElementById('close-queue-modal');
+    const modalQueue = document.getElementById('modal-queue');
+    if (openQueue && modalQueue) {
+      openQueue.addEventListener('click', () => {
+        renderQueueDrawer();
+        modalQueue.style.display = 'flex';
+      });
     }
-    if (btnSyncNow) {
-      btnSyncNow.addEventListener('click', async () => {
-        const val = tokenInput ? tokenInput.value.trim() : '';
-        if (val) {
-          state.todoistToken = val;
-          localStorage.setItem(STORAGE_KEYS.TODOIST_TOKEN, val);
-        }
-        if (feedbackEl) {
-          feedbackEl.style.display = 'block';
-          feedbackEl.style.color = '#0284c7';
-          feedbackEl.textContent = 'Sincronizando ordem exata do Hoje com o Todoist...';
-        }
-        try {
-          const snap = await syncDirectlyWithTodoistBrowser(state.todoistToken);
-          renderQueueModalList();
-          if (feedbackEl) {
-            feedbackEl.style.color = '#047857';
-            feedbackEl.textContent = `✓ Sincronizado com sucesso! ${snap.tasks.length} tarefas na ordem exata do Hoje.`;
-          }
-        } catch (err) {
-          if (feedbackEl) {
-            feedbackEl.style.color = '#dc2626';
-            feedbackEl.textContent = `Usando snapshot sincronizado do conector (${err.message}).`;
-          }
-        }
+    if (closeQueue && modalQueue) closeQueue.addEventListener('click', () => (modalQueue.style.display = 'none'));
+
+    const openHist = document.getElementById('btn-open-history');
+    const closeHist = document.getElementById('close-history-modal');
+    const modalHist = document.getElementById('modal-history');
+    if (openHist && modalHist) {
+      openHist.addEventListener('click', () => {
+        renderHistoryModal();
+        modalHist.style.display = 'flex';
+      });
+    }
+    if (closeHist && modalHist) closeHist.addEventListener('click', () => (modalHist.style.display = 'none'));
+
+    const openAch = document.getElementById('btn-open-achievements');
+    const closeAch = document.getElementById('close-achievements-modal');
+    const modalAch = document.getElementById('modal-achievements');
+    if (openAch && modalAch) {
+      openAch.addEventListener('click', () => {
+        renderGamification();
+        modalAch.style.display = 'flex';
+      });
+    }
+    if (closeAch && modalAch) closeAch.addEventListener('click', () => (modalAch.style.display = 'none'));
+
+    // Modo Presta Atenção
+    const attBtn = document.getElementById('btn-attention-toggle');
+    if (attBtn) {
+      attBtn.addEventListener('click', () => {
+        state.attentionEnabled = !state.attentionEnabled;
+        attBtn.classList.toggle('active-mode', state.attentionEnabled);
+        attBtn.setAttribute('aria-pressed', String(state.attentionEnabled));
       });
     }
 
-    // Exportar JSON de Tempos da Miss Minutos
-    const btnExportTimes = document.getElementById('btn-export-times-json');
-    if (btnExportTimes) {
-      btnExportTimes.addEventListener('click', () => {
-        const blob = new Blob([JSON.stringify(state.timesData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'lightfocus-times.json';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      });
-    }
-
-    // Controles do Player Lo-Fi no Cantinho
-    const btnLofiToggle = document.getElementById('btn-lofi-toggle');
-    const btnLofiPrev = document.getElementById('btn-lofi-prev');
-    const btnLofiNext = document.getElementById('btn-lofi-next');
+    // Lo-Fi
+    const lofiToggle = document.getElementById('lofi-toggle-btn');
+    const lofiPrev = document.getElementById('lofi-prev-station');
+    const lofiNext = document.getElementById('lofi-next-station');
     const lofiVol = document.getElementById('lofi-volume');
-
-    if (btnLofiToggle) btnLofiToggle.addEventListener('click', toggleLofiPlayback);
-    if (btnLofiPrev) {
-      btnLofiPrev.addEventListener('click', () => {
-        state.lofi.stationIndex = (state.lofi.stationIndex - 1 + LOFI_STATIONS.length) % LOFI_STATIONS.length;
-        if (state.lofi.playing) startCurrentLofiStation();
+    if (lofiToggle) lofiToggle.addEventListener('click', toggleLofi);
+    if (lofiPrev) {
+      lofiPrev.addEventListener('click', () => {
+        state.lofiStationIdx = (state.lofiStationIdx + LOFI_STATIONS.length - 1) % LOFI_STATIONS.length;
+        if (state.lofiPlaying) startLofi();
         else updateLofiUI();
       });
     }
-    if (btnLofiNext) {
-      btnLofiNext.addEventListener('click', () => {
-        state.lofi.stationIndex = (state.lofi.stationIndex + 1) % LOFI_STATIONS.length;
-        if (state.lofi.playing) startCurrentLofiStation();
+    if (lofiNext) {
+      lofiNext.addEventListener('click', () => {
+        state.lofiStationIdx = (state.lofiStationIdx + 1) % LOFI_STATIONS.length;
+        if (state.lofiPlaying) startLofi();
         else updateLofiUI();
       });
     }
     if (lofiVol) {
-      lofiVol.value = String(Math.round(state.lofi.volume * 100));
       lofiVol.addEventListener('input', () => {
-        const v = Number(lofiVol.value || 45);
-        state.lofi.volume = v / 100;
-        localStorage.setItem(STORAGE_KEYS.LOFI_VOLUME, String(v));
-        if (state.lofi.masterGain && state.audioCtx) {
-          state.lofi.masterGain.gain.setValueAtTime(state.lofi.volume * 0.25, state.audioCtx.currentTime);
-        }
-        if (state.lofi.audioEl) {
-          state.lofi.audioEl.volume = state.lofi.volume;
+        state.lofiVolume = Number(lofiVol.value) / 100;
+        if (state.lofiNodes && state.lofiNodes.gain) {
+          state.lofiNodes.gain.gain.value = state.lofiVolume * 0.08;
         }
       });
     }
 
     // Atalhos de Teclado
-    window.addEventListener('keydown', (e) => {
-      const splashEl = document.getElementById('splash-screen');
-      if (splashEl && !splashEl.classList.contains('hidden')) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          ensureAudioContext();
-          splashEl.classList.add('hidden');
-        }
-        return;
-      }
-
-      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) {
-        return;
-      }
-
+    document.addEventListener('keydown', (e) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target && e.target.tagName) || '')) return;
       if (e.code === 'Space') {
         e.preventDefault();
-        toggleTaskTimer();
-      } else if (e.altKey && (e.key === 'c' || e.key === 'C')) {
+        toggleTimer();
+      } else if (e.code === 'Enter') {
         e.preventDefault();
-        completeCurrentTask();
+        const t = state.tasks[state.currentIndex];
+        if (t) completeTaskById(t.id, true);
+      } else if (e.code === 'KeyA') {
+        triggerAttentionPulse();
       }
     });
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    setupEyeTracking();
+    loadLocalState();
     bindEvents();
+    setupEyeTracking();
+    startAttentionLoop();
     updateLofiUI();
-    updateAttentionCountdownBadge();
-    initTasksAndTimes();
+    checkInitialAuth();
   });
 })();
