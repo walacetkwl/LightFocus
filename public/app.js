@@ -1,116 +1,76 @@
-/* ==========================================================================
-   LightFocus — estrelando Miss Minutos (app.js)
-   - Tarefa única no centro + animação de dissolução/nuvem subindo ao concluir
-   - Sincronização em tempo real com Todoist (ordem exata do Hoje / day_order)
-   - Barra lateral gamificada (Vermelho -> Amarelo -> Azul) com olhinhos seguindo o mouse
-   - Modo "Presta Atenção" (a cada 5 min quando Play ativo: Luminoso, Sonoro ou Ambos)
-   - Player Lo-Fi no cantinho (Web Audio Chillhop Sintetizado + Streams Reais)
-   - Log de tempo real por tarefa sincronizado para a Miss Minutos (5h30)
-   ========================================================================== */
+/* ============================================================================
+   LightFocus v3 — Apple Liquid Glass Commercial SaaS Edition (app.js)
+   - Multi-user SaaS Auth Gate (Entrar / Criar Conta) + Founder pre-seeded login
+   - Single-Task Liquid Glass Focus Stage + Soft Refractive Light Pulse
+   - Shortcut 'Q': Quick-Add Task Modal with Real-Time Natural Language Parser
+   - Shortcut 'Cmd+K / Ctrl+K': Spotlight Search & Command Palette
+   - Minimalist Apple Activity Bento, XP Progression & Todoist Sync
+   ============================================================================ */
 
 (function () {
   'use strict';
 
   const STORAGE_KEYS = {
-    TIMES: 'lightfocus_times_v1',
-    COMPLETED_IDS: 'lightfocus_completed_ids_v1',
-    SUBTASKS_DONE: 'lightfocus_subtasks_done_v1',
-    ATTENTION_MODE: 'lightfocus_attention_mode_v1',
-    ATTENTION_INTERVAL: 'lightfocus_attention_interval_v1',
-    TODOIST_TOKEN: 'lightfocus_todoist_token_v1',
-    LOFI_VOLUME: 'lightfocus_lofi_volume_v1'
+    THEME: 'lf_v3_theme',
+    PULSE_5M: 'lf_v3_pulse_5m',
+    SUBTASKS: 'lf_v3_subtasks_done'
   };
 
   const state = {
+    authenticated: false,
+    authMode: 'login', // 'login' | 'register'
+    user: null,
+    hasTodoistToken: false,
     tasks: [],
-    currentIndex: 0,
-    completedIds: new Set(),
-    subtasksDone: {},
+    filter: 'pending', // 'pending' | 'all' | 'completed'
+    currentTaskId: null,
+    descExpanded: false,
+    subtasksDone: loadJsonStorage(STORAGE_KEYS.SUBTASKS, {}),
     timerRunning: false,
     timerSeconds: 0,
     timerStartedAt: null,
-    timerIntervalId: null,
-    attentionMode: localStorage.getItem(STORAGE_KEYS.ATTENTION_MODE) || 'both',
-    attentionIntervalSec: Number(localStorage.getItem(STORAGE_KEYS.ATTENTION_INTERVAL) || 300),
-    attentionElapsedSec: 0,
-    todoistToken: localStorage.getItem(STORAGE_KEYS.TODOIST_TOKEN) || '',
+    timerInterval: null,
+    pulse5mEnabled: localStorage.getItem(STORAGE_KEYS.PULSE_5M) !== '0',
+    theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'light',
     timesData: {
-      app: 'LightFocus',
-      owner: 'Walace Messias',
-      agent: 'Miss Minutos · Adm do Tempo',
-      timezone: 'America/Sao_Paulo',
       sessions: [],
       taskAverages: {},
+      taskEstimates: {},
       dailySummary: {}
     },
-    audioCtx: null,
-    lofi: {
-      playing: false,
-      stationIndex: 0,
-      volume: Number(localStorage.getItem(STORAGE_KEYS.LOFI_VOLUME) ?? 45) / 100,
-      audioEl: null,
-      synthTimer: null,
-      noiseNode: null,
-      masterGain: null,
-      chordStep: 0
-    }
+    qaPicker: {
+      date: 'today',
+      est: 15,
+      prio: 'p4'
+    },
+    spotlightIndex: 0,
+    spotlightItems: []
   };
 
-  const LOFI_STATIONS = [
-    {
-      name: 'Lo-Fi Yoga & Chillhop (Zen Synth)',
-      sub: 'Acordes Rhodes & Vinil Suave · Zero Falha',
-      type: 'synth'
-    },
-    {
-      name: 'SomaFM · Groove Salad Chill',
-      sub: 'Ambient / Downtempo Beats',
-      type: 'stream',
-      url: 'https://ice2.somafm.com/groovesalad-128-mp3'
-    },
-    {
-      name: 'SomaFM · Drone Zone Zen',
-      sub: 'Foco Profundo & Meditação',
-      type: 'stream',
-      url: 'https://ice2.somafm.com/dronezone-128-mp3'
-    },
-    {
-      name: 'Nightride · ChillSynth FM',
-      sub: 'Lo-Fi & Warm Synthwave',
-      type: 'stream',
-      url: 'https://stream.nightride.fm/chillsynth.mp3'
+  function loadJsonStorage(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (_) {
+      return fallback;
     }
-  ];
+  }
 
-  const MISS_MINUTOS_QUOTES = {
-    startRed: [
-      '“Oi, querido! Vamos começar pela primeira da fila? Dá um Play ou conclui direto se já tiver feito! ”',
-      '“Respira fundo igual num Yoga, Walace! Uma tarefa por vez e a gente chega no azul rapidinho! ⏰”'
-    ],
-    celebrateRed: [
-      '“Boa, querido! Primeiro passo dado! Já estou subindo aqui na barra! ”',
-      '“Isso aí! Uma já foi pro espaço! Mantém esse ritmo gostoso! ”',
-      '“Adorei ver essa tarefa subindo igual nuvem! Vamos pra próxima? ⏰”'
-    ],
-    celebrateYellow: [
-      '“Olha a gente na faixa amarela, Walace! Já passamos de um terço do dia! ”',
-      '“Que orgulho! Seu foco hoje está lindo de ver, querido! Continue assim! ”',
-      '“Mais uma concluída com leveza! Estamos quase chegando no céu azul! ”'
-    ],
-    celebrateBlue: [
-      '“UAAAU! Faixa Azul Zen atingida! Você está voando hoje, Walace! ”',
-      '“Impecável, querido! Estou radiante aqui no topo da barra vendo você zerar tudo! ⏰”',
-      '“Quase lá! Esse é o poder de focar em uma única coisa de cada vez! ”'
-    ],
-    allDone: [
-      '“ZEROU O HOJE, QUERIDO!!  100% concluído! Pode descansar em paz que amanhã às 5h30 eu te trago o balanço!”'
-    ]
-  };
+  function saveJsonStorage(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (_) {}
+  }
 
-  // ==========================================================================
-  // Utilitários de Data, Formatação e Áudio Zen (Web Audio API)
-  // ==========================================================================
-  function getTodayStr() {
+  function stripEmojis(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]/gu, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
+  function getTodayDateStr() {
     const fmt = new Intl.DateTimeFormat('sv-SE', {
       timeZone: 'America/Sao_Paulo',
       year: 'numeric',
@@ -120,8 +80,19 @@
     return fmt.format(new Date());
   }
 
-  function formatMMSS(totalSeconds) {
-    const s = Math.max(0, Math.floor(totalSeconds));
+  function addDaysDateStr(days) {
+    const d = new Date(Date.now() + days * 86400000);
+    const fmt = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    return fmt.format(d);
+  }
+
+  function formatDurationMMSS(totalSec) {
+    const s = Math.max(0, Math.floor(Number(totalSec || 0)));
     const hrs = Math.floor(s / 3600);
     const mins = Math.floor((s % 3600) / 60);
     const secs = s % 60;
@@ -131,1968 +102,1587 @@
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   }
 
-  function ensureAudioContext() {
-    if (!state.audioCtx) {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) {
-        state.audioCtx = new AudioContextClass();
-      }
-    }
-    if (state.audioCtx && state.audioCtx.state === 'suspended') {
-      state.audioCtx.resume().catch(() => {});
-    }
-    return state.audioCtx;
-  }
-
-  // Som suave e orgânico ao concluir tarefa (acorde harpa/celesta zen)
-  function playZenCompletionSound() {
-    const ctx = ensureAudioContext();
-    if (!ctx) return;
-
-    const now = ctx.currentTime;
-    // Acorde Fmaj9 celestial (F4, A4, C5, E5, G5)
-    const freqs = [349.23, 440.0, 523.25, 659.25, 783.99];
-    freqs.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const osc2 = ctx.createOscillator();
-      const filter = ctx.createBiquadFilter();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc2.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, now + i * 0.065);
-      osc2.frequency.setValueAtTime(freq * 2, now + i * 0.065);
-
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(1800, now);
-
-      const start = now + i * 0.065;
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.linearRampToValueAtTime(0.075 / (1 + i * 0.15), start + 0.045);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 2.2);
-
-      osc.connect(filter);
-      osc2.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(start);
-      osc2.start(start);
-      osc.stop(start + 2.3);
-      osc2.stop(start + 2.3);
-    });
-  }
-
-  // Som suave de piano Rhodes/Felt para o Modo "Presta Atenção" (5 em 5 min)
-  function playGentlePianoAttentionChord() {
-    const ctx = ensureAudioContext();
-    if (!ctx) return;
-
-    const now = ctx.currentTime;
-    // Acorde Cmaj7 / Gmaj7 super macio e aveludado
-    const notes = [261.63, 329.63, 392.0, 493.88, 587.33];
-    notes.forEach((freq, idx) => {
-      const osc = ctx.createOscillator();
-      const subOsc = ctx.createOscillator();
-      const filter = ctx.createBiquadFilter();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      subOsc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, now + idx * 0.09);
-      subOsc.frequency.setValueAtTime(freq * 0.5, now + idx * 0.09);
-
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(1100, now);
-
-      const t0 = now + idx * 0.09;
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.linearRampToValueAtTime(0.06, t0 + 0.08);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 3.4);
-
-      osc.connect(filter);
-      subOsc.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(t0);
-      subOsc.start(t0);
-      osc.stop(t0 + 3.5);
-      subOsc.stop(t0 + 3.5);
-    });
+  function getInitials(name) {
+    const parts = String(name || 'Usuario')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (parts.length === 0) return 'LF';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
   // ==========================================================================
-  // Animação de Partículas / Nuvem Subindo ao Concluir Tarefa
+  // REFRACTIVE LIGHT PULSE & SUBTLE HARMONIC AUDIO
   // ==========================================================================
-  const particleCanvas = document.getElementById('particle-canvas');
-  const pCtx = particleCanvas ? particleCanvas.getContext('2d') : null;
-  let particles = [];
-  let particleAnimId = null;
-
-  function resizeParticleCanvas() {
-    if (!particleCanvas) return;
-    particleCanvas.width = window.innerWidth;
-    particleCanvas.height = window.innerHeight;
-  }
-  window.addEventListener('resize', resizeParticleCanvas);
-  resizeParticleCanvas();
-
-  function triggerTaskDissolveParticles(cardElement) {
-    if (!particleCanvas || !pCtx || !cardElement) return;
-    const rect = cardElement.getBoundingClientRect();
-    const colors = [
-      'rgba(56, 189, 248, 0.78)',
-      'rgba(249, 115, 22, 0.72)',
-      'rgba(250, 204, 21, 0.75)',
-      'rgba(16, 185, 129, 0.72)',
-      'rgba(255, 255, 255, 0.92)'
-    ];
-
-    for (let i = 0; i < 68; i++) {
-      particles.push({
-        x: rect.left + Math.random() * rect.width,
-        y: rect.top + Math.random() * rect.height,
-        vx: (Math.random() - 0.5) * 1.8,
-        vy: -(1.6 + Math.random() * 3.4),
-        radius: 4 + Math.random() * 14,
-        alpha: 0.85 + Math.random() * 0.15,
-        decay: 0.008 + Math.random() * 0.011,
-        color: colors[Math.floor(Math.random() * colors.length)]
-      });
-    }
-
-    if (!particleAnimId) {
-      animateParticles();
-    }
+  function triggerLightPulse() {
+    const overlay = document.getElementById('lightPulseOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    void overlay.offsetWidth;
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.remove('active'), 950);
   }
 
-  function animateParticles() {
-    if (!pCtx || !particleCanvas) return;
-    pCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.x += p.vx + Math.sin(p.y * 0.03) * 0.5;
-      p.y += p.vy;
-      p.radius *= 1.004;
-      p.alpha -= p.decay;
-
-      if (p.alpha <= 0.01) {
-        particles.splice(i, 1);
-        continue;
-      }
-
-      pCtx.save();
-      pCtx.globalAlpha = Math.max(0, p.alpha);
-      pCtx.beginPath();
-      pCtx.fillStyle = p.color;
-      pCtx.shadowColor = p.color;
-      pCtx.shadowBlur = 12;
-      pCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-      pCtx.fill();
-      pCtx.restore();
-    }
-
-    if (particles.length > 0) {
-      particleAnimId = requestAnimationFrame(animateParticles);
-    } else {
-      pCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
-      particleAnimId = null;
-    }
-  }
-
-  // ==========================================================================
-  // Olhinhos da Miss Minutos Seguindo o Cursor do Mouse (mousemove)
-  // ==========================================================================
-  function setupEyeTracking() {
-    const sockets = document.querySelectorAll('.mm-eye-socket');
-    if (!sockets.length) return;
-
-    window.addEventListener('mousemove', (e) => {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-
-      sockets.forEach((socket) => {
-        const pupilGroup = socket.querySelector('.mm-pupil-group');
-        const svg = socket.ownerSVGElement;
-        if (!pupilGroup || !svg) return;
-
-        const rect = socket.getBoundingClientRect();
-        if (rect.width === 0 && rect.height === 0) return;
-
-        const eyeCenterX = rect.left + rect.width / 2;
-        const eyeCenterY = rect.top + rect.height / 2;
-
-        const dx = mouseX - eyeCenterX;
-        const dy = mouseY - eyeCenterY;
-        const angle = Math.atan2(dy, dx);
-        const dist = Math.min(5.2, Math.hypot(dx, dy) / 36);
-
-        const offsetX = Math.cos(angle) * dist;
-        const offsetY = Math.sin(angle) * dist;
-
-        pupilGroup.style.transform = `translate(${offsetX.toFixed(2)}px, ${offsetY.toFixed(2)}px)`;
-      });
-    });
-  }
-
-  // ==========================================================================
-  // Carregamento e Sincronização das Tarefas (Ordem Exata do Hoje)
-  // ==========================================================================
-  function loadLocalStorageState() {
+  function playGlassHarmonic(kind) {
     try {
-      const savedCompleted = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPLETED_IDS) || '[]');
-      if (Array.isArray(savedCompleted)) {
-        state.completedIds = new Set(savedCompleted.map(String));
-      }
-    } catch (e) {}
-
-    try {
-      const savedSub = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUBTASKS_DONE) || '{}');
-      if (savedSub && typeof savedSub === 'object') {
-        state.subtasksDone = savedSub;
-      }
-    } catch (e) {}
-
-    try {
-      const savedTimes = JSON.parse(localStorage.getItem(STORAGE_KEYS.TIMES) || 'null');
-      if (savedTimes && Array.isArray(savedTimes.sessions)) {
-        state.timesData = savedTimes;
-      }
-    } catch (e) {}
-  }
-
-  function saveCompletedToStorage() {
-    try {
-      localStorage.setItem(STORAGE_KEYS.COMPLETED_IDS, JSON.stringify(Array.from(state.completedIds)));
-      localStorage.setItem(STORAGE_KEYS.SUBTASKS_DONE, JSON.stringify(state.subtasksDone));
-    } catch (e) {}
-  }
-
-  function recomputeLocalTimesAggregates() {
-    const sessions = Array.isArray(state.timesData.sessions) ? state.timesData.sessions : [];
-    const taskMap = {};
-    const dailyMap = {};
-
-    sessions.forEach((s) => {
-      const key = s.taskId || s.content || 'unknown';
-      if (!taskMap[key]) {
-        taskMap[key] = {
-          taskId: s.taskId || null,
-          content: s.content || 'Tarefa',
-          totalSessions: 0,
-          timedSessions: 0,
-          completedWithoutTimerCount: 0,
-          totalSeconds: 0,
-          averageSeconds: 0,
-          averageMinutes: 0
-        };
-      }
-      const entry = taskMap[key];
-      entry.totalSessions += 1;
-      const dur = Math.max(0, Number(s.durationSeconds || 0));
-      if (s.completedWithoutTimer || dur === 0) {
-        entry.completedWithoutTimerCount += 1;
-      } else {
-        entry.timedSessions += 1;
-        entry.totalSeconds += dur;
-      }
-
-      const dKey = s.date || getTodayStr();
-      if (!dailyMap[dKey]) {
-        dailyMap[dKey] = {
-          date: dKey,
-          completedTasksCount: 0,
-          timedTasksCount: 0,
-          quickCompletedCount: 0,
-          totalFocusedSeconds: 0,
-          totalFocusedMinutes: 0
-        };
-      }
-      const day = dailyMap[dKey];
-      day.completedTasksCount += 1;
-      if (s.completedWithoutTimer || dur === 0) {
-        day.quickCompletedCount += 1;
-      } else {
-        day.timedTasksCount += 1;
-        day.totalFocusedSeconds += dur;
-      }
-      day.totalFocusedMinutes = Number((day.totalFocusedSeconds / 60).toFixed(1));
-    });
-
-    Object.keys(taskMap).forEach((k) => {
-      const t = taskMap[k];
-      if (t.timedSessions > 0) {
-        t.averageSeconds = Math.round(t.totalSeconds / t.timedSessions);
-        t.averageMinutes = Number((t.averageSeconds / 60).toFixed(1));
-      }
-    });
-
-    state.timesData.taskAverages = taskMap;
-    state.timesData.dailySummary = dailyMap;
-    state.timesData.updatedAt = new Date().toISOString();
-    try {
-      localStorage.setItem(STORAGE_KEYS.TIMES, JSON.stringify(state.timesData));
-    } catch (e) {}
-  }
-
-  function applySnapshotTasks(snapshot) {
-    if (!snapshot || !Array.isArray(snapshot.tasks)) return;
-    const tasks = snapshot.tasks.slice().sort((a, b) => {
-      const oA = Number(a.dayOrder ?? 9999);
-      const oB = Number(b.dayOrder ?? 9999);
-      return oA - oB;
-    });
-
-    tasks.forEach((t) => {
-      if (t.checked) {
-        state.completedIds.add(String(t.id));
-      }
-    });
-
-    state.tasks = tasks;
-    // Posiciona na primeira tarefa ainda não concluída
-    const firstPendingIdx = state.tasks.findIndex((t) => !state.completedIds.has(String(t.id)));
-    state.currentIndex = firstPendingIdx >= 0 ? firstPendingIdx : 0;
-
-    renderCurrentTask(false);
-    updateMissMinutosSidebar(false);
-    updateHeaderStats();
-  }
-
-  async function initTasksAndTimes() {
-    loadLocalStorageState();
-
-    // 1. Carrega snapshot inicial embutido (tasks-seed.js)
-    if (window.LIGHTFOCUS_INITIAL_SNAPSHOT) {
-      applySnapshotTasks(window.LIGHTFOCUS_INITIAL_SNAPSHOT);
-    }
-
-    // 2. Se o servidor local Node estiver ativo, sincroniza estado e tempos
-    try {
-      const [tasksRes, timesRes] = await Promise.all([
-        fetch('/api/tasks', { headers: state.todoistToken ? { 'X-Todoist-Token': state.todoistToken } : {} }),
-        fetch('/api/times')
-      ]);
-      if (tasksRes.ok) {
-        const tJson = await tasksRes.json();
-        if (tJson && tJson.snapshot) {
-          applySnapshotTasks(tJson.snapshot);
-        }
-      }
-      if (timesRes.ok) {
-        const tmJson = await timesRes.json();
-        if (tmJson && tmJson.data && Array.isArray(tmJson.data.sessions)) {
-          // Mescla sessões locais com as do servidor
-          const serverSessions = tmJson.data.sessions;
-          const localSessions = state.timesData.sessions || [];
-          const byId = new Map();
-          serverSessions.forEach((s) => byId.set(s.sessionId || `${s.taskId}_${s.endedAt}`, s));
-          localSessions.forEach((s) => byId.set(s.sessionId || `${s.taskId}_${s.endedAt}`, s));
-          state.timesData.sessions = Array.from(byId.values());
-          recomputeLocalTimesAggregates();
-          updateHeaderStats();
-        }
-      }
-    } catch (err) {
-      // Rodando em modo estático (GitHub Pages): se o usuário tiver colado token Todoist, sincroniza direto
-      if (state.todoistToken) {
-        syncDirectlyWithTodoistBrowser(state.todoistToken).catch(() => {});
-      }
-    }
-  }
-
-  async function syncDirectlyWithTodoistBrowser(token) {
-    const syncBadgeText = document.getElementById('sync-status-text');
-    if (syncBadgeText) syncBadgeText.textContent = 'Sincronizando...';
-
-    // Tenta via backend primeiro
-    try {
-      const res = await fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, saveToken: true })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.snapshot) {
-          applySnapshotTasks(data.snapshot);
-          if (syncBadgeText) syncBadgeText.textContent = 'Hoje Sincronizado';
-          return data.snapshot;
-        }
-      }
-    } catch (e) {
-      // Continua para chamada direta do navegador (GitHub Pages)
-    }
-
-    const body = new URLSearchParams({
-      sync_token: '*',
-      resource_types: JSON.stringify(['items', 'day_orders', 'projects'])
-    });
-    const resp = await fetch('https://api.todoist.com/sync/v9/sync', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: body.toString()
-    });
-    if (!resp.ok) {
-      throw new Error(`Todoist API respondeu ${resp.status}`);
-    }
-    const syncData = await resp.json();
-    const todayStr = getTodayStr();
-    const items = (syncData.items || []).filter((item) => !item.checked && !item.is_deleted);
-    const dayOrders = syncData.day_orders || {};
-
-    const childrenByParent = {};
-    items.forEach((item) => {
-      if (item.parent_id) {
-        const pid = String(item.parent_id);
-        if (!childrenByParent[pid]) childrenByParent[pid] = [];
-        childrenByParent[pid].push({
-          id: String(item.id),
-          content: item.content,
-          checked: Boolean(item.checked),
-          childOrder: Number(item.child_order ?? 9999)
-        });
-      }
-    });
-
-    const todayTop = items.filter((item) => {
-      if (item.parent_id) return false;
-      const dueDate = item.due && item.due.date ? String(item.due.date).slice(0, 10) : null;
-      return dueDate && dueDate <= todayStr;
-    });
-
-    const hasExplicitDayOrders = todayTop.some((item) => dayOrders[String(item.id)] !== undefined);
-    todayTop.sort((a, b) => {
-      if (hasExplicitDayOrders) {
-        const dA = dayOrders[String(a.id)] ?? 999999;
-        const dB = dayOrders[String(b.id)] ?? 999999;
-        if (dA !== dB) return dA - dB;
-      }
-      return Number(a.child_order ?? 999999) - Number(b.child_order ?? 999999);
-    });
-
-    const formatted = todayTop.map((item, idx) => {
-      const desc = item.description || '';
-      const estMatch = desc.match(/\[(\d+)\]/) || desc.match(/(\d+)\s*min/i);
-      return {
-        id: String(item.id),
-        content: item.content,
-        description: desc,
-        dueDate: item.due && item.due.date ? String(item.due.date).slice(0, 10) : todayStr,
-        recurring: item.due && item.due.is_recurring ? (item.due.string || 'recorrente') : false,
-        priority: `p${5 - Number(item.priority || 1)}`,
-        projectId: String(item.project_id || '6CrgFRpqRPQVfgjG'),
-        checked: false,
-        dayOrder: idx + 1,
-        estimatedMinutes: estMatch ? parseInt(estMatch[1], 10) : null,
-        subtasks: childrenByParent[String(item.id)] || []
-      };
-    });
-
-    const snapshot = {
-      syncedAt: new Date().toISOString(),
-      date: todayStr,
-      totalToday: formatted.length,
-      tasks: formatted
-    };
-    applySnapshotTasks(snapshot);
-    if (syncBadgeText) syncBadgeText.textContent = 'Hoje Sincronizado (Live)';
-    return snapshot;
-  }
-
-  // ==========================================================================
-  // Renderização da Tarefa Única no Centro & Markdown Leve
-  // ==========================================================================
-  function formatMarkdownLinks(text) {
-    if (!text) return '';
-    let safe = String(text)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    // Markdown links [label](url)
-    safe = safe.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1 ↗</a>');
-    // Raw URLs
-    safe = safe.replace(/(^|[\s(])(https?:\/\/[^\s)<]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2 ↗</a>');
-    // Bold **text**
-    safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    return safe.replace(/\n/g, '<br />');
-  }
-
-  function renderCurrentTask(animateEnter) {
-    const card = document.getElementById('single-task-card');
-    const orderBadge = document.getElementById('task-order-badge');
-    const recurringBadge = document.getElementById('task-recurring-badge');
-    const estimateBadge = document.getElementById('task-estimate-badge');
-    const avgBadge = document.getElementById('task-avg-badge');
-    const titleEl = document.getElementById('task-title');
-    const descBox = document.getElementById('task-description-box');
-    const subtasksBox = document.getElementById('subtasks-box');
-    const subtasksList = document.getElementById('subtasks-list');
-    const subtasksCounter = document.getElementById('subtasks-counter');
-    const prevBtn = document.getElementById('btn-prev-task');
-    const skipBtn = document.getElementById('btn-skip-task');
-
-    stopTaskTimer(true);
-
-    const total = state.tasks.length;
-    const completedCount = state.tasks.filter((t) => state.completedIds.has(String(t.id))).length;
-
-    if (total === 0 || completedCount >= total) {
-      if (orderBadge) orderBadge.textContent = ` Dia Concluído (${completedCount}/${total})`;
-      if (recurringBadge) recurringBadge.style.display = 'none';
-      if (estimateBadge) estimateBadge.style.display = 'none';
-      if (avgBadge) avgBadge.style.display = 'none';
-      if (titleEl) {
-        titleEl.innerHTML = ' Todas as tarefas do Hoje foram concluídas, Walace!';
-      }
-      if (descBox) {
-        descBox.style.display = 'block';
-        descBox.innerHTML = 'Você zerou a sua fila do Hoje com foco absoluto. A <strong>Miss Minutos</strong> já salvou todas as suas métricas para o feedback das 5h30 da manhã! ⏰';
-      }
-      if (subtasksBox) subtasksBox.style.display = 'none';
-      return;
-    }
-
-    // Garante que currentIndex aponte para uma tarefa válida
-    if (state.currentIndex < 0 || state.currentIndex >= total) {
-      state.currentIndex = 0;
-    }
-
-    const task = state.tasks[state.currentIndex];
-    const isDone = state.completedIds.has(String(task.id));
-
-    if (orderBadge) {
-      orderBadge.textContent = `Tarefa #${task.dayOrder || state.currentIndex + 1} de ${total}${isDone ? ' (Concluída )' : ''}`;
-    }
-
-    if (recurringBadge) {
-      if (task.recurring) {
-        recurringBadge.style.display = 'inline-flex';
-        recurringBadge.textContent = ` ${task.recurring}`;
-      } else {
-        recurringBadge.style.display = 'none';
-      }
-    }
-
-    if (estimateBadge) {
-      if (task.estimatedMinutes) {
-        estimateBadge.style.display = 'inline-flex';
-        estimateBadge.textContent = `⏱ Meta: ${task.estimatedMinutes} min`;
-      } else {
-        estimateBadge.style.display = 'none';
-      }
-    }
-
-    if (avgBadge) {
-      const avgEntry =
-        (state.timesData.taskAverages && state.timesData.taskAverages[task.id]) ||
-        (state.timesData.taskAverages && state.timesData.taskAverages[task.content]);
-      if (avgEntry && avgEntry.averageMinutes > 0) {
-        avgBadge.style.display = 'inline-flex';
-        avgBadge.textContent = ` Sua Média: ${avgEntry.averageMinutes} min`;
-      } else {
-        avgBadge.style.display = 'none';
-      }
-    }
-
-    if (titleEl) {
-      titleEl.innerHTML = formatMarkdownLinks(task.content);
-    }
-
-    const cleanDesc = String(task.description || '').replace(/^\[\d+\]\s*/, '').trim();
-    if (descBox) {
-      if (cleanDesc) {
-        descBox.style.display = 'block';
-        descBox.innerHTML = formatMarkdownLinks(cleanDesc);
-      } else {
-        descBox.style.display = 'none';
-        descBox.innerHTML = '';
-      }
-    }
-
-    if (subtasksBox && subtasksList && subtasksCounter) {
-      const subs = Array.isArray(task.subtasks) ? task.subtasks : [];
-      if (subs.length > 0) {
-        subtasksBox.style.display = 'block';
-        const doneSubCount = subs.filter((st) => state.subtasksDone[st.id] || st.checked).length;
-        subtasksCounter.textContent = `${doneSubCount}/${subs.length}`;
-        subtasksList.innerHTML = '';
-
-        subs.forEach((st) => {
-          const checked = Boolean(state.subtasksDone[st.id] || st.checked);
-          const itemDiv = document.createElement('label');
-          itemDiv.className = `subtask-item${checked ? ' done' : ''}`;
-          itemDiv.style.cursor = 'pointer';
-          itemDiv.innerHTML = `
-            <input type="checkbox" ${checked ? 'checked' : ''} style="margin-top: 3px; accent-color: #f97316; cursor: pointer;" />
-            <span>${formatMarkdownLinks(st.content)}</span>
-          `;
-          const checkbox = itemDiv.querySelector('input');
-          checkbox.addEventListener('change', () => {
-            state.subtasksDone[st.id] = checkbox.checked;
-            saveCompletedToStorage();
-            itemDiv.classList.toggle('done', checkbox.checked);
-            const newCount = subs.filter((s) => state.subtasksDone[s.id] || s.checked).length;
-            subtasksCounter.textContent = `${newCount}/${subs.length}`;
-          });
-          subtasksList.appendChild(itemDiv);
-        });
-      } else {
-        subtasksBox.style.display = 'none';
-      }
-    }
-
-    if (prevBtn) prevBtn.disabled = state.currentIndex <= 0;
-    if (skipBtn) skipBtn.disabled = total <= 1;
-
-    updateTimerUI();
-    if (typeof updateV2GamificationAndPlanning === "function") updateV2GamificationAndPlanning();
-
-    if (animateEnter && card) {
-      card.classList.remove('task-completing-float-up');
-      card.classList.remove('task-entering-zen');
-      void card.offsetWidth;
-      card.classList.add('task-entering-zen');
-    }
-  }
-
-  // ==========================================================================
-  // Cronômetro da Tarefa + Modo "Presta Atenção" (a cada 5 minutos)
-  // ==========================================================================
-  function updateTimerUI() {
-    const digitsEl = document.getElementById('timer-digits');
-    const statusPill = document.getElementById('timer-status-pill');
-    const btnToggle = document.getElementById('btn-toggle-timer');
-    const btnIcon = document.getElementById('btn-timer-icon');
-    const btnText = document.getElementById('btn-timer-text');
-    const btnSub = document.getElementById('btn-timer-sub');
-    const completeText = document.getElementById('btn-complete-text');
-    const completeSub = document.getElementById('btn-complete-sub');
-    const card = document.getElementById('single-task-card');
-    const track = document.getElementById('timer-progress-track');
-    const fill = document.getElementById('timer-progress-fill');
-
-    if (digitsEl) {
-      digitsEl.textContent = formatMMSS(state.timerSeconds);
-      digitsEl.classList.toggle('running', state.timerRunning);
-    }
-
-    if (statusPill) {
-      if (state.timerRunning) {
-        statusPill.textContent = '⏱ Focando agora';
-        statusPill.classList.add('running');
-      } else if (state.timerSeconds > 0) {
-        statusPill.textContent = '⏸ Pausado';
-        statusPill.classList.remove('running');
-      } else {
-        statusPill.textContent = 'Pronto p/ focar';
-        statusPill.classList.remove('running');
-      }
-    }
-
-    if (card) {
-      card.classList.toggle('timer-running', state.timerRunning);
-    }
-
-    if (btnToggle && btnIcon && btnText && btnSub) {
-      btnToggle.classList.toggle('is-running', state.timerRunning);
-      if (state.timerRunning) {
-        btnIcon.innerHTML = '<svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></svg>'; // = '<svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>';
-        btnText.textContent = 'Pausar Tempo';
-        btnSub.textContent = 'Cronômetro ativo · Presta Atenção monitorando';
-      } else if (state.timerSeconds > 0) {
-        btnIcon.innerHTML = '<svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>';
-        btnText.textContent = 'Retomar Tempo';
-        btnSub.textContent = `Já focado: ${formatMMSS(state.timerSeconds)}`;
-      } else {
-        btnIcon.innerHTML = '<svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>';
-        btnText.textContent = 'Play no Tempo';
-        btnSub.textContent = 'Inicia cronômetro + modo Presta Atenção (5 min)';
-      }
-    }
-
-    if (completeText && completeSub) {
-      if (state.timerSeconds > 0 || state.timerRunning) {
-        completeText.textContent = `Concluir (${formatMMSS(state.timerSeconds)})`;
-        completeSub.textContent = 'Salva o tempo focado p/ Miss Minutos e avança';
-      } else {
-        completeText.textContent = 'Concluir Direto';
-        completeSub.textContent = 'Concluir sem iniciar tempo (vapt-vupt)';
-      }
-    }
-
-    const currentTask = state.tasks[state.currentIndex];
-    if (track && fill && currentTask && currentTask.estimatedMinutes) {
-      track.style.display = 'block';
-      const targetSec = currentTask.estimatedMinutes * 60;
-      const pct = Math.min(100, (state.timerSeconds / targetSec) * 100);
-      fill.style.width = `${pct.toFixed(1)}%`;
-    } else if (track) {
-      track.style.display = 'none';
-    }
-
-    updateAttentionCountdownBadge();
-  }
-
-  function updateAttentionCountdownBadge() {
-    const badge = document.getElementById('attention-countdown-badge');
-    const iconEl = document.getElementById('attention-mode-icon');
-    const labelEl = document.getElementById('attention-mode-label');
-
-    const modeMap = {
-      both: { icon: '', label: 'Luz + Som' },
-      light: { icon: '', label: 'Só Luz (Vídeo)' },
-      sound: { icon: '', label: 'Só Piano' },
-      off: { icon: '', label: 'Desligado' }
-    };
-    const m = modeMap[state.attentionMode] || modeMap.both;
-    if (iconEl) iconEl.innerHTML = '<svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><circle cx="12" cy="12" r="4"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6l2.1-2.1"/></svg>';
-    if (labelEl) labelEl.textContent = m.label;
-
-    if (!badge) return;
-    if (state.attentionMode === 'off') {
-      badge.textContent = 'Off';
-      return;
-    }
-    if (!state.timerRunning) {
-      badge.textContent = 'Aguardando Play';
-      return;
-    }
-    const remaining = Math.max(0, state.attentionIntervalSec - state.attentionElapsedSec);
-    badge.textContent = formatMMSS(remaining);
-  }
-
-  function triggerAttentionReminder(isManualTest) {
-    if (!isManualTest && (state.attentionMode === 'off' || !state.timerRunning)) return;
-
-    const effectiveMode = state.attentionMode === 'off' && isManualTest ? 'both' : state.attentionMode;
-    const overlay = document.getElementById('attention-light-overlay');
-    const toast = document.getElementById('attention-toast');
-    const toastText = document.getElementById('attention-toast-text');
-    const currentTask = state.tasks[state.currentIndex];
-
-    // 1. Modo Luminoso (Pulso azul suave em fade-in/fade-out — ideal para gravação de vídeo)
-    if (effectiveMode === 'light' || effectiveMode === 'both') {
-      if (overlay) {
-        overlay.classList.remove('pulsing');
-        void overlay.offsetWidth;
-        overlay.classList.add('pulsing');
-      }
-    }
-
-    // 2. Modo Sonoro (Acorde de piano Rhodes/Felt suave)
-    if (effectiveMode === 'sound' || effectiveMode === 'both') {
-      playGentlePianoAttentionChord();
-    }
-
-    // 3. Toast suave + frase na Miss Minutos
-    if (toast && toastText) {
-      const minsFocused = Math.max(1, Math.round(state.timerSeconds / 60));
-      toastText.textContent = isManualTest
-        ? ' Teste do Modo Presta Atenção: pulso luminoso azul suave + piano zen!'
-        : ` Oi, querido! ${minsFocused} min focados em "${currentTask ? currentTask.content.slice(0, 38) : 'sua tarefa'}" — continua comigo! ⏰`;
-      toast.classList.add('visible');
-      setTimeout(() => {
-        toast.classList.remove('visible');
-      }, 4600);
-    }
-  }
-
-  function toggleTaskTimer() {
-    ensureAudioContext();
-    if (state.timerRunning) {
-      state.timerRunning = false;
-      if (state.timerIntervalId) {
-        clearInterval(state.timerIntervalId);
-        state.timerIntervalId = null;
-      }
-      updateTimerUI();
-      return;
-    }
-
-    if (!state.timerStartedAt) {
-      state.timerStartedAt = new Date().toISOString();
-    }
-    state.timerRunning = true;
-    state.timerIntervalId = setInterval(() => {
-      state.timerSeconds += 1;
-      if (state.attentionMode !== 'off') {
-        state.attentionElapsedSec += 1;
-        if (state.attentionElapsedSec >= state.attentionIntervalSec) {
-          state.attentionElapsedSec = 0;
-          triggerAttentionReminder(false);
-        }
-      }
-      updateTimerUI();
-    }, 1000);
-
-    updateTimerUI();
-  }
-
-  function stopTaskTimer(resetSeconds) {
-    state.timerRunning = false;
-    if (state.timerIntervalId) {
-      clearInterval(state.timerIntervalId);
-      state.timerIntervalId = null;
-    }
-    state.attentionElapsedSec = 0;
-    if (resetSeconds) {
-      state.timerSeconds = 0;
-      state.timerStartedAt = null;
-    }
-    updateTimerUI();
-  }
-
-  // ==========================================================================
-  // Conclusão da Tarefa (Com ou Sem Tempo) + Barra Gamificada da Miss Minutos
-  // ==========================================================================
-  async function completeCurrentTask() {
-    if (!state.tasks.length) return;
-    const task = state.tasks[state.currentIndex];
-    if (!task) return;
-
-    ensureAudioContext();
-
-    const durationSeconds = state.timerSeconds;
-    const completedWithoutTimer = durationSeconds === 0;
-    const startedAt = state.timerStartedAt || new Date().toISOString();
-    const endedAt = new Date().toISOString();
-
-    stopTaskTimer(false);
-
-    // 1. Dispara som zen suave + partículas subindo + animação do card se desfazendo para cima
-    playZenCompletionSound();
-    triggerCheckLightPulse();
-    const card = document.getElementById('single-task-card');
-    if (card) {
-      triggerTaskDissolveParticles(card);
-      card.classList.remove('task-entering-zen');
-      card.classList.add('task-completing-float-up');
-    }
-
-    // 2. Marca tarefa como concluída e registra sessão de tempo
-    state.completedIds.add(String(task.id));
-    saveCompletedToStorage();
-
-    const sessionEntry = {
-      sessionId: `lf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      taskId: String(task.id),
-      content: task.content,
-      projectId: task.projectId || '6CrgFRpqRPQVfgjG',
-      date: getTodayStr(),
-      startedAt,
-      endedAt,
-      durationSeconds,
-      durationMinutes: Number((durationSeconds / 60).toFixed(2)),
-      estimatedMinutes: task.estimatedMinutes || null,
-      completed: true,
-      completedWithoutTimer
-    };
-
-    state.timesData.sessions.push(sessionEntry);
-    recomputeLocalTimesAggregates();
-    updateHeaderStats();
-
-    // 3. Atualiza a Barra Gamificada da Miss Minutos com comemoração!
-    updateMissMinutosSidebar(true);
-
-    // 4. Sincroniza conclusão e tempo com o servidor local (que grava no store da Miss Minutos) e/ou Todoist API
-    syncTaskCompletionRemote(task, sessionEntry);
-
-    // 5. Após a tarefa dissolver suavemente para cima, traz a próxima da fila
-    setTimeout(() => {
-      const nextIdx = findNextPendingTaskIndex(state.currentIndex);
-      if (nextIdx >= 0) {
-        state.currentIndex = nextIdx;
-      }
-      stopTaskTimer(true);
-      renderCurrentTask(true);
-    }, 820);
-  }
-
-  function findNextPendingTaskIndex(fromIndex) {
-    const total = state.tasks.length;
-    for (let i = fromIndex + 1; i < total; i++) {
-      if (!state.completedIds.has(String(state.tasks[i].id))) return i;
-    }
-    for (let i = 0; i < total; i++) {
-      if (!state.completedIds.has(String(state.tasks[i].id))) return i;
-    }
-    return -1;
-  }
-
-  async function syncTaskCompletionRemote(task, sessionEntry) {
-    // Envia para /api/tasks/complete se backend Node estiver rodando
-    try {
-      const resp = await fetch('/api/tasks/complete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(state.todoistToken ? { 'X-Todoist-Token': state.todoistToken } : {})
-        },
-        body: JSON.stringify({
-          ...sessionEntry,
-          token: state.todoistToken || undefined
-        })
-      });
-      if (resp.ok) return;
-    } catch (e) {
-      // Se estiver no GitHub Pages estático e houver token do Todoist no navegador, fecha direto na Sync API v9
-      if (state.todoistToken) {
-        try {
-          const uuid = (crypto && crypto.randomUUID) ? crypto.randomUUID() : `uuid_${Date.now()}`;
-          const body = new URLSearchParams({
-            commands: JSON.stringify([{ type: 'item_close', uuid, args: { id: String(task.id) } }])
-          });
-          await fetch('https://api.todoist.com/sync/v9/sync', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${state.todoistToken}`,
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: body.toString()
-          });
-        } catch (err) {}
-      }
-    }
-  }
-
-  // ==========================================================================
-  // Barra Lateral Gamificada da Miss Minutos (Vermelho -> Amarelo -> Azul)
-  // ==========================================================================
-  function updateMissMinutosSidebar(celebrateNow) {
-    const total = state.tasks.length || 1;
-    const completedCount = state.tasks.filter((t) => state.completedIds.has(String(t.id))).length;
-    const pct = Math.min(100, Math.round((completedCount / total) * 100));
-
-    const summaryEl = document.getElementById('mm-progress-summary');
-    const marker = document.getElementById('mm-climber-marker');
-    const moodPill = document.getElementById('mm-mood-pill');
-    const speechBubble = document.getElementById('mm-speech-bubble');
-
-    const mouthSad = document.getElementById('mm-mouth-sad');
-    const mouthMedium = document.getElementById('mm-mouth-medium');
-    const mouthHappy = document.getElementById('mm-mouth-happy');
-    const browLeft = document.getElementById('mm-brow-left');
-    const browRight = document.getElementById('mm-brow-right');
-    const sweatDrop = document.getElementById('mm-sweat-drop');
-    const sparkles = document.getElementById('mm-sparkles');
-    const armLeft = document.getElementById('mm-arm-left');
-    const armRight = document.getElementById('mm-arm-right');
-    const handLeft = document.getElementById('mm-hand-left');
-    const handRight = document.getElementById('mm-hand-right');
-
-    if (summaryEl) {
-      summaryEl.textContent = `${completedCount} de ${state.tasks.length} concluídas (${pct}%)`;
-    }
-
-    if (marker) {
-      // Sobe na barra vertical de 0% (base vermelha) até 100% (topo azul suave)
-      marker.style.bottom = `${pct}%`;
-      if (celebrateNow) {
-        marker.classList.remove('celebrate-jump');
-        void marker.offsetWidth;
-        marker.classList.add('celebrate-jump');
-      }
-    }
-
-    // Define faixa de humor da Miss Minutos:
-    // 0% a 33% = Faixa Vermelha (preocupada/triste)
-    // 34% a 74% = Faixa Amarela (média/animando)
-    // 75% a 100% = Faixa Azul (super feliz/radiante)
-    let zone = 'red';
-    if (pct >= 75) {
-      zone = 'blue';
-    } else if (pct >= 34) {
-      zone = 'yellow';
-    }
-
-    // Se acabou de concluir uma tarefa, ela comemora feliz!
-    const showHappyFace = zone === 'blue' || celebrateNow;
-
-    if (mouthSad && mouthMedium && mouthHappy) {
-      mouthSad.style.display = (!showHappyFace && zone === 'red') ? 'block' : 'none';
-      mouthMedium.style.display = (!showHappyFace && zone === 'yellow') ? 'block' : 'none';
-      mouthHappy.style.display = showHappyFace ? 'block' : 'none';
-    }
-
-    if (sweatDrop) {
-      sweatDrop.style.opacity = (zone === 'red' && !celebrateNow) ? '0.85' : '0';
-    }
-
-    if (sparkles) {
-      sparkles.style.opacity = (zone === 'blue' || celebrateNow) ? '1' : '0';
-    }
-
-    if (browLeft && browRight) {
-      if (zone === 'red' && !celebrateNow) {
-        // Sobrancelhas caídas preocupadas
-        browLeft.setAttribute('d', 'M 72 82 Q 86 74 98 72');
-        browRight.setAttribute('d', 'M 122 72 Q 134 74 148 82');
-      } else {
-        // Sobrancelhas arqueadas alegres
-        browLeft.setAttribute('d', 'M 74 75 Q 87 66 98 74');
-        browRight.setAttribute('d', 'M 122 74 Q 133 66 146 75');
-      }
-    }
-
-    if (armLeft && armRight && handLeft && handRight) {
-      if (zone === 'blue' || celebrateNow) {
-        // Bracinhos levantados comemorando!
-        armLeft.setAttribute('d', 'M 38 118 Q 14 96 18 74');
-        handLeft.setAttribute('cy', '70');
-        handLeft.setAttribute('cx', '18');
-        armRight.setAttribute('d', 'M 182 118 Q 206 96 202 74');
-        handRight.setAttribute('cy', '70');
-        handRight.setAttribute('cx', '202');
-      } else if (zone === 'yellow') {
-        armLeft.setAttribute('d', 'M 38 118 Q 18 112 18 98');
-        handLeft.setAttribute('cy', '96');
-        handLeft.setAttribute('cx', '18');
-        armRight.setAttribute('d', 'M 182 118 Q 202 112 202 98');
-        handRight.setAttribute('cy', '96');
-        handRight.setAttribute('cx', '202');
-      } else {
-        armLeft.setAttribute('d', 'M 38 118 Q 18 130 22 148');
-        handLeft.setAttribute('cy', '150');
-        handLeft.setAttribute('cx', '22');
-        armRight.setAttribute('d', 'M 182 118 Q 202 130 198 148');
-        handRight.setAttribute('cy', '150');
-        handRight.setAttribute('cx', '198');
-      }
-    }
-
-    if (moodPill) {
-      moodPill.className = 'mm-mood-pill';
-      if (zone === 'blue') {
-        moodPill.classList.add('mood-blue');
-        moodPill.textContent = ' Faixa Azul Zen · Miss Minutos radiante!';
-      } else if (zone === 'yellow') {
-        moodPill.classList.add('mood-yellow');
-        moodPill.textContent = ' Faixa Amarela · Miss Minutos animada!';
-      } else {
-        moodPill.classList.add('mood-red');
-        moodPill.textContent = ' Faixa Vermelha · Miss Minutos quer subir!';
-      }
-    }
-
-    if (speechBubble) {
-      let pool = MISS_MINUTOS_QUOTES.startRed;
-      if (completedCount >= state.tasks.length && state.tasks.length > 0) {
-        pool = MISS_MINUTOS_QUOTES.allDone;
-      } else if (celebrateNow || completedCount > 0) {
-        if (zone === 'blue') pool = MISS_MINUTOS_QUOTES.celebrateBlue;
-        else if (zone === 'yellow') pool = MISS_MINUTOS_QUOTES.celebrateYellow;
-        else pool = MISS_MINUTOS_QUOTES.celebrateRed;
-      }
-      const chosen = pool[Math.floor(Math.random() * pool.length)];
-      speechBubble.textContent = chosen;
-
-      if (celebrateNow) {
-        speechBubble.classList.add('celebrating');
-        setTimeout(() => speechBubble.classList.remove('celebrating'), 1800);
-      }
-    }
-  }
-
-  // ==========================================================================
-  // Player Lo-Fi no Cantinho (Synth Zen Rhodes + Streams Ao Vivo)
-  // ==========================================================================
-  function updateLofiUI() {
-    const btnToggle = document.getElementById('btn-lofi-toggle');
-    const playIcon = document.getElementById('lofi-play-icon');
-    const nameEl = document.getElementById('lofi-station-name');
-    const subEl = document.getElementById('lofi-station-sub');
-    const eqEl = document.getElementById('lofi-eq');
-
-    const station = LOFI_STATIONS[state.lofi.stationIndex] || LOFI_STATIONS[0];
-    if (nameEl) nameEl.textContent = station.name;
-    if (subEl) {
-      subEl.textContent = state.lofi.playing ? ` Tocando · ${station.sub}` : station.sub;
-    }
-    if (btnToggle) btnToggle.classList.toggle('playing', state.lofi.playing);
-    if (playIcon) playIcon.innerHTML = state.lofi.playing ? '<svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></svg>' : '<svg class="ui-svg" viewBox="0 0 24 24" width="15" height="15"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>';
-    if (eqEl) eqEl.classList.toggle('playing', state.lofi.playing);
-  }
-
-  function stopLofiEngine() {
-    if (state.lofi.synthTimer) {
-      clearInterval(state.lofi.synthTimer);
-      state.lofi.synthTimer = null;
-    }
-    if (state.lofi.noiseNode) {
-      try {
-        state.lofi.noiseNode.stop();
-        state.lofi.noiseNode.disconnect();
-      } catch (e) {}
-      state.lofi.noiseNode = null;
-    }
-    if (state.lofi.audioEl) {
-      try {
-        state.lofi.audioEl.pause();
-        state.lofi.audioEl.src = '';
-      } catch (e) {}
-    }
-  }
-
-  function startLofiSynth() {
-    const ctx = ensureAudioContext();
-    if (!ctx) return;
-
-    if (!state.lofi.masterGain) {
-      state.lofi.masterGain = ctx.createGain();
-      state.lofi.masterGain.connect(ctx.destination);
-    }
-    state.lofi.masterGain.gain.setValueAtTime(state.lofi.volume * 0.25, ctx.currentTime);
-
-    // Textura suave de vinil / chuva zen bem baixinha
-    const bufferSize = ctx.sampleRate * 2;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * 0.035;
-    }
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    noise.loop = true;
-
-    const noiseFilter = ctx.createBiquadFilter();
-    noiseFilter.type = 'bandpass';
-    noiseFilter.frequency.setValueAtTime(950, ctx.currentTime);
-    noiseFilter.Q.setValueAtTime(0.7, ctx.currentTime);
-
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.16, ctx.currentTime);
-
-    noise.connect(noiseFilter);
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(state.lofi.masterGain);
-    noise.start();
-    state.lofi.noiseNode = noise;
-
-    // Progressão de acordes Lo-Fi Jazz (Fmaj7 -> Em7 -> Dm9 -> Cmaj7)
-    const chords = [
-      [174.61, 261.63, 349.23, 440.0, 523.25], // Fmaj7
-      [164.81, 246.94, 329.63, 392.0, 493.88], // Em7
-      [146.83, 220.0, 293.66, 349.23, 440.0, 523.25], // Dm9
-      [130.81, 196.0, 261.63, 329.63, 392.0, 493.88] // Cmaj7
-    ];
-
-    const playNextChord = () => {
-      if (!state.lofi.playing) return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
       const now = ctx.currentTime;
-      const chord = chords[state.lofi.chordStep % chords.length];
-      state.lofi.chordStep += 1;
-
-      chord.forEach((freq, i) => {
+      const notes = kind === 'complete' ? [523.25, 659.25, 783.99, 1046.5] : [587.33, 880];
+      notes.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
-        const filter = ctx.createBiquadFilter();
         const gain = ctx.createGain();
-
-        osc.type = i === 0 ? 'sine' : 'triangle';
-        // Leve detune estilo fita cassete Lo-Fi
-        osc.frequency.setValueAtTime(freq + (Math.random() - 0.5) * 0.8, now + i * 0.04);
-
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(720, now);
-
-        const t0 = now + i * 0.04;
-        gain.gain.setValueAtTime(0.0001, t0);
-        gain.gain.linearRampToValueAtTime(i === 0 ? 0.22 : 0.11, t0 + 0.35);
-        gain.gain.exponentialRampToValueAtTime(0.001, t0 + 3.4);
-
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(state.lofi.masterGain);
-
-        osc.start(t0);
-        osc.stop(t0 + 3.5);
-      });
-    };
-
-    playNextChord();
-    state.lofi.synthTimer = setInterval(playNextChord, 3400);
-  }
-
-  function startCurrentLofiStation() {
-    stopLofiEngine();
-    const station = LOFI_STATIONS[state.lofi.stationIndex] || LOFI_STATIONS[0];
-
-    if (station.type === 'synth') {
-      startLofiSynth();
-      updateLofiUI();
-      return;
-    }
-
-    if (!state.lofi.audioEl) {
-      state.lofi.audioEl = new Audio();
-      state.lofi.audioEl.crossOrigin = 'anonymous';
-    }
-    state.lofi.audioEl.src = station.url;
-    state.lofi.audioEl.volume = state.lofi.volume;
-    state.lofi.audioEl.play().catch(() => {
-      // Fallback imediato para o Synth Lo-Fi caso o stream externo falhe
-      state.lofi.stationIndex = 0;
-      startLofiSynth();
-      updateLofiUI();
-    });
-    updateLofiUI();
-  }
-
-  function toggleLofiPlayback() {
-    ensureAudioContext();
-    state.lofi.playing = !state.lofi.playing;
-    if (state.lofi.playing) {
-      startCurrentLofiStation();
-    } else {
-      stopLofiEngine();
-      updateLofiUI();
-    }
-  }
-
-  // ==========================================================================
-  // Modais: Fila do Hoje, Tempos da Miss Minutos e Presta Atenção
-  // ==========================================================================
-  function updateHeaderStats() {
-    const queueCountEl = document.getElementById('header-queue-count');
-    const focusedMinEl = document.getElementById('header-focused-minutes');
-
-    const total = state.tasks.length;
-    const completed = state.tasks.filter((t) => state.completedIds.has(String(t.id))).length;
-    if (queueCountEl) {
-      queueCountEl.textContent = `${completed}/${total}`;
-    }
-
-    const todayStr = getTodayStr();
-    const todaySessions = (state.timesData.sessions || []).filter((s) => s.date === todayStr);
-    const totalSec = todaySessions.reduce((acc, s) => acc + Math.max(0, Number(s.durationSeconds || 0)), 0);
-    const mins = Math.round(totalSec / 60);
-    if (focusedMinEl) {
-      focusedMinEl.textContent = `${mins}m`;
-    }
-  }
-
-  function renderQueueModalList() {
-    const container = document.getElementById('queue-list-container');
-    if (!container) return;
-    container.innerHTML = '';
-
-    state.tasks.forEach((t, idx) => {
-      const done = state.completedIds.has(String(t.id));
-      const isCurrent = idx === state.currentIndex;
-      const div = document.createElement('div');
-      div.className = `queue-item${isCurrent ? ' current' : ''}${done ? ' completed' : ''}`;
-      div.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
-          <span style="font-weight:800; color:var(--mm-orange-dark); min-width:28px;">#${t.dayOrder || idx + 1}</span>
-          <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;">${t.content}</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-          ${t.estimatedMinutes ? `<span style="font-size:0.74rem; color:#047857; font-weight:700;">${t.estimatedMinutes}m</span>` : ''}
-          <span style="font-size:0.78rem; font-weight:700; color:${done ? '#10b981' : isCurrent ? '#f97316' : '#64748b'};">
-            ${done ? ' Concluída' : isCurrent ? ' Em Foco' : 'Focar →'}
-          </span>
-        </div>
-      `;
-      div.addEventListener('click', () => {
-        state.currentIndex = idx;
-        renderCurrentTask(true);
-        closeModal('modal-queue');
-      });
-      container.appendChild(div);
-    });
-  }
-
-  function renderTimesModal() {
-    const todayStr = getTodayStr();
-    const sessions = Array.isArray(state.timesData.sessions) ? state.timesData.sessions : [];
-    const todaySessions = sessions.filter((s) => s.date === todayStr);
-
-    const totalSecToday = todaySessions.reduce((acc, s) => acc + Number(s.durationSeconds || 0), 0);
-    const timedCount = todaySessions.filter((s) => !s.completedWithoutTimer && Number(s.durationSeconds || 0) > 0).length;
-    const quickCount = todaySessions.filter((s) => s.completedWithoutTimer || Number(s.durationSeconds || 0) === 0).length;
-
-    const statMinEl = document.getElementById('stat-today-minutes');
-    const statTimedEl = document.getElementById('stat-timed-count');
-    const statQuickEl = document.getElementById('stat-quick-count');
-    const logList = document.getElementById('times-log-list');
-
-    if (statMinEl) statMinEl.textContent = `${(totalSecToday / 60).toFixed(1)} min`;
-    if (statTimedEl) statTimedEl.textContent = String(timedCount);
-    if (statQuickEl) statQuickEl.textContent = String(quickCount);
-
-    if (!logList) return;
-    logList.innerHTML = '';
-
-    if (sessions.length === 0) {
-      logList.innerHTML = `
-        <div style="padding:18px; text-align:center; color:var(--text-muted); font-size:0.86rem;">
-          Nenhuma tarefa concluída ainda nesta sessão. Assim que você usar o <strong>Play</strong> ou <strong>Concluir</strong>, os tempos aparecem aqui e no arquivo da Miss Minutos! ⏰
-        </div>
-      `;
-      return;
-    }
-
-    sessions
-      .slice()
-      .reverse()
-      .forEach((s) => {
-        const row = document.createElement('div');
-        row.className = 'queue-item';
-        row.style.cursor = 'default';
-        const durLabel = s.completedWithoutTimer || !s.durationSeconds
-          ? 'Concluída direto (sem timer)'
-          : `⏱ ${formatMMSS(s.durationSeconds)} (${s.durationMinutes} min)`;
-        row.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:2px;">
-            <strong style="font-size:0.86rem; color:#0f172a;">${s.content}</strong>
-            <span style="font-size:0.74rem; color:var(--text-muted);">Data: ${s.date} · ID: ${s.taskId}</span>
-          </div>
-          <span style="font-size:0.8rem; font-weight:700; color:${s.completedWithoutTimer ? '#f97316' : '#0284c7'};">
-            ${durLabel}
-          </span>
-        `;
-        logList.appendChild(row);
-      });
-  }
-
-  function openModal(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (id === 'modal-queue') renderQueueModalListV2();
-    if (id === 'modal-times') { renderTimesModal(); updateV2GamificationAndPlanning(); }
-    el.classList.add('open');
-  }
-
-  function closeModal(id) {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('open');
-  }
-
-  // ==========================================================================
-  // Inicialização & Eventos de Interface
-  // ==========================================================================
-  function bindEvents() {
-    // Splash screen -> Iniciar Sessão Zen
-    const btnEnterZen = document.getElementById('btn-enter-zen');
-    const splash = document.getElementById('splash-screen');
-    if (btnEnterZen && splash) {
-      btnEnterZen.addEventListener('click', () => {
-        ensureAudioContext();
-        splash.classList.add('hidden');
-      });
-    }
-
-    // Play / Pause no Cronômetro da tarefa
-    const btnToggleTimer = document.getElementById('btn-toggle-timer');
-    if (btnToggleTimer) {
-      btnToggleTimer.addEventListener('click', toggleTaskTimer);
-    }
-
-    // Concluir Tarefa (com ou sem tempo)
-    const btnCompleteTask = document.getElementById('btn-complete-task');
-    if (btnCompleteTask) {
-      btnCompleteTask.addEventListener('click', completeCurrentTask);
-    }
-
-    // Navegação Anterior / Pular
-    const btnPrev = document.getElementById('btn-prev-task');
-    const btnSkip = document.getElementById('btn-skip-task');
-    if (btnPrev) {
-      btnPrev.addEventListener('click', () => {
-        if (state.currentIndex > 0) {
-          state.currentIndex -= 1;
-          renderCurrentTask(true);
-        }
-      });
-    }
-    if (btnSkip) {
-      btnSkip.addEventListener('click', () => {
-        if (state.tasks.length > 1) {
-          state.currentIndex = (state.currentIndex + 1) % state.tasks.length;
-          renderCurrentTask(true);
-        }
-      });
-    }
-
-    // Clique na Miss Minutos da barra lateral -> frase de incentivo + pulinho
-    const climber = document.getElementById('mm-climber-marker');
-    if (climber) {
-      climber.addEventListener('click', () => {
-        updateMissMinutosSidebar(true);
-      });
-    }
-
-    // Botões de abrir Modais
-    const btnOpenAttention = document.getElementById('btn-open-attention-modal');
-    const btnOpenTimes = document.getElementById('btn-open-times-modal');
-    const btnOpenQueue = document.getElementById('btn-open-queue-modal');
-    if (btnOpenAttention) btnOpenAttention.addEventListener('click', () => openModal('modal-attention'));
-    if (btnOpenTimes) btnOpenTimes.addEventListener('click', () => openModal('modal-times'));
-    if (btnOpenQueue) btnOpenQueue.addEventListener('click', () => openModal('modal-queue'));
-
-    // Fechar Modais
-    document.querySelectorAll('[data-close-modal]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        closeModal(btn.getAttribute('data-close-modal'));
-      });
-    });
-    document.querySelectorAll('.modal-backdrop').forEach((backdrop) => {
-      backdrop.addEventListener('click', (e) => {
-        if (e.target === backdrop) backdrop.classList.remove('open');
-      });
-    });
-
-    // Seleção do Modo "Presta Atenção"
-    const modeCards = document.querySelectorAll('.mode-option-card');
-    modeCards.forEach((card) => {
-      if (card.getAttribute('data-attention-mode') === state.attentionMode) {
-        card.classList.add('selected');
-      } else {
-        card.classList.remove('selected');
-      }
-      card.addEventListener('click', () => {
-        const mode = card.getAttribute('data-attention-mode');
-        state.attentionMode = mode;
-        localStorage.setItem(STORAGE_KEYS.ATTENTION_MODE, mode);
-        modeCards.forEach((c) => c.classList.toggle('selected', c === card));
-        updateAttentionCountdownBadge();
-      });
-    });
-
-    const intervalSelect = document.getElementById('attention-interval-select');
-    if (intervalSelect) {
-      intervalSelect.value = String(state.attentionIntervalSec);
-      intervalSelect.addEventListener('change', () => {
-        state.attentionIntervalSec = Number(intervalSelect.value || 300);
-        state.attentionElapsedSec = 0;
-        localStorage.setItem(STORAGE_KEYS.ATTENTION_INTERVAL, String(state.attentionIntervalSec));
-        updateAttentionCountdownBadge();
-      });
-    }
-
-    const btnTestAttention = document.getElementById('btn-test-attention-now');
-    if (btnTestAttention) {
-      btnTestAttention.addEventListener('click', () => {
-        ensureAudioContext();
-        triggerAttentionReminder(true);
-      });
-    }
-
-    // Sincronização manual Todoist
-    const tokenInput = document.getElementById('todoist-token-input');
-    const btnSyncNow = document.getElementById('btn-sync-todoist-now');
-    const feedbackEl = document.getElementById('sync-feedback-msg');
-    if (tokenInput && state.todoistToken) {
-      tokenInput.value = state.todoistToken;
-    }
-    if (btnSyncNow) {
-      btnSyncNow.addEventListener('click', async () => {
-        const val = tokenInput ? tokenInput.value.trim() : '';
-        if (val) {
-          state.todoistToken = val;
-          localStorage.setItem(STORAGE_KEYS.TODOIST_TOKEN, val);
-        }
-        if (feedbackEl) {
-          feedbackEl.style.display = 'block';
-          feedbackEl.style.color = '#0284c7';
-          feedbackEl.textContent = 'Sincronizando ordem exata do Hoje com o Todoist...';
-        }
-        try {
-          const snap = await syncDirectlyWithTodoistBrowser(state.todoistToken);
-          renderQueueModalList();
-          if (feedbackEl) {
-            feedbackEl.style.color = '#047857';
-            feedbackEl.textContent = ` Sincronizado com sucesso! ${snap.tasks.length} tarefas na ordem exata do Hoje.`;
-          }
-        } catch (err) {
-          if (feedbackEl) {
-            feedbackEl.style.color = '#dc2626';
-            feedbackEl.textContent = `Usando snapshot sincronizado do conector (${err.message}).`;
-          }
-        }
-      });
-    }
-
-    // Exportar JSON de Tempos da Miss Minutos
-    const btnExportTimes = document.getElementById('btn-export-times-json');
-    if (btnExportTimes) {
-      btnExportTimes.addEventListener('click', () => {
-        const blob = new Blob([JSON.stringify(state.timesData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'lightfocus-times.json';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      });
-    }
-
-    // Controles do Player Lo-Fi no Cantinho
-    const btnLofiToggle = document.getElementById('btn-lofi-toggle');
-    const btnLofiPrev = document.getElementById('btn-lofi-prev');
-    const btnLofiNext = document.getElementById('btn-lofi-next');
-    const lofiVol = document.getElementById('lofi-volume');
-
-    if (btnLofiToggle) btnLofiToggle.addEventListener('click', toggleLofiPlayback);
-    if (btnLofiPrev) {
-      btnLofiPrev.addEventListener('click', () => {
-        state.lofi.stationIndex = (state.lofi.stationIndex - 1 + LOFI_STATIONS.length) % LOFI_STATIONS.length;
-        if (state.lofi.playing) startCurrentLofiStation();
-        else updateLofiUI();
-      });
-    }
-    if (btnLofiNext) {
-      btnLofiNext.addEventListener('click', () => {
-        state.lofi.stationIndex = (state.lofi.stationIndex + 1) % LOFI_STATIONS.length;
-        if (state.lofi.playing) startCurrentLofiStation();
-        else updateLofiUI();
-      });
-    }
-    if (lofiVol) {
-      lofiVol.value = String(Math.round(state.lofi.volume * 100));
-      lofiVol.addEventListener('input', () => {
-        const v = Number(lofiVol.value || 45);
-        state.lofi.volume = v / 100;
-        localStorage.setItem(STORAGE_KEYS.LOFI_VOLUME, String(v));
-        if (state.lofi.masterGain && state.audioCtx) {
-          state.lofi.masterGain.gain.setValueAtTime(state.lofi.volume * 0.25, state.audioCtx.currentTime);
-        }
-        if (state.lofi.audioEl) {
-          state.lofi.audioEl.volume = state.lofi.volume;
-        }
-      });
-    }
-
-    // Atalhos de Teclado
-    window.addEventListener('keydown', (e) => {
-      const splashEl = document.getElementById('splash-screen');
-      if (splashEl && !splashEl.classList.contains('hidden')) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          ensureAudioContext();
-          splashEl.classList.add('hidden');
-        }
-        return;
-      }
-
-      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) {
-        return;
-      }
-
-      if (e.code === 'Space') {
-        e.preventDefault();
-        toggleTaskTimer();
-      } else if (e.altKey && (e.key === 'c' || e.key === 'C')) {
-        e.preventDefault();
-        completeCurrentTask();
-      }
-    });
-  }
-
-  
-  // ==========================================================================
-  // LightFocus v2 Extensions: Auth Gate, Pulso Luminoso no Check, Estimativa
-  // de Tempo, Gamificação SVG e Sincronização Bidirecional Todoist
-  // ==========================================================================
-  const AUTH_TOKEN_KEY = 'lightfocus_auth_token';
-  state.authToken = localStorage.getItem(AUTH_TOKEN_KEY) || '';
-  state.descExpanded = false;
-
-  const origFetch = window.fetch.bind(window);
-  window.fetch = function (url, opts) {
-    if (typeof url === 'string' && url.startsWith('/api/')) {
-      opts = Object.assign({}, opts || {});
-      opts.headers = Object.assign({}, opts.headers || {});
-      const tok = state.authToken || localStorage.getItem(AUTH_TOKEN_KEY) || '';
-      if (tok) opts.headers['x-lightfocus-auth'] = tok;
-    }
-    return origFetch(url, opts);
-  };
-
-  function stripAnyEmojis(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]/gu, '')
-      .replace(/\s{2,}/g, ' ')
-      .trim();
-  }
-
-  function triggerCheckLightPulse() {
-    const pulseEl = document.getElementById('lightfocus-check-pulse');
-    if (!pulseEl) return;
-    pulseEl.classList.remove('pulsing-check');
-    void pulseEl.offsetWidth;
-    pulseEl.classList.add('pulsing-check');
-  }
-
-  const V2_BADGES = [
-    { id: 'b1', name: 'Primeiro Pulso', desc: '1ª tarefa concluída hoje', svg: '<svg class="ui-svg" width="15" height="15" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>', test: (done) => done >= 1 },
-    { id: 'b2', name: 'Combo 3x', desc: '3 tarefas concluídas no dia', svg: '<svg class="ui-svg" width="15" height="15" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>', test: (done) => done >= 3 },
-    { id: 'b3', name: 'Imersão 25m', desc: '25+ min focados no cronômetro', svg: '<svg class="ui-svg" width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', test: (done, sec) => sec >= 1500 },
-    { id: 'b4', name: 'Meio Caminho Zen', desc: '50% da fila do Hoje concluída', svg: '<svg class="ui-svg" width="15" height="15" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', test: (done, sec, pct) => pct >= 50 },
-    { id: 'b5', name: 'Mestre do Tempo', desc: '100% da fila do Hoje concluída', svg: '<svg class="ui-svg" width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>', test: (done, sec, pct) => pct >= 100 }
-  ];
-
-  function updateV2GamificationAndPlanning() {
-    const total = state.tasks.length || 1;
-    const doneCount = state.tasks.filter((t) => state.completedIds.has(String(t.id))).length;
-    const pendingTasks = state.tasks.filter((t) => !state.completedIds.has(String(t.id)));
-    const pct = Math.min(100, Math.round((doneCount / total) * 100));
-
-    const todayStr = getTodayStr();
-    const todaySessions = (state.timesData.sessions || []).filter((s) => s.date === todayStr);
-    const focusSec = todaySessions.reduce((acc, s) => acc + Math.max(0, Number(s.durationSeconds || 0)), 0) + state.timerSeconds;
-
-    const xp = doneCount * 50 + Math.floor(focusSec / 60) * 5;
-    const levels = [
-      { min: 0, label: 'Nível 1 · Brisa' },
-      { min: 150, label: 'Nível 2 · Fluido' },
-      { min: 350, label: 'Nível 3 · Solar' },
-      { min: 650, label: 'Nível 4 · Guardião' },
-      { min: 1000, label: 'Nível 5 · Mestre TVA' }
-    ];
-    let curLvl = levels[0];
-    let nxtLvl = levels[1];
-    for (let i = 0; i < levels.length; i++) {
-      if (xp >= levels[i].min) {
-        curLvl = levels[i];
-        nxtLvl = levels[i + 1] || null;
-      }
-    }
-
-    const lvlEl = document.getElementById('gamification-level-label');
-    const fillEl = document.getElementById('xp-mini-fill');
-    const xpEl = document.getElementById('gamification-xp-text');
-    const strkEl = document.getElementById('gamification-streak-text');
-    if (lvlEl) lvlEl.textContent = curLvl.label;
-    if (xpEl) xpEl.textContent = xp + ' XP';
-    if (strkEl) strkEl.textContent = Math.max(1, doneCount) + 'x';
-    if (fillEl) {
-      const prog = nxtLvl ? Math.min(100, Math.round(((xp - curLvl.min) / (nxtLvl.min - curLvl.min)) * 100)) : 100;
-      fillEl.style.width = prog + '%';
-    }
-
-    // Insígnias na barra lateral e no modal de tempos
-    const sideRow = document.getElementById('sidebar-badges-row');
-    const achGrid = document.getElementById('achievements-modal-grid');
-    if (sideRow) {
-      sideRow.innerHTML = V2_BADGES.map((b) => {
-        const u = b.test(doneCount, focusSec, pct);
-        return '<div class="badge-icon-circle ' + (u ? 'unlocked' : '') + '" title="' + b.name + ': ' + b.desc + '">' + b.svg + '</div>';
-      }).join('');
-    }
-    if (achGrid) {
-      achGrid.innerHTML = V2_BADGES.map((b) => {
-        const u = b.test(doneCount, focusSec, pct);
-        return '<div class="ach-card ' + (u ? 'unlocked' : '') + '"><div class="badge-icon-circle ' + (u ? 'unlocked' : '') + '">' + b.svg + '</div><div><div style="font-size:0.82rem;font-weight:700;">' + b.name + '</div><div style="font-size:0.72rem;color:#64748b;">' + b.desc + '</div></div></div>';
-      }).join('');
-    }
-
-    // Resumo de Planejamento do Dia na Gaveta
-    const totalPlannedMin = pendingTasks.reduce((acc, t) => acc + (Number(t.estimatedMinutes) || 15), 0);
-    const eta = new Date(Date.now() + totalPlannedMin * 60000);
-    const etaStr = String(eta.getHours()).padStart(2, '0') + ':' + String(eta.getMinutes()).padStart(2, '0');
-
-    const stTasks = document.getElementById('plan-stat-tasks');
-    const stMin = document.getElementById('plan-stat-minutes');
-    const stEta = document.getElementById('plan-stat-eta');
-    if (stTasks) stTasks.textContent = pendingTasks.length + ' pendentes · ' + doneCount + ' concluídas';
-    if (stMin) stMin.textContent = totalPlannedMin + 'm planejados';
-    if (stEta) stEta.textContent = pendingTasks.length > 0 ? etaStr : 'Concluído';
-
-    // Atualiza wrapper de descrição responsiva e botão expandir
-    const task = state.tasks[state.currentIndex];
-    const descWrapper = document.getElementById('task-description-wrapper');
-    const descBox = document.getElementById('task-description-box');
-    const expBtn = document.getElementById('btn-toggle-desc-expand');
-    const estBadge = document.getElementById('task-estimate-badge');
-    const estBadgeText = document.getElementById('task-estimate-badge-text');
-    const checkMain = document.getElementById('btn-check-circle-main');
-
-    if (task) {
-      const cleanD = stripAnyEmojis(String(task.description || '').replace(/^\[\d+\]\s*/, '').trim());
-      if (descWrapper && descBox) {
-        if (cleanD) {
-          descWrapper.style.display = 'flex';
-          descBox.style.display = 'block';
-          descBox.classList.toggle('expanded', Boolean(state.descExpanded));
-          if (expBtn) {
-            const isLong = cleanD.length > 160 || cleanD.split('\n').length > 3;
-            expBtn.style.display = isLong ? 'inline-flex' : 'none';
-            const expTxt = document.getElementById('desc-expand-text');
-            if (expTxt) expTxt.textContent = state.descExpanded ? 'Recolher descrição' : 'Ver descrição completa';
-          }
-        } else {
-          descWrapper.style.display = 'none';
-        }
-      }
-      if (estBadge && estBadgeText) {
-        estBadge.style.display = 'inline-flex';
-        estBadgeText.textContent = task.estimatedMinutes ? ('Meta: ' + task.estimatedMinutes + ' min') : 'Definir tempo (15m)';
-      }
-      if (checkMain) {
-        checkMain.classList.toggle('checked', state.completedIds.has(String(task.id)));
-      }
-    }
-  }
-
-  async function saveTaskEstimateV2(taskId, minutes) {
-    const cleanMin = Math.max(1, Math.min(480, Math.round(Number(minutes) || 15)));
-    const t = state.tasks.find((x) => String(x.id) === String(taskId));
-    if (t) t.estimatedMinutes = cleanMin;
-    updateV2GamificationAndPlanning();
-    updateTimerUI();
-    try {
-      await fetch('/api/tasks/estimate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskId: String(taskId), estimatedMinutes: cleanMin })
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.065);
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.065);
+        gain.gain.exponentialRampToValueAtTime(0.045, now + idx * 0.065 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.065 + 0.42);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.065);
+        osc.stop(now + idx * 0.065 + 0.45);
       });
     } catch (_) {}
   }
 
-  async function toggleTaskCompletedFromDrawer(taskId) {
-    const t = state.tasks.find((x) => String(x.id) === String(taskId));
-    if (!t) return;
-    const isDone = state.completedIds.has(String(t.id));
-    if (isDone) {
-      state.completedIds.delete(String(t.id));
-      t.checked = false;
-      saveCompletedToStorage();
-      fetch('/api/tasks/uncomplete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskId: String(t.id) })
-      }).catch(() => {});
-    } else {
-      triggerCheckLightPulse();
-      playZenCompletionSound();
-      state.completedIds.add(String(t.id));
-      t.checked = true;
-      saveCompletedToStorage();
-      syncTaskCompletionRemote(t, {
-        sessionId: 'lf_' + Date.now(),
-        taskId: String(t.id),
-        content: t.content,
-        date: getTodayStr(),
-        durationSeconds: (t.estimatedMinutes || 15) * 60,
-        durationMinutes: t.estimatedMinutes || 15,
-        completed: true,
-        completedWithoutTimer: true
-      });
-    }
-    renderCurrentTask(false);
-    updateMissMinutosSidebar(!isDone);
-    updateHeaderStats();
-    renderQueueModalListV2();
-    updateV2GamificationAndPlanning();
+  let toastTimeout = null;
+  function showToast(message) {
+    const toast = document.getElementById('glassToast');
+    const textEl = document.getElementById('glassToastText');
+    if (!toast || !textEl) return;
+    textEl.textContent = stripEmojis(message);
+    toast.classList.remove('hidden');
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+      toast.classList.add('hidden');
+    }, 3000);
   }
 
-  function renderQueueModalListV2() {
-    const container = document.getElementById('queue-list-container');
-    if (!container) return;
-    container.innerHTML = '';
-    updateV2GamificationAndPlanning();
-
-    state.tasks.forEach((t, idx) => {
-      const done = state.completedIds.has(String(t.id));
-      const isCurrent = idx === state.currentIndex;
-      const est = Number(t.estimatedMinutes) || 15;
-      const div = document.createElement('div');
-      div.className = 'queue-item' + (isCurrent ? ' current' : '') + (done ? ' completed' : '');
-      div.innerHTML =
-        '<div class="queue-item-left">' +
-        '<button type="button" class="queue-check-btn ' + (done ? 'checked' : '') + '" data-qcheck="' + t.id + '" title="Concluir ou reabrir no Todoist">' +
-        '<svg class="ui-svg" width="13" height="13" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' +
-        '</button>' +
-        '<span style="font-weight:800; color:var(--mm-orange-dark); min-width:26px;">#' + (t.dayOrder || idx + 1) + '</span>' +
-        '<span class="queue-title-click" style="font-weight:600; word-break:break-word; overflow-wrap:anywhere; flex:1;">' + stripAnyEmojis(t.content) + '</span>' +
-        '</div>' +
-        '<div class="queue-est-box">' +
-        '<input type="number" min="1" max="480" class="queue-est-input" data-qest="' + t.id + '" value="' + est + '" title="Minutos estimados para esta tarefa" />' +
-        '<span style="font-size:0.72rem; font-weight:700; color:#64748b;">min</span>' +
-        '</div>';
-
-      const chkBtn = div.querySelector('[data-qcheck]');
-      if (chkBtn) {
-        chkBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          toggleTaskCompletedFromDrawer(t.id);
-        });
+  // ==========================================================================
+  // THEME ENGINE (Pearl Light / Obsidian Dark)
+  // ==========================================================================
+  function applyTheme(theme) {
+    state.theme = theme === 'dark' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', state.theme);
+    localStorage.setItem(STORAGE_KEYS.THEME, state.theme);
+    const iconSvg = document.getElementById('themeIconSvg');
+    if (iconSvg) {
+      if (state.theme === 'dark') {
+        iconSvg.innerHTML =
+          '<circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.75"/><path d="M12 2V4.5M12 19.5V22M2 12H4.5M19.5 12H22M4.93 4.93L6.7 6.7M17.3 17.3L19.07 19.07M19.07 4.93L17.3 6.7M6.7 17.3L4.93 19.07" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>';
+      } else {
+        iconSvg.innerHTML =
+          '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>';
       }
-      const estInp = div.querySelector('[data-qest]');
-      if (estInp) {
-        estInp.addEventListener('click', (e) => e.stopPropagation());
-        estInp.addEventListener('change', (e) => {
-          e.stopPropagation();
-          saveTaskEstimateV2(t.id, estInp.value);
-        });
-      }
-      div.addEventListener('click', () => {
-        state.currentIndex = idx;
-        state.descExpanded = false;
-        renderCurrentTask(true);
-        updateV2GamificationAndPlanning();
-        closeModal('modal-queue');
+    }
+  }
+
+  // ==========================================================================
+  // NATURAL LANGUAGE SCHEDULE PARSER (FOR SHORTCUT 'Q')
+  // ==========================================================================
+  function parseNaturalLanguageTask(rawInput, fallbackPicker) {
+    let text = String(rawInput || '').trim();
+    const detected = {
+      dueDate: null,
+      dueDateLabel: null,
+      dueTime: null,
+      estimatedMinutes: null,
+      priority: null,
+      recurring: null,
+      labels: []
+    };
+
+    // 1. Extract #tags
+    text = text.replace(/(?:^|\s)#([a-zA-Z0-9_-]+)/g, (match, tag) => {
+      detected.labels.push(tag.toLowerCase());
+      return ' ';
+    });
+
+    // 2. Extract priority: p1, p2, p3, p4
+    text = text.replace(/(?:^|\s)(p[1-4])(?=\s|$)/i, (match, p) => {
+      detected.priority = p.toLowerCase();
+      return ' ';
+    });
+
+    // 3. Extract duration/estimate: 15m, 25min, 45m, 1h, 1h30, 2h
+    text = text.replace(/(?:^|\s)(\d{1,2})\s*h(?:\s*(\d{1,2})\s*m(?:in)?)?(?=\s|$)/i, (match, h, m) => {
+      const mins = Number(h) * 60 + (m ? Number(m) : 0);
+      if (mins > 0 && mins <= 480) detected.estimatedMinutes = mins;
+      return ' ';
+    });
+    if (!detected.estimatedMinutes) {
+      text = text.replace(/(?:^|\s)(\d{1,3})\s*(?:m|min|minutos)(?=\s|$)/i, (match, m) => {
+        const mins = Number(m);
+        if (mins > 0 && mins <= 480) detected.estimatedMinutes = mins;
+        return ' ';
       });
-      container.appendChild(div);
+    }
+
+    // 4. Extract recurrence: todo dia, todos os dias, diario, semanal, mensal
+    text = text.replace(/(?:^|\s)(todo\s+dia|todos\s+os\s+dias|diario|diariamente|semanal|mensal)(?=\s|$)/i, (match, rec) => {
+      detected.recurring = rec.toLowerCase();
+      return ' ';
+    });
+
+    // 5. Extract time: às 14:30, 14:30, às 15h, 9h30
+    text = text.replace(/(?:^|\s)(?:as|às)?\s*(\d{1,2}):(\d{2})(?=\s|$)/i, (match, hh, mm) => {
+      const h = Number(hh);
+      const m = Number(mm);
+      if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+        detected.dueTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        return ' ';
+      }
+      return match;
+    });
+    if (!detected.dueTime) {
+      text = text.replace(/(?:^|\s)(?:as|às)\s*(\d{1,2})h(\d{2})?(?=\s|$)/i, (match, hh, mm) => {
+        const h = Number(hh);
+        const m = mm ? Number(mm) : 0;
+        if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+          detected.dueTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+          return ' ';
+        }
+        return match;
+      });
+    }
+
+    // 6. Extract relative dates: hoje, amanha, seg, ter, qua, qui, sex, sab, dom, DD/MM
+    text = text.replace(/(?:^|\s)(hoje|amanha|amanhã|segunda|seg|terca|terça|ter|quarta|qua|quinta|qui|sexta|sex|sabado|sábado|sab|domingo|dom)(?=\s|$)/i, (match, word) => {
+      const w = word.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (w === 'hoje') {
+        detected.dueDate = getTodayDateStr();
+        detected.dueDateLabel = 'Hoje';
+      } else if (w === 'amanha') {
+        detected.dueDate = addDaysDateStr(1);
+        detected.dueDateLabel = 'Amanha';
+      } else {
+        const mapDay = { dom: 0, domingo: 0, seg: 1, segunda: 1, ter: 2, terca: 2, qua: 3, quarta: 3, qui: 4, quinta: 4, sex: 5, sexta: 5, sab: 6, sabado: 6 };
+        const targetDow = mapDay[w];
+        if (targetDow !== undefined) {
+          const nowDow = new Date().getDay();
+          let diff = (targetDow - nowDow + 7) % 7;
+          if (diff === 0) diff = 7;
+          detected.dueDate = addDaysDateStr(diff);
+          detected.dueDateLabel = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }
+      }
+      return ' ';
+    });
+
+    if (!detected.dueDate) {
+      text = text.replace(/(?:^|\s)(\d{1,2})\/(\d{1,2})(?=\s|$)/, (match, dd, mm) => {
+        const d = Number(dd);
+        const m = Number(mm);
+        if (d >= 1 && d <= 31 && m >= 1 && m <= 12) {
+          const year = new Date().getFullYear();
+          detected.dueDate = `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          detected.dueDateLabel = `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
+          return ' ';
+        }
+        return match;
+      });
+    }
+
+    const cleanTitle = stripEmojis(text.replace(/\s{2,}/g, ' ').trim());
+
+    // Apply fallback picker values when not overridden by NLP text
+    const picker = fallbackPicker || state.qaPicker;
+    let finalDueDate = detected.dueDate;
+    let finalDateLabel = detected.dueDateLabel;
+    if (!finalDueDate) {
+      if (picker.date === 'tomorrow') {
+        finalDueDate = addDaysDateStr(1);
+        finalDateLabel = 'Amanha';
+      } else if (picker.date === 'nextweek') {
+        finalDueDate = addDaysDateStr(7);
+        finalDateLabel = 'Prox Semana';
+      } else {
+        finalDueDate = getTodayDateStr();
+        finalDateLabel = 'Hoje';
+      }
+    }
+
+    const finalEst = detected.estimatedMinutes || picker.est || 15;
+    const finalPrio = detected.priority || picker.prio || 'p4';
+
+    return {
+      cleanTitle: cleanTitle || stripEmojis(rawInput).trim(),
+      dueDate: finalDueDate,
+      dueDateLabel: finalDateLabel,
+      dueTime: detected.dueTime,
+      estimatedMinutes: finalEst,
+      priority: finalPrio,
+      recurring: detected.recurring,
+      labels: detected.labels,
+      explicitTokens: detected
+    };
+  }
+
+  // ==========================================================================
+  // AUTH GATE & SESSION MANAGEMENT
+  // ==========================================================================
+  function setAuthMode(mode) {
+    state.authMode = mode === 'register' ? 'register' : 'login';
+    const tabLogin = document.getElementById('authTabLogin');
+    const tabReg = document.getElementById('authTabRegister');
+    const nameGroup = document.getElementById('authNameGroup');
+    const emailHint = document.getElementById('authEmailHint');
+    const submitLabel = document.getElementById('authSubmitLabel');
+    const errMsg = document.getElementById('authErrorMsg');
+
+    if (errMsg) errMsg.classList.add('hidden');
+    if (tabLogin && tabReg) {
+      tabLogin.classList.toggle('active', state.authMode === 'login');
+      tabLogin.setAttribute('aria-selected', state.authMode === 'login' ? 'true' : 'false');
+      tabReg.classList.toggle('active', state.authMode === 'register');
+      tabReg.setAttribute('aria-selected', state.authMode === 'register' ? 'true' : 'false');
+    }
+    if (nameGroup) {
+      nameGroup.classList.toggle('hidden', state.authMode !== 'register');
+    }
+    if (emailHint) {
+      emailHint.classList.toggle('hidden', state.authMode === 'register');
+    }
+    if (submitLabel) {
+      submitLabel.textContent = state.authMode === 'register' ? 'Criar Conta & Entrar' : 'Entrar no Workspace';
+    }
+  }
+
+  function updateAuthUI() {
+    const gate = document.getElementById('authGateOverlay');
+    const shell = document.getElementById('appShell');
+    if (state.authenticated) {
+      if (gate) gate.classList.add('hidden');
+      if (shell) shell.classList.remove('hidden');
+      renderUserHeaderAndXP();
+    } else {
+      if (gate) gate.classList.remove('hidden');
+      if (shell) shell.classList.add('hidden');
+    }
+  }
+
+  function renderUserHeaderAndXP() {
+    const u = state.user || {
+      name: 'Walace Messias',
+      email: 'walacetkwl@gmail.com',
+      xp: 0,
+      level: 1,
+      levelTitle: 'Cristal',
+      streak: 1,
+      nextLevelXp: 150
+    };
+    const initials = getInitials(u.name);
+    const shortName = String(u.name || 'Walace').split(/\s+/)[0];
+
+    const avatarEl = document.getElementById('userInitialsAvatar');
+    const nameShortEl = document.getElementById('userNameShort');
+    const settingsAvatar = document.getElementById('settingsAvatar');
+    const settingsName = document.getElementById('settingsUserName');
+    const settingsEmail = document.getElementById('settingsUserEmail');
+
+    if (avatarEl) avatarEl.textContent = initials;
+    if (nameShortEl) nameShortEl.textContent = shortName;
+    if (settingsAvatar) settingsAvatar.textContent = initials;
+    if (settingsName) settingsName.textContent = u.name || 'Walace Messias';
+    if (settingsEmail) settingsEmail.textContent = u.email || 'walacetkwl@gmail.com';
+
+    const xp = Number(u.xp || 0);
+    const lvl = Number(u.level || 1);
+    const title = u.levelTitle || 'Cristal';
+    const nextXp = Number(u.nextLevelXp || lvl * 250);
+    const pct = Math.min(100, Math.max(8, Math.round((xp / Math.max(1, nextXp)) * 100)));
+
+    const topLevelLabel = document.getElementById('topLevelLabel');
+    const topXpValue = document.getElementById('topXpValue');
+    const topXpArc = document.getElementById('topXpArc');
+    if (topLevelLabel) topLevelLabel.textContent = `Nv ${lvl} · ${title}`;
+    if (topXpValue) topXpValue.textContent = `${xp} XP`;
+    if (topXpArc) {
+      const circum = 56.5;
+      topXpArc.style.strokeDashoffset = String((circum - (circum * pct) / 100).toFixed(1));
+    }
+
+    const repLvlTitle = document.getElementById('reportLevelTitle');
+    const repXpSub = document.getElementById('reportXpSubtitle');
+    const repBar = document.getElementById('reportXpBarFill');
+    const repStreak = document.getElementById('reportStreakNum');
+    const repTotalXp = document.getElementById('reportTotalXpNum');
+
+    if (repLvlTitle) repLvlTitle.textContent = `Nivel ${lvl} · ${title}`;
+    if (repXpSub) repXpSub.textContent = `${xp} XP acumulados · Proximo nivel em ${nextXp} XP`;
+    if (repBar) repBar.style.width = `${pct}%`;
+    if (repStreak) repStreak.textContent = `${u.streak || 1}d`;
+    if (repTotalXp) repTotalXp.textContent = String(xp);
+  }
+
+  async function checkSessionAndBoot() {
+    try {
+      const r = await fetch('/api/auth/verify');
+      const d = await r.json();
+      if (d && d.authenticated) {
+        state.authenticated = true;
+        state.user = d.user || null;
+        state.hasTodoistToken = Boolean(d.hasServerTodoistToken);
+        updateAuthUI();
+        await loadWorkspaceData();
+        return;
+      }
+    } catch (_) {}
+    state.authenticated = false;
+    updateAuthUI();
+  }
+
+  async function loadWorkspaceData(forceLive) {
+    const syncLbl = document.getElementById('syncStatusLabel');
+    const syncIcon = document.getElementById('syncIconSvg');
+    if (syncLbl) syncLbl.textContent = 'Sincronizando...';
+    if (syncIcon) syncIcon.style.transform = 'rotate(180deg)';
+
+    try {
+      const [tasksRes, timesRes] = await Promise.all([
+        fetch(forceLive ? '/api/tasks?live=1' : '/api/tasks'),
+        fetch('/api/times')
+      ]);
+
+      if (tasksRes.status === 401) {
+        state.authenticated = false;
+        updateAuthUI();
+        return;
+      }
+
+      const tasksJson = await tasksRes.json();
+      if (tasksJson && tasksJson.user) {
+        state.user = tasksJson.user;
+      }
+      state.hasTodoistToken = Boolean(tasksJson && tasksJson.hasServerTodoistToken);
+      if (tasksJson && tasksJson.snapshot && Array.isArray(tasksJson.snapshot.tasks)) {
+        state.tasks = tasksJson.snapshot.tasks.map(normalizeClientTask);
+      } else if (window.LIGHTFOCUS_INITIAL_SNAPSHOT && Array.isArray(window.LIGHTFOCUS_INITIAL_SNAPSHOT.tasks)) {
+        state.tasks = window.LIGHTFOCUS_INITIAL_SNAPSHOT.tasks.map(normalizeClientTask);
+      }
+
+      if (timesRes.ok) {
+        const timesJson = await timesRes.json();
+        if (timesJson && timesJson.data) {
+          state.timesData = timesJson.data;
+        }
+      }
+    } catch (_) {
+      if (window.LIGHTFOCUS_INITIAL_SNAPSHOT && Array.isArray(window.LIGHTFOCUS_INITIAL_SNAPSHOT.tasks)) {
+        state.tasks = window.LIGHTFOCUS_INITIAL_SNAPSHOT.tasks.map(normalizeClientTask);
+      }
+    } finally {
+      if (syncLbl) {
+        syncLbl.textContent = state.hasTodoistToken ? 'Todoist Sincronizado' : 'Cloud Sincronizado';
+      }
+      if (syncIcon) syncIcon.style.transform = '';
+    }
+
+    ensureValidCurrentTask();
+    renderUserHeaderAndXP();
+    renderAll();
+  }
+
+  function normalizeClientTask(t, idx) {
+    const id = String(t.id);
+    const estFromTimes = state.timesData && state.timesData.taskEstimates && state.timesData.taskEstimates[id];
+    return {
+      id,
+      content: stripEmojis(t.content || 'Tarefa sem titulo'),
+      description: String(t.description || '').replace(/\[LF_EST:\d+m\]/gi, '').trim(),
+      dueDate: t.dueDate || getTodayDateStr(),
+      dueTime: t.dueTime || null,
+      recurring: t.recurring || false,
+      priority: ['p1', 'p2', 'p3', 'p4'].includes(String(t.priority || '').toLowerCase())
+        ? String(t.priority).toLowerCase()
+        : 'p4',
+      projectName: stripEmojis(t.projectName || 'Hoje · Principal'),
+      labels: Array.isArray(t.labels) ? t.labels.map(stripEmojis) : [],
+      checked: Boolean(t.checked),
+      estimatedMinutes: Number(t.estimatedMinutes || estFromTimes || 15),
+      subtasks: Array.isArray(t.subtasks)
+        ? t.subtasks.map((s) => ({
+            id: String(s.id),
+            content: stripEmojis(s.content || ''),
+            checked: Boolean(s.checked || state.subtasksDone[s.id])
+          }))
+        : [],
+      dayOrder: Number(t.dayOrder || idx + 1)
+    };
+  }
+
+  function getFilteredTasks() {
+    if (state.filter === 'pending') {
+      return state.tasks.filter((t) => !t.checked);
+    }
+    if (state.filter === 'completed') {
+      return state.tasks.filter((t) => t.checked);
+    }
+    return state.tasks;
+  }
+
+  function ensureValidCurrentTask() {
+    const list = getFilteredTasks();
+    if (list.length === 0) {
+      state.currentTaskId = null;
+      return;
+    }
+    const exists = list.some((t) => t.id === state.currentTaskId);
+    if (!exists) {
+      state.currentTaskId = list[0].id;
+    }
+  }
+
+  function getCurrentTask() {
+    const list = getFilteredTasks();
+    if (list.length === 0) return null;
+    return list.find((t) => t.id === state.currentTaskId) || list[0];
+  }
+
+  // ==========================================================================
+  // RENDERING: FOCUS CARD, BENTO PROGRESS RING & AGENDA QUEUE
+  // ==========================================================================
+  function renderAll() {
+    ensureValidCurrentTask();
+    renderFocusCard();
+    renderDayOverviewAndQueue();
+  }
+
+  function renderFocusCard() {
+    const list = getFilteredTasks();
+    const task = getCurrentTask();
+
+    const counterPill = document.getElementById('taskCounterPill');
+    const schedText = document.getElementById('taskScheduleText');
+    const prioBadge = document.getElementById('taskPriorityBadge');
+    const estLabel = document.getElementById('taskEstimateLabel');
+    const heroCheckBtn = document.getElementById('heroCheckBtn');
+    const titleEl = document.getElementById('focusTaskTitle');
+    const tagsRow = document.getElementById('focusTaskTagsRow');
+    const descContainer = document.getElementById('focusDescContainer');
+    const descContent = document.getElementById('focusDescContent');
+    const toggleDescBtn = document.getElementById('toggleDescExpandBtn');
+    const toggleDescLbl = document.getElementById('toggleDescExpandLabel');
+    const subtasksBox = document.getElementById('focusSubtasksBox');
+    const subtasksBadge = document.getElementById('subtasksProgressBadge');
+    const subtasksList = document.getElementById('focusSubtasksList');
+
+    if (!task) {
+      if (counterPill) counterPill.textContent = '00 / 00';
+      if (schedText) schedText.textContent = 'Agenda Livre';
+      if (prioBadge) {
+        prioBadge.className = 'glass-badge-priority p4';
+        prioBadge.textContent = 'P4';
+      }
+      if (estLabel) estLabel.textContent = '-- min';
+      if (heroCheckBtn) heroCheckBtn.classList.remove('checked');
+      if (titleEl) {
+        titleEl.textContent =
+          state.filter === 'completed'
+            ? 'Nenhuma tarefa concluida ainda.'
+            : 'Tudo concluido por agora. Pressione Q para criar uma nova tarefa.';
+      }
+      if (tagsRow) tagsRow.innerHTML = '';
+      if (descContainer) descContainer.classList.add('hidden');
+      if (subtasksBox) subtasksBox.classList.add('hidden');
+      return;
+    }
+
+    const idx = list.findIndex((t) => t.id === task.id);
+    if (counterPill) {
+      counterPill.textContent = `${String(idx + 1).padStart(2, '0')} / ${String(list.length).padStart(2, '0')}`;
+    }
+
+    const todayStr = getTodayDateStr();
+    const datePart = task.dueDate === todayStr ? 'Hoje' : task.dueDate || 'Hoje';
+    const timePart = task.dueTime ? ` · ${task.dueTime}` : '';
+    const recPart = task.recurring ? ' · Recorrente' : '';
+    if (schedText) schedText.textContent = `${datePart}${timePart}${recPart}`;
+
+    if (prioBadge) {
+      prioBadge.className = `glass-badge-priority ${task.priority || 'p4'}`;
+      prioBadge.textContent = String(task.priority || 'p4').toUpperCase();
+    }
+
+    if (estLabel) {
+      estLabel.textContent = `${task.estimatedMinutes || 15} min`;
+    }
+
+    if (heroCheckBtn) {
+      heroCheckBtn.classList.toggle('checked', Boolean(task.checked));
+    }
+
+    if (titleEl) {
+      titleEl.textContent = task.content;
+    }
+
+    if (tagsRow) {
+      const chips = [];
+      if (task.projectName) {
+        chips.push(`<span class="task-tag-chip">${escapeHtml(task.projectName)}</span>`);
+      }
+      (task.labels || []).forEach((lbl) => {
+        chips.push(`<span class="task-tag-chip">#${escapeHtml(lbl)}</span>`);
+      });
+      tagsRow.innerHTML = chips.join('');
+    }
+
+    // Long description handling with mobile-safe wrapping & expand button
+    const cleanDesc = String(task.description || '').trim();
+    if (descContainer && descContent && toggleDescBtn && toggleDescLbl) {
+      if (cleanDesc) {
+        descContainer.classList.remove('hidden');
+        descContent.textContent = cleanDesc;
+        descContent.classList.toggle('expanded', state.descExpanded);
+        const isLong = cleanDesc.length > 180 || cleanDesc.split('\n').length > 3;
+        toggleDescBtn.classList.toggle('hidden', !isLong);
+        toggleDescLbl.textContent = state.descExpanded
+          ? 'Recolher descricao'
+          : 'Expandir descricao completa';
+      } else {
+        descContainer.classList.add('hidden');
+      }
+    }
+
+    // Subtasks
+    if (subtasksBox && subtasksBadge && subtasksList) {
+      const subs = Array.isArray(task.subtasks) ? task.subtasks : [];
+      if (subs.length > 0) {
+        subtasksBox.classList.remove('hidden');
+        const doneCount = subs.filter((s) => s.checked || state.subtasksDone[s.id]).length;
+        subtasksBadge.textContent = `${doneCount}/${subs.length}`;
+        subtasksList.innerHTML = subs
+          .map((s) => {
+            const isDone = Boolean(s.checked || state.subtasksDone[s.id]);
+            return `
+              <li class="subtask-row ${isDone ? 'done' : ''}" data-subtask-id="${escapeHtml(s.id)}">
+                <span class="subtask-mini-check" aria-hidden="true">
+                  <svg class="icon-13" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span>${escapeHtml(s.content)}</span>
+              </li>
+            `;
+          })
+          .join('');
+      } else {
+        subtasksBox.classList.add('hidden');
+      }
+    }
+
+    updateTimerProgressUI();
+  }
+
+  function renderDayOverviewAndQueue() {
+    const total = state.tasks.length;
+    const completed = state.tasks.filter((t) => t.checked).length;
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    const ringCircle = document.getElementById('dayProgressCircle');
+    const ringPct = document.getElementById('dayProgressPct');
+    const countEl = document.getElementById('completedSummaryCount');
+    const focusedStat = document.getElementById('focusedTodayStat');
+    const etaStat = document.getElementById('etaFinishStat');
+
+    if (ringCircle) {
+      const circum = 226.2;
+      const offset = circum - (circum * pct) / 100;
+      ringCircle.style.strokeDashoffset = String(offset.toFixed(1));
+    }
+    if (ringPct) ringPct.textContent = `${pct}%`;
+    if (countEl) countEl.textContent = `${completed} de ${total}`;
+
+    // Calculate focused minutes today
+    const todayStr = getTodayDateStr();
+    const sessions = (state.timesData && Array.isArray(state.timesData.sessions)) ? state.timesData.sessions : [];
+    const todaySec = sessions
+      .filter((s) => s.date === todayStr)
+      .reduce((acc, s) => acc + Number(s.durationSeconds || 0), 0);
+    const totalMins = Math.round((todaySec + state.timerSeconds) / 60);
+    if (focusedStat) focusedStat.textContent = `${totalMins}m`;
+
+    // Calculate ETA based on remaining pending tasks' estimated minutes
+    const remMins = state.tasks
+      .filter((t) => !t.checked)
+      .reduce((acc, t) => acc + Number(t.estimatedMinutes || 15), 0);
+    if (etaStat) {
+      if (remMins <= 0) {
+        etaStat.textContent = 'Concluido';
+      } else {
+        const etaDate = new Date(Date.now() + remMins * 60000);
+        const fmt = new Intl.DateTimeFormat('pt-BR', {
+          timeZone: 'America/Sao_Paulo',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+        etaStat.textContent = fmt.format(etaDate);
+      }
+    }
+
+    // Queue list
+    const list = getFilteredTasks();
+    const queueBadge = document.getElementById('queueTotalBadge');
+    const queueContainer = document.getElementById('agendaQueueList');
+    if (queueBadge) queueBadge.textContent = String(list.length);
+    if (!queueContainer) return;
+
+    if (list.length === 0) {
+      queueContainer.innerHTML = `<div class="history-row"><span class="history-row-meta">Nenhuma tarefa neste filtro.</span></div>`;
+      return;
+    }
+
+    const current = getCurrentTask();
+    queueContainer.innerHTML = list
+      .map((t) => {
+        const isActive = current && current.id === t.id;
+        const timeTag = t.dueTime ? `${t.dueTime} · ` : '';
+        return `
+          <div class="queue-item-row ${isActive ? 'active-focus' : ''} ${t.checked ? 'completed' : ''}" data-task-id="${escapeHtml(t.id)}" role="listitem">
+            <button type="button" class="queue-mini-check" data-check-task-id="${escapeHtml(t.id)}" aria-label="Concluir tarefa">
+              <svg class="icon-13" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <span class="queue-item-text">${escapeHtml(t.content)}</span>
+            <span class="queue-item-est">${escapeHtml(timeTag)}${t.estimatedMinutes || 15}m</span>
+          </div>
+        `;
+      })
+      .join('');
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ==========================================================================
+  // TIMER CONSOLE & 5-MINUTE REFRACTIVE PULSE
+  // ==========================================================================
+  function toggleTimerPlayPause() {
+    if (state.timerRunning) {
+      pauseTimer();
+    } else {
+      startTimer();
+    }
+  }
+
+  function startTimer() {
+    const task = getCurrentTask();
+    if (!task) {
+      showToast('Selecione ou crie uma tarefa para focar.');
+      return;
+    }
+    state.timerRunning = true;
+    if (!state.timerStartedAt) {
+      state.timerStartedAt = new Date().toISOString();
+    }
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    state.timerInterval = setInterval(() => {
+      state.timerSeconds += 1;
+      updateTimerProgressUI();
+      if (state.timerSeconds > 0 && state.timerSeconds % 300 === 0 && state.pulse5mEnabled) {
+        triggerLightPulse();
+        playGlassHarmonic('pulse');
+        showToast('5 minutos de foco profundo registrados.');
+      }
+      if (state.timerSeconds % 60 === 0) {
+        renderDayOverviewAndQueue();
+      }
+    }, 1000);
+    updateTimerProgressUI();
+  }
+
+  function pauseTimer() {
+    state.timerRunning = false;
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+    updateTimerProgressUI();
+  }
+
+  function resetTimer() {
+    pauseTimer();
+    state.timerSeconds = 0;
+    state.timerStartedAt = null;
+    updateTimerProgressUI();
+  }
+
+  function updateTimerProgressUI() {
+    const display = document.getElementById('timerDisplay');
+    const subStatus = document.getElementById('timerSubStatus');
+    const dot = document.getElementById('timerStateDot');
+    const playLabel = document.getElementById('timerPlayLabel');
+    const playIcon = document.getElementById('timerPlayIcon');
+    const bar = document.getElementById('timerProgressBar');
+
+    if (display) display.textContent = formatDurationMMSS(state.timerSeconds);
+    if (dot) dot.classList.toggle('running', state.timerRunning);
+
+    const task = getCurrentTask();
+    const estSec = Math.max(60, Number((task && task.estimatedMinutes) || 15) * 60);
+    const pct = Math.min(100, (state.timerSeconds / estSec) * 100);
+    if (bar) bar.style.width = `${pct.toFixed(1)}%`;
+
+    if (subStatus) {
+      if (state.timerRunning) {
+        subStatus.textContent = `Focando · Meta ${Math.round(estSec / 60)}m`;
+      } else if (state.timerSeconds > 0) {
+        subStatus.textContent = 'Pausado · Pronto para retomar';
+      } else {
+        subStatus.textContent = 'Pronto para focar';
+      }
+    }
+
+    if (playLabel) {
+      playLabel.textContent = state.timerRunning ? 'Pausar' : state.timerSeconds > 0 ? 'Retomar' : 'Iniciar Foco';
+    }
+    if (playIcon) {
+      if (state.timerRunning) {
+        playIcon.innerHTML =
+          '<rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/>';
+      } else {
+        playIcon.innerHTML =
+          '<path d="M7 5.5V18.5L18 12L7 5.5Z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>';
+      }
+    }
+  }
+
+  // ==========================================================================
+  // TASK COMPLETION / UNCOMPLETION / ESTIMATE / NAVIGATION
+  // ==========================================================================
+  async function toggleTaskChecked(taskId) {
+    const target = state.tasks.find((t) => t.id === String(taskId));
+    if (!target) return;
+
+    if (target.checked) {
+      // Uncomplete
+      target.checked = false;
+      renderAll();
+      showToast('Tarefa reaberta na agenda.');
+      try {
+        const r = await fetch('/api/tasks/uncomplete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taskId: target.id })
+        });
+        const d = await r.json();
+        if (d && d.snapshot && Array.isArray(d.snapshot.tasks)) {
+          state.tasks = d.snapshot.tasks.map(normalizeClientTask);
+          renderAll();
+        }
+      } catch (_) {}
+      return;
+    }
+
+    // Complete task with signature soft refractive light pulse
+    const isCurrent = getCurrentTask() && getCurrentTask().id === target.id;
+    const elapsedSec = isCurrent ? state.timerSeconds : 0;
+    const startedAt = isCurrent && state.timerStartedAt ? state.timerStartedAt : new Date().toISOString();
+
+    if (isCurrent) {
+      resetTimer();
+    }
+
+    triggerLightPulse();
+    playGlassHarmonic('complete');
+
+    const card = document.getElementById('focusTaskCard');
+    const heroBtn = document.getElementById('heroCheckBtn');
+    if (isCurrent && heroBtn) heroBtn.classList.add('checked');
+    if (isCurrent && card) card.classList.add('completing-anim');
+
+    setTimeout(async () => {
+      target.checked = true;
+      if (card) card.classList.remove('completing-anim');
+      ensureValidCurrentTask();
+      renderAll();
+
+      try {
+        const r = await fetch('/api/tasks/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskId: target.id,
+            content: target.content,
+            estimatedMinutes: target.estimatedMinutes || 15,
+            durationSeconds: elapsedSec,
+            startedAt,
+            endedAt: new Date().toISOString(),
+            completedWithoutTimer: elapsedSec === 0
+          })
+        });
+        const d = await r.json();
+        if (d && d.user) {
+          state.user = d.user;
+          renderUserHeaderAndXP();
+        }
+        if (d && d.times) {
+          state.timesData = d.times;
+        }
+        if (d && d.snapshot && Array.isArray(d.snapshot.tasks)) {
+          state.tasks = d.snapshot.tasks.map(normalizeClientTask);
+        }
+        renderAll();
+        showToast(`Tarefa concluida · +${d.xpGained || 50} XP`);
+      } catch (_) {
+        showToast('Tarefa concluida.');
+      }
+    }, 260);
+  }
+
+  async function saveTaskEstimate(minutes) {
+    const task = getCurrentTask();
+    if (!task) return;
+    const mins = Math.min(480, Math.max(1, Math.round(Number(minutes || 15))));
+    task.estimatedMinutes = mins;
+    const bar = document.getElementById('inlineEstimateBar');
+    if (bar) bar.classList.add('hidden');
+    renderAll();
+    showToast(`Estimativa ajustada para ${mins} min.`);
+
+    try {
+      const r = await fetch('/api/tasks/estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: task.id, estimatedMinutes: mins })
+      });
+      const d = await r.json();
+      if (d && d.times) state.timesData = d.times;
+    } catch (_) {}
+  }
+
+  function stepTask(delta) {
+    const list = getFilteredTasks();
+    if (list.length === 0) return;
+    const cur = getCurrentTask();
+    const curIdx = cur ? list.findIndex((t) => t.id === cur.id) : 0;
+    const nextIdx = (curIdx + delta + list.length) % list.length;
+    state.currentTaskId = list[nextIdx].id;
+    state.descExpanded = false;
+    resetTimer();
+    renderAll();
+  }
+
+  // ==========================================================================
+  // SHORTCUT 'Q': QUICK-ADD MODAL WITH LIVE NLP PREVIEW
+  // ==========================================================================
+  function openQuickAddModal(prefillText) {
+    closeAllModals();
+    const modal = document.getElementById('quickAddModal');
+    const input = document.getElementById('quickAddInput');
+    const desc = document.getElementById('quickAddDesc');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    if (input) {
+      input.value = prefillText || '';
+      setTimeout(() => input.focus(), 30);
+    }
+    if (desc) desc.value = '';
+    updateQuickAddNlpPreview();
+  }
+
+  function updateQuickAddNlpPreview() {
+    const input = document.getElementById('quickAddInput');
+    const tokensList = document.getElementById('nlpTokensList');
+    if (!tokensList) return;
+    const raw = input ? input.value : '';
+    const parsed = parseNaturalLanguageTask(raw, state.qaPicker);
+
+    const chips = [];
+    chips.push(
+      `<span class="nlp-chip">Data: ${escapeHtml(parsed.dueDateLabel || 'Hoje')}${parsed.dueTime ? ' ' + escapeHtml(parsed.dueTime) : ''}</span>`
+    );
+    chips.push(`<span class="nlp-chip">Tempo: ${parsed.estimatedMinutes}m</span>`);
+    chips.push(`<span class="nlp-chip">Prioridade: ${parsed.priority.toUpperCase()}</span>`);
+    if (parsed.recurring) {
+      chips.push(`<span class="nlp-chip">Recorrencia: ${escapeHtml(parsed.recurring)}</span>`);
+    }
+    parsed.labels.forEach((lbl) => {
+      chips.push(`<span class="nlp-chip">#${escapeHtml(lbl)}</span>`);
+    });
+    tokensList.innerHTML = chips.join('');
+  }
+
+  async function handleQuickAddSubmit(e) {
+    e.preventDefault();
+    const input = document.getElementById('quickAddInput');
+    const desc = document.getElementById('quickAddDesc');
+    const raw = input ? input.value.trim() : '';
+    if (!raw) {
+      showToast('Digite o nome da tarefa.');
+      return;
+    }
+
+    const parsed = parseNaturalLanguageTask(raw, state.qaPicker);
+    const description = desc ? desc.value.trim() : '';
+
+    closeAllModals();
+    showToast('Criando tarefa na agenda...');
+
+    try {
+      const r = await fetch('/api/tasks/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: parsed.cleanTitle,
+          description,
+          dueDate: parsed.dueDate,
+          dueTime: parsed.dueTime,
+          recurring: parsed.recurring,
+          estimatedMinutes: parsed.estimatedMinutes,
+          priority: parsed.priority,
+          labels: parsed.labels
+        })
+      });
+      const d = await r.json();
+      if (d && d.ok) {
+        if (d.user) {
+          state.user = d.user;
+          renderUserHeaderAndXP();
+        }
+        if (d.snapshot && Array.isArray(d.snapshot.tasks)) {
+          state.tasks = d.snapshot.tasks.map(normalizeClientTask);
+        }
+        if (d.task && d.task.id) {
+          state.filter = 'pending';
+          state.currentTaskId = String(d.task.id);
+        }
+        renderAll();
+        triggerLightPulse();
+        showToast('Nova tarefa adicionada · +10 XP');
+      } else {
+        showToast((d && d.error) || 'Erro ao criar tarefa.');
+      }
+    } catch (_) {
+      showToast('Erro de conexao ao criar tarefa.');
+    }
+  }
+
+  // ==========================================================================
+  // SHORTCUT 'CMD+K / CTRL+K': SPOTLIGHT SEARCH & COMMAND BAR
+  // ==========================================================================
+  function openSpotlightModal() {
+    closeAllModals();
+    const modal = document.getElementById('spotlightModal');
+    const input = document.getElementById('spotlightInput');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    state.spotlightIndex = 0;
+    if (input) {
+      input.value = '';
+      setTimeout(() => input.focus(), 30);
+    }
+    renderSpotlightResults('');
+  }
+
+  function renderSpotlightResults(query) {
+    const q = String(query || '').trim().toLowerCase();
+    const container = document.getElementById('spotlightResultsList');
+    if (!container) return;
+
+    const commands = [
+      {
+        type: 'cmd',
+        id: 'cmd_new_task',
+        title: 'Criar Nova Tarefa com Atalhos de Agenda',
+        right: 'Tecla Q',
+        run: () => openQuickAddModal(q)
+      },
+      {
+        type: 'cmd',
+        id: 'cmd_toggle_timer',
+        title: state.timerRunning ? 'Pausar Cronometro de Foco' : 'Iniciar Cronometro de Foco',
+        right: 'Espaco',
+        run: () => toggleTimerPlayPause()
+      },
+      {
+        type: 'cmd',
+        id: 'cmd_complete_current',
+        title: 'Concluir Tarefa em Foco Agora',
+        right: '+50 XP',
+        run: () => {
+          const cur = getCurrentTask();
+          if (cur) toggleTaskChecked(cur.id);
+        }
+      },
+      {
+        type: 'cmd',
+        id: 'cmd_open_reports',
+        title: 'Abrir Relatorios de Foco & Nivel de XP',
+        right: 'Relatorios',
+        run: () => openReportsModal()
+      },
+      {
+        type: 'cmd',
+        id: 'cmd_sync_todoist',
+        title: 'Sincronizar com Todoist Agora',
+        right: 'Sync',
+        run: () => loadWorkspaceData(true)
+      },
+      {
+        type: 'cmd',
+        id: 'cmd_toggle_theme',
+        title: state.theme === 'dark' ? 'Mudar para Modo Claro (Pearl Light)' : 'Mudar para Modo Escuro (Obsidian Dark)',
+        right: 'Tema',
+        run: () => applyTheme(state.theme === 'dark' ? 'light' : 'dark')
+      }
+    ];
+
+    const matchingTasks = state.tasks
+      .filter((t) => {
+        if (!q) return !t.checked;
+        return (
+          t.content.toLowerCase().includes(q) ||
+          (t.projectName && t.projectName.toLowerCase().includes(q)) ||
+          (t.labels || []).some((l) => l.toLowerCase().includes(q))
+        );
+      })
+      .slice(0, 8)
+      .map((t) => ({
+        type: 'task',
+        id: t.id,
+        title: t.content,
+        right: `${t.checked ? 'Concluida · ' : ''}${t.estimatedMinutes || 15}m`,
+        run: () => {
+          state.filter = t.checked ? 'all' : 'pending';
+          state.currentTaskId = t.id;
+          renderAll();
+          showToast('Tarefa colocada em foco.');
+        }
+      }));
+
+    const matchingCmds = commands.filter((c) => !q || c.title.toLowerCase().includes(q));
+    state.spotlightItems = [...matchingTasks, ...matchingCmds];
+    if (state.spotlightIndex >= state.spotlightItems.length) {
+      state.spotlightIndex = 0;
+    }
+
+    if (state.spotlightItems.length === 0) {
+      container.innerHTML = `<div class="spotlight-item" data-spot-idx="0"><div class="spotlight-item-left"><span class="spotlight-item-title">Criar tarefa "${escapeHtml(query)}"</span></div><span class="spotlight-item-right">Enter</span></div>`;
+      state.spotlightItems = [
+        {
+          type: 'cmd',
+          id: 'cmd_quick_create',
+          title: query,
+          right: 'Enter',
+          run: () => openQuickAddModal(query)
+        }
+      ];
+      return;
+    }
+
+    let html = '';
+    if (matchingTasks.length > 0) {
+      html += `<div class="spotlight-section-label">Tarefas da Agenda</div>`;
+      matchingTasks.forEach((item, idx) => {
+        const sel = idx === state.spotlightIndex ? 'selected' : '';
+        html += `
+          <div class="spotlight-item ${sel}" data-spot-idx="${idx}" role="option">
+            <div class="spotlight-item-left">
+              <svg class="spotlight-item-icon" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.75"/>
+              </svg>
+              <span class="spotlight-item-title">${escapeHtml(item.title)}</span>
+            </div>
+            <span class="spotlight-item-right">${escapeHtml(item.right)}</span>
+          </div>
+        `;
+      });
+    }
+
+    if (matchingCmds.length > 0) {
+      html += `<div class="spotlight-section-label">Acoes e Comandos</div>`;
+      matchingCmds.forEach((item, cIdx) => {
+        const idx = matchingTasks.length + cIdx;
+        const sel = idx === state.spotlightIndex ? 'selected' : '';
+        html += `
+          <div class="spotlight-item ${sel}" data-spot-idx="${idx}" role="option">
+            <div class="spotlight-item-left">
+              <svg class="spotlight-item-icon" viewBox="0 0 24 24" fill="none">
+                <path d="M13 3L4 14H12L11 21L20 10H12L13 3Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+              </svg>
+              <span class="spotlight-item-title">${escapeHtml(item.title)}</span>
+            </div>
+            <span class="spotlight-item-right">${escapeHtml(item.right)}</span>
+          </div>
+        `;
+      });
+    }
+
+    container.innerHTML = html;
+  }
+
+  function executeSpotlightSelected() {
+    const item = state.spotlightItems[state.spotlightIndex];
+    if (!item) return;
+    closeAllModals();
+    item.run();
+  }
+
+  // ==========================================================================
+  // REPORTS & XP MODAL + SETTINGS MODAL
+  // ==========================================================================
+  function openReportsModal() {
+    closeAllModals();
+    const modal = document.getElementById('reportsModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    renderUserHeaderAndXP();
+
+    const todayStr = getTodayDateStr();
+    const sessions = (state.timesData && Array.isArray(state.timesData.sessions)) ? state.timesData.sessions : [];
+    const todaySessions = sessions.filter((s) => s.date === todayStr);
+    const totalSec = todaySessions.reduce((acc, s) => acc + Number(s.durationSeconds || 0), 0);
+    const timedCount = todaySessions.filter((s) => !s.completedWithoutTimer && Number(s.durationSeconds || 0) > 0).length;
+    const quickCount = todaySessions.filter((s) => s.completedWithoutTimer || Number(s.durationSeconds || 0) === 0).length;
+
+    const kpiMins = document.getElementById('kpiFocusedMinutes');
+    const kpiTimed = document.getElementById('kpiTimedTasks');
+    const kpiQuick = document.getElementById('kpiQuickTasks');
+    const kpiAcc = document.getElementById('kpiAccuracyPct');
+
+    if (kpiMins) kpiMins.textContent = `${Math.round(totalSec / 60)} min`;
+    if (kpiTimed) kpiTimed.textContent = String(timedCount);
+    if (kpiQuick) kpiQuick.textContent = String(quickCount);
+    if (kpiAcc) kpiAcc.textContent = '100%';
+
+    const histList = document.getElementById('reportsTaskHistoryList');
+    if (histList) {
+      const avgs = Object.values((state.timesData && state.timesData.taskAverages) || {});
+      if (avgs.length === 0) {
+        histList.innerHTML = `<div class="history-row"><span class="history-row-meta">Nenhuma sessao cronometrada registrada ainda.</span></div>`;
+      } else {
+        histList.innerHTML = avgs
+          .slice(0, 15)
+          .map(
+            (a) => `
+            <div class="history-row">
+              <span class="history-row-title">${escapeHtml(a.content)}</span>
+              <span class="history-row-meta">${a.runs}x · Media ${a.avgMinutes}m · Total ${Math.round((a.totalSeconds || 0) / 60)}m</span>
+            </div>
+          `
+          )
+          .join('');
+      }
+    }
+  }
+
+  function openSettingsModal() {
+    closeAllModals();
+    const modal = document.getElementById('settingsModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    renderUserHeaderAndXP();
+    const note = document.getElementById('todoistStatusNote');
+    if (note) {
+      note.textContent = state.hasTodoistToken
+        ? 'Token do Todoist ativo e sincronizado no servidor.'
+        : 'Nenhum token do Todoist configurado nesta conta.';
+    }
+  }
+
+  function closeAllModals() {
+    ['quickAddModal', 'spotlightModal', 'reportsModal', 'settingsModal'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
     });
   }
 
-  function bindV2Events() {
-    // Auth Gate
-    const authForm = document.getElementById('auth-gate-form');
-    const authUnlocked = document.getElementById('auth-unlocked-box');
-    const splash = document.getElementById('splash-screen');
+  // ==========================================================================
+  // EVENT BINDINGS & GLOBAL KEYBOARD SHORTCUTS ('Q', 'CMD+K', 'SPACE', 'ESC')
+  // ==========================================================================
+  function bindEvents() {
+    // Auth Tabs
+    const tabLogin = document.getElementById('authTabLogin');
+    const tabReg = document.getElementById('authTabRegister');
+    if (tabLogin) tabLogin.addEventListener('click', () => setAuthMode('login'));
+    if (tabReg) tabReg.addEventListener('click', () => setAuthMode('register'));
 
-    fetch('/api/auth/verify')
-      .then((r) => r.json())
-      .then((d) => {
-        if (d && d.authenticated) {
-          if (authForm) authForm.style.display = 'none';
-          if (authUnlocked) authUnlocked.style.display = 'block';
-          initTasksAndTimes().then(() => updateV2GamificationAndPlanning());
-        } else {
-          if (authForm) authForm.style.display = 'flex';
-          if (authUnlocked) authUnlocked.style.display = 'none';
-        }
-      })
-      .catch(() => {});
-
+    // Auth Form Submit
+    const authForm = document.getElementById('authForm');
     if (authForm) {
       authForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const inp = document.getElementById('auth-password-input');
-        const err = document.getElementById('auth-error-msg');
-        const password = inp ? inp.value : '';
+        const nameInput = document.getElementById('authNameInput');
+        const emailInput = document.getElementById('authEmailInput');
+        const passInput = document.getElementById('authPasswordInput');
+        const errMsg = document.getElementById('authErrorMsg');
+
+        const name = nameInput ? nameInput.value.trim() : '';
+        const email = emailInput ? emailInput.value.trim() : '';
+        const password = passInput ? passInput.value.trim() : '';
+
+        if (errMsg) errMsg.classList.add('hidden');
+
+        const endpoint = state.authMode === 'register' ? '/api/auth/register' : '/api/auth/login';
         try {
-          const res = await fetch('/api/auth/login', {
+          const r = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password })
+            body: JSON.stringify({ name, email, password })
           });
-          const data = await res.json();
-          if (res.ok && data.ok) {
-            state.authToken = data.token;
-            localStorage.setItem(AUTH_TOKEN_KEY, data.token);
-            if (err) err.style.display = 'none';
-            ensureAudioContext();
-            if (splash) splash.classList.add('hidden');
-            await initTasksAndTimes();
-            updateV2GamificationAndPlanning();
-          } else if (err) {
-            err.style.display = 'block';
-            err.textContent = 'Senha incorreta. Use a senha Admin do seu cofre.';
+          const d = await r.json();
+          if (r.ok && d && d.authenticated) {
+            state.authenticated = true;
+            state.user = d.user || null;
+            state.hasTodoistToken = Boolean(d.hasServerTodoistToken);
+            if (passInput) passInput.value = '';
+            updateAuthUI();
+            triggerLightPulse();
+            await loadWorkspaceData();
+            showToast(`Bem-vindo, ${(state.user && state.user.name) || 'Walace'}`);
+          } else {
+            if (errMsg) {
+              errMsg.textContent = (d && d.error) || 'Credenciais invalidas.';
+              errMsg.classList.remove('hidden');
+            }
           }
         } catch (_) {
-          if (err) {
-            err.style.display = 'block';
-            err.textContent = 'Erro ao validar senha.';
+          if (errMsg) {
+            errMsg.textContent = 'Erro de comunicacao com o servidor.';
+            errMsg.classList.remove('hidden');
           }
         }
       });
     }
 
-    const lockBtn = document.getElementById('btn-logout-lock');
-    if (lockBtn) {
-      lockBtn.addEventListener('click', async () => {
-        stopTaskTimer(false);
-        await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        state.authToken = '';
-        if (authForm) authForm.style.display = 'flex';
-        if (authUnlocked) authUnlocked.style.display = 'none';
-        if (splash) splash.classList.remove('hidden');
-      });
-    }
-
-    // Círculo de check principal no card
-    const checkCircle = document.getElementById('btn-check-circle-main');
-    if (checkCircle) {
-      checkCircle.addEventListener('click', () => {
-        completeCurrentTask();
-      });
-    }
-
-    // Expandir / recolher descrição longa
-    const expBtn = document.getElementById('btn-toggle-desc-expand');
-    if (expBtn) {
-      expBtn.addEventListener('click', () => {
-        state.descExpanded = !state.descExpanded;
-        updateV2GamificationAndPlanning();
-      });
-    }
-
-    // Estimador inline no card principal
-    const estBadge = document.getElementById('task-estimate-badge');
-    const inlineEst = document.getElementById('card-inline-estimator');
-    if (estBadge && inlineEst) {
-      estBadge.addEventListener('click', () => {
-        inlineEst.style.display = inlineEst.style.display === 'none' ? 'flex' : 'none';
-      });
-    }
-    document.querySelectorAll('.est-pill-btn[data-est-min]').forEach((btn) => {
+    // Filter pills
+    document.querySelectorAll('.filter-pill').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const t = state.tasks[state.currentIndex];
-        if (!t) return;
-        saveTaskEstimateV2(t.id, btn.getAttribute('data-est-min'));
-        if (inlineEst) inlineEst.style.display = 'none';
+        document.querySelectorAll('.filter-pill').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.filter = btn.getAttribute('data-filter') || 'pending';
+        ensureValidCurrentTask();
+        renderAll();
       });
     });
-    const customEst = document.getElementById('card-custom-est-input');
-    if (customEst) {
-      customEst.addEventListener('change', () => {
-        const t = state.tasks[state.currentIndex];
-        if (!t) return;
-        saveTaskEstimateV2(t.id, customEst.value);
-        if (inlineEst) inlineEst.style.display = 'none';
+
+    // Top bar actions
+    const openSpotlightBtn = document.getElementById('openSpotlightBtn');
+    const openQuickAddBtn = document.getElementById('openQuickAddBtn');
+    const queueQuickAddBtn = document.getElementById('queueQuickAddBtn');
+    const openReportsBtn = document.getElementById('openReportsBtn');
+    const openSettingsBtn = document.getElementById('openSettingsBtn');
+    const pulseToggleBtn = document.getElementById('pulseToggleBtn');
+    const syncNowBtn = document.getElementById('syncNowBtn');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+
+    if (openSpotlightBtn) openSpotlightBtn.addEventListener('click', openSpotlightModal);
+    if (openQuickAddBtn) openQuickAddBtn.addEventListener('click', () => openQuickAddModal(''));
+    if (queueQuickAddBtn) queueQuickAddBtn.addEventListener('click', () => openQuickAddModal(''));
+    if (openReportsBtn) openReportsBtn.addEventListener('click', openReportsModal);
+    if (openSettingsBtn) openSettingsBtn.addEventListener('click', openSettingsModal);
+
+    if (pulseToggleBtn) {
+      pulseToggleBtn.classList.toggle('active', state.pulse5mEnabled);
+      pulseToggleBtn.addEventListener('click', () => {
+        state.pulse5mEnabled = !state.pulse5mEnabled;
+        localStorage.setItem(STORAGE_KEYS.PULSE_5M, state.pulse5mEnabled ? '1' : '0');
+        pulseToggleBtn.classList.toggle('active', state.pulse5mEnabled);
+        if (state.pulse5mEnabled) triggerLightPulse();
+        showToast(state.pulse5mEnabled ? 'Pulso luminoso de 5m ativado.' : 'Pulso luminoso de 5m silenciado.');
       });
     }
 
-    // Botões rápidos de sincronizar Todoist no topo e na gaveta
-    const quickSyncHeader = document.getElementById('btn-quick-sync-header');
-    const syncDrawerTop = document.getElementById('btn-sync-drawer-top');
-    const handleQuickSync = async () => {
-      const sp = document.getElementById('header-sync-spinner');
-      const st = document.getElementById('sync-status-text');
-      if (sp) sp.classList.add('spinning');
-      if (st) st.textContent = 'Sincronizando...';
-      try {
-        const r = await fetch('/api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-        if (r.ok) {
-          const d = await r.json();
-          if (d && d.snapshot) applySnapshotTasks(d.snapshot);
-        } else {
-          await initTasksAndTimes();
+    if (syncNowBtn) {
+      syncNowBtn.addEventListener('click', async () => {
+        await loadWorkspaceData(true);
+        showToast('Agenda sincronizada.');
+      });
+    }
+
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+      });
+    }
+
+    // Focus card controls
+    const heroCheckBtn = document.getElementById('heroCheckBtn');
+    const timerPlayPauseBtn = document.getElementById('timerPlayPauseBtn');
+    const timerCompleteBtn = document.getElementById('timerCompleteBtn');
+    const timerResetBtn = document.getElementById('timerResetBtn');
+    const prevTaskBtn = document.getElementById('prevTaskBtn');
+    const nextTaskBtn = document.getElementById('nextTaskBtn');
+    const toggleDescBtn = document.getElementById('toggleDescExpandBtn');
+
+    if (heroCheckBtn) {
+      heroCheckBtn.addEventListener('click', () => {
+        const cur = getCurrentTask();
+        if (cur) toggleTaskChecked(cur.id);
+      });
+    }
+    if (timerPlayPauseBtn) timerPlayPauseBtn.addEventListener('click', toggleTimerPlayPause);
+    if (timerCompleteBtn) {
+      timerCompleteBtn.addEventListener('click', () => {
+        const cur = getCurrentTask();
+        if (cur) toggleTaskChecked(cur.id);
+      });
+    }
+    if (timerResetBtn) timerResetBtn.addEventListener('click', resetTimer);
+    if (prevTaskBtn) prevTaskBtn.addEventListener('click', () => stepTask(-1));
+    if (nextTaskBtn) nextTaskBtn.addEventListener('click', () => stepTask(1));
+    if (toggleDescBtn) {
+      toggleDescBtn.addEventListener('click', () => {
+        state.descExpanded = !state.descExpanded;
+        renderFocusCard();
+      });
+    }
+
+    // Inline estimate bar
+    const taskEstBtn = document.getElementById('taskEstimateBtn');
+    const inlineEstBar = document.getElementById('inlineEstimateBar');
+    const saveCustomEstBtn = document.getElementById('saveCustomEstimateBtn');
+    const customEstInput = document.getElementById('customEstimateInput');
+
+    if (taskEstBtn && inlineEstBar) {
+      taskEstBtn.addEventListener('click', () => {
+        inlineEstBar.classList.toggle('hidden');
+      });
+    }
+    document.querySelectorAll('.est-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        saveTaskEstimate(Number(chip.getAttribute('data-min') || 15));
+      });
+    });
+    if (saveCustomEstBtn && customEstInput) {
+      saveCustomEstBtn.addEventListener('click', () => {
+        if (customEstInput.value) saveTaskEstimate(Number(customEstInput.value));
+      });
+    }
+
+    // Subtasks click delegation
+    const subtasksList = document.getElementById('focusSubtasksList');
+    if (subtasksList) {
+      subtasksList.addEventListener('click', (e) => {
+        const row = e.target.closest('.subtask-row');
+        if (!row) return;
+        const sid = row.getAttribute('data-subtask-id');
+        if (!sid) return;
+        state.subtasksDone[sid] = !state.subtasksDone[sid];
+        saveJsonStorage(STORAGE_KEYS.SUBTASKS, state.subtasksDone);
+        if (state.subtasksDone[sid]) triggerLightPulse();
+        renderFocusCard();
+      });
+    }
+
+    // Queue list click delegation
+    const queueList = document.getElementById('agendaQueueList');
+    if (queueList) {
+      queueList.addEventListener('click', (e) => {
+        const checkBtn = e.target.closest('[data-check-task-id]');
+        if (checkBtn) {
+          e.stopPropagation();
+          toggleTaskChecked(checkBtn.getAttribute('data-check-task-id'));
+          return;
         }
-        renderQueueModalListV2();
-        updateV2GamificationAndPlanning();
-        if (st) st.textContent = 'Sincronizado';
-      } catch (_) {
-        if (st) st.textContent = 'Sincronizado';
-      } finally {
-        if (sp) sp.classList.remove('spinning');
+        const row = e.target.closest('[data-task-id]');
+        if (row) {
+          state.currentTaskId = row.getAttribute('data-task-id');
+          state.descExpanded = false;
+          resetTimer();
+          renderAll();
+        }
+      });
+    }
+
+    // Quick-Add Modal events
+    const quickAddInput = document.getElementById('quickAddInput');
+    const quickAddForm = document.getElementById('quickAddForm');
+    if (quickAddInput) {
+      quickAddInput.addEventListener('input', updateQuickAddNlpPreview);
+    }
+    if (quickAddForm) {
+      quickAddForm.addEventListener('submit', handleQuickAddSubmit);
+    }
+
+    document.querySelectorAll('[data-qa-date]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-qa-date]').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.qaPicker.date = btn.getAttribute('data-qa-date');
+        updateQuickAddNlpPreview();
+      });
+    });
+    document.querySelectorAll('[data-qa-est]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-qa-est]').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.qaPicker.est = Number(btn.getAttribute('data-qa-est') || 15);
+        updateQuickAddNlpPreview();
+      });
+    });
+    document.querySelectorAll('[data-qa-prio]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-qa-prio]').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.qaPicker.prio = btn.getAttribute('data-qa-prio') || 'p4';
+        updateQuickAddNlpPreview();
+      });
+    });
+
+    // Spotlight Modal events
+    const spotlightInput = document.getElementById('spotlightInput');
+    const spotlightList = document.getElementById('spotlightResultsList');
+    if (spotlightInput) {
+      spotlightInput.addEventListener('input', () => {
+        state.spotlightIndex = 0;
+        renderSpotlightResults(spotlightInput.value);
+      });
+      spotlightInput.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (state.spotlightItems.length > 0) {
+            state.spotlightIndex = (state.spotlightIndex + 1) % state.spotlightItems.length;
+            renderSpotlightResults(spotlightInput.value);
+          }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (state.spotlightItems.length > 0) {
+            state.spotlightIndex =
+              (state.spotlightIndex - 1 + state.spotlightItems.length) % state.spotlightItems.length;
+            renderSpotlightResults(spotlightInput.value);
+          }
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          executeSpotlightSelected();
+        }
+      });
+    }
+    if (spotlightList) {
+      spotlightList.addEventListener('click', (e) => {
+        const item = e.target.closest('[data-spot-idx]');
+        if (!item) return;
+        state.spotlightIndex = Number(item.getAttribute('data-spot-idx') || 0);
+        executeSpotlightSelected();
+      });
+    }
+
+    // Export JSON in Reports Modal
+    const exportBtn = document.getElementById('exportTimesJsonBtn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(state.timesData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `lightfocus-relatorio-${getTodayDateStr()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // Settings Modal: Logout & Todoist Token Save
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async () => {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        closeAllModals();
+        resetTimer();
+        state.authenticated = false;
+        state.user = null;
+        updateAuthUI();
+        showToast('Sessao encerrada.');
+      });
+    }
+
+    const todoistForm = document.getElementById('todoistConfigForm');
+    if (todoistForm) {
+      todoistForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('todoistTokenInput');
+        const note = document.getElementById('todoistStatusNote');
+        const token = input ? input.value.trim() : '';
+        if (note) note.textContent = 'Validando e sincronizando com Todoist...';
+        try {
+          const r = await fetch('/api/config/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          const d = await r.json();
+          if (r.ok && d && d.ok) {
+            state.hasTodoistToken = Boolean(d.hasServerTodoistToken);
+            if (d.snapshot && Array.isArray(d.snapshot.tasks)) {
+              state.tasks = d.snapshot.tasks.map(normalizeClientTask);
+              renderAll();
+            }
+            if (note) note.textContent = 'Sincronizado com sucesso com sua conta Todoist.';
+            showToast('Todoist sincronizado.');
+          } else {
+            if (note) note.textContent = (d && d.error) || 'Nao foi possivel sincronizar este token.';
+          }
+        } catch (_) {
+          if (note) note.textContent = 'Erro ao salvar token.';
+        }
+      });
+    }
+
+    // Close modal buttons & backdrop click
+    document.querySelectorAll('[data-close-modal]').forEach((btn) => {
+      btn.addEventListener('click', closeAllModals);
+    });
+    document.querySelectorAll('.glass-modal-backdrop').forEach((backdrop) => {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeAllModals();
+      });
+    });
+
+    // Global Keyboard Shortcuts: Q, Cmd/Ctrl+K, Space, Arrows, Escape
+    document.addEventListener('keydown', (e) => {
+      if (!state.authenticated) return;
+
+      // Cmd+K or Ctrl+K -> Spotlight
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const spot = document.getElementById('spotlightModal');
+        if (spot && !spot.classList.contains('hidden')) {
+          closeAllModals();
+        } else {
+          openSpotlightModal();
+        }
+        return;
       }
-    };
-    if (quickSyncHeader) quickSyncHeader.addEventListener('click', handleQuickSync);
-    if (syncDrawerTop) syncDrawerTop.addEventListener('click', handleQuickSync);
+
+      if (e.key === 'Escape') {
+        closeAllModals();
+        const estBar = document.getElementById('inlineEstimateBar');
+        if (estBar) estBar.classList.add('hidden');
+        return;
+      }
+
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      const isTyping = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+      if (isTyping) return;
+
+      if (e.key.toLowerCase() === 'q' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        openQuickAddModal('');
+      } else if (e.code === 'Space') {
+        e.preventDefault();
+        toggleTimerPlayPause();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        stepTask(1);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        stepTask(-1);
+      }
+    });
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    bindV2Events();
-    setupEyeTracking();
+    applyTheme(state.theme);
     bindEvents();
-    updateLofiUI();
-    updateAttentionCountdownBadge();
-    initTasksAndTimes();
+    checkSessionAndBoot();
   });
 })();

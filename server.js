@@ -1,16 +1,12 @@
 #!/usr/bin/env node
 /**
- * LightFocus v2 — estrelando Miss Minutos
- * Servidor Node.js (zero dependências externas)
- * - Proteção por senha (compatível com a senha Admin do Vault do Walace via SHA-256 + sessão de 30 dias)
- * - Sincronização bidirecional real com Todoist (Sync API v9 + REST API v2 + Fila de Sincronização)
- *   - Concluir tarefa (item_close preservando recorrência)
- *   - Reabrir tarefa (item_uncomplete / reopen)
- *   - Definir/atualizar estimativa de tempo por tarefa (duration + descrição [min])
- *   - Reordenar e sincronizar ordem exata do Hoje (day_orders / child_order)
- * - Grava logs de tempo reais e gamificação para a Miss Minutos ler antes das 5h30:
- *   1) /cursor/stores/store-5b2033df-0366-49bc-b749-db89d38460ab/lightfocus-times.json
- *   2) /workspace/lightfocus/data/lightfocus-times.json
+ * LightFocus v3 — Apple Liquid Glass Commercial SaaS Edition
+ * Zero external npm dependencies (runs natively on node:20-alpine)
+ * Features:
+ * - Multi-user commercial SaaS registration & authentication (data/users.json + persistent store backup)
+ * - Founder account pre-seeded for Walace Messias (walacetkwl@gmail.com) with Vault Admin SHA-256 hash + quick passwords + Todoist snapshot
+ * - Per-user task workspace, XP/Level/Streak progression, time analytics, and Todoist Sync v9 / REST v2 integration
+ * - Natural language Quick-Add task creation, inline time estimates, task updates, deletion, and completion
  */
 
 const http = require('http');
@@ -23,15 +19,18 @@ const ROOT_DIR = __dirname;
 const DATA_DIR = path.join(ROOT_DIR, 'data');
 const SNAPSHOT_FILE = path.join(DATA_DIR, 'todoist-snapshot.json');
 const LOCAL_TIMES_FILE = path.join(DATA_DIR, 'lightfocus-times.json');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const TOKEN_FILE = path.join(DATA_DIR, '.todoist-token');
 const AUTH_HASH_FILE = path.join(DATA_DIR, '.auth-sha256');
 const SYNC_QUEUE_FILE = path.join(DATA_DIR, 'todoist-sync-queue.json');
+
+const PERSISTENT_STORE_DIR = '/cursor/stores/store-299e4d2b-b1b8-4b9f-b8a2-8d06b3bf0b20';
+const PERSISTENT_USERS_FILE = path.join(PERSISTENT_STORE_DIR, 'lightfocus-users.json');
 
 const MISS_MINUTOS_STORE_DIR = '/cursor/stores/store-5b2033df-0366-49bc-b749-db89d38460ab';
 const MISS_MINUTOS_TIMES_FILE = path.join(MISS_MINUTOS_STORE_DIR, 'lightfocus-times.json');
 const MISS_MINUTOS_TOKEN_FILE = path.join(MISS_MINUTOS_STORE_DIR, 'todoist-token.txt');
 
-// Hash SHA-256 com salt da senha Admin padrão do Walace (Vault: Afilify Admin / PalcoGestão)
 const DEFAULT_ADMIN_SHA256 = 'bac5ff9e8ab23f2c26d1749c32bb930943db8110e9d82880d3d34168cccc3a55';
 const AUTH_SALT = 'lightfocus_salt_v2:';
 
@@ -60,8 +59,16 @@ function getSaoPauloNow() {
   return { dateStr, isoStr };
 }
 
+function stripEmojisServer(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]/gu, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 // ============================================================================
-// Autenticação e Controle de Acesso (Sessão de 30 dias)
+// Password Hashing & Signing
 // ============================================================================
 function computePasswordHash(plainPassword) {
   return crypto
@@ -70,7 +77,7 @@ function computePasswordHash(plainPassword) {
     .digest('hex');
 }
 
-function getAllowedPasswordHashes() {
+function getFounderAllowedHashes() {
   const hashes = new Set([DEFAULT_ADMIN_SHA256]);
   try {
     if (fs.existsSync(AUTH_HASH_FILE)) {
@@ -78,44 +85,46 @@ function getAllowedPasswordHashes() {
       if (h) hashes.add(h);
     }
   } catch (e) {}
-
   if (process.env.LIGHTFOCUS_PASSWORD && process.env.LIGHTFOCUS_PASSWORD.trim()) {
     hashes.add(computePasswordHash(process.env.LIGHTFOCUS_PASSWORD.trim()));
   }
-  // Senhas rápidas alternativas para o Walace caso esteja no celular sem o Vault aberto
   hashes.add(computePasswordHash('walace2026'));
   hashes.add(computePasswordHash('tubalabs'));
   return hashes;
 }
 
 function getSigningSecret() {
-  const allowed = Array.from(getAllowedPasswordHashes())[0] || DEFAULT_ADMIN_SHA256;
-  return crypto.createHash('sha256').update('lf_hmac_secret:' + allowed).digest('hex');
+  return crypto.createHash('sha256').update('lf_v3_hmac_secret:' + DEFAULT_ADMIN_SHA256).digest('hex');
 }
 
-function createAuthToken() {
-  const exp = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 dias
-  const payload = `walace.${exp}`;
+function createAuthToken(userId) {
+  const exp = Date.now() + 30 * 24 * 60 * 60 * 1000;
+  const safeId = Buffer.from(String(userId || 'usr_walace')).toString('base64url');
+  const payload = `${safeId}.${exp}`;
   const sig = crypto.createHmac('sha256', getSigningSecret()).update(payload).digest('hex');
   return `${payload}.${sig}`;
 }
 
 function verifyAuthToken(token) {
-  if (!token || typeof token !== 'string') return false;
+  if (!token || typeof token !== 'string') return null;
   const parts = token.trim().split('.');
-  if (parts.length !== 3) return false;
-  const [user, expStr, sig] = parts;
-  if (user !== 'walace') return false;
+  if (parts.length !== 3) return null;
+  const [safeId, expStr, sig] = parts;
   const exp = Number(expStr);
-  if (!exp || Date.now() > exp) return false;
+  if (!exp || Date.now() > exp) return null;
   const expectedSig = crypto
     .createHmac('sha256', getSigningSecret())
-    .update(`${user}.${expStr}`)
+    .update(`${safeId}.${expStr}`)
     .digest('hex');
   try {
-    return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig));
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) {
+      return null;
+    }
+    if (safeId === 'walace') return 'usr_walace';
+    const decoded = Buffer.from(safeId, 'base64url').toString('utf8');
+    return decoded || 'usr_walace';
   } catch (e) {
-    return false;
+    return null;
   }
 }
 
@@ -133,24 +142,27 @@ function parseCookies(req) {
   return out;
 }
 
-function isRequestAuthorized(req) {
+function getAuthenticatedUserId(req) {
   const headerToken = (req.headers['x-lightfocus-auth'] || '').toString().trim();
-  if (headerToken && verifyAuthToken(headerToken)) return true;
-
+  if (headerToken) {
+    const uid = verifyAuthToken(headerToken);
+    if (uid) return uid;
+  }
   const authHeader = (req.headers.authorization || '').toString().trim();
   if (authHeader.startsWith('Bearer ')) {
-    const bearer = authHeader.slice(7).trim();
-    if (verifyAuthToken(bearer)) return true;
+    const uid = verifyAuthToken(authHeader.slice(7).trim());
+    if (uid) return uid;
   }
-
   const cookies = parseCookies(req);
-  if (cookies.lf_auth && verifyAuthToken(cookies.lf_auth)) return true;
-
-  return false;
+  if (cookies.lf_auth) {
+    const uid = verifyAuthToken(cookies.lf_auth);
+    if (uid) return uid;
+  }
+  return null;
 }
 
 // ============================================================================
-// Gerenciamento de Token Todoist e Fila de Sincronização
+// Todoist Server Token & Sync Queue Helpers
 // ============================================================================
 function getStoredTodoistToken() {
   if (process.env.TODOIST_API_TOKEN && process.env.TODOIST_API_TOKEN.trim()) {
@@ -177,7 +189,6 @@ function saveTodoistToken(token) {
     }
     return true;
   } catch (err) {
-    console.error('Erro ao salvar token:', err.message);
     return false;
   }
 }
@@ -209,15 +220,13 @@ function enqueueTodoistOperation(op) {
 }
 
 // ============================================================================
-// Persistência de Tempos, Estimativas e Gamificação (Miss Minutos 5h30)
+// Times & Analytics Engine
 // ============================================================================
 function defaultTimesPayload() {
   const { isoStr } = getSaoPauloNow();
   return {
     app: 'LightFocus',
     owner: 'Walace Messias',
-    agent: 'Miss Minutos · Adm do Tempo',
-    agentId: '48d857a0-88cd-4c58-887e-43fd9aa850bb',
     timezone: 'America/Sao_Paulo',
     updatedAt: isoStr,
     sessions: [],
@@ -258,7 +267,7 @@ function recomputeAggregates(data) {
     if (!taskMap[key]) {
       taskMap[key] = {
         taskId: s.taskId || null,
-        content: s.content || 'Tarefa',
+        content: stripEmojisServer(s.content || 'Tarefa'),
         projectId: s.projectId || '6CrgFRpqRPQVfgjG',
         totalSessions: 0,
         timedSessions: 0,
@@ -273,7 +282,7 @@ function recomputeAggregates(data) {
       };
     }
     const entry = taskMap[key];
-    entry.content = s.content || entry.content;
+    entry.content = stripEmojisServer(s.content || entry.content);
     if (s.estimatedMinutes) entry.estimatedMinutes = s.estimatedMinutes;
     if (taskEstimates[key]) entry.estimatedMinutes = taskEstimates[key];
 
@@ -313,7 +322,7 @@ function recomputeAggregates(data) {
     day.totalFocusedMinutes = Number((day.totalFocusedSeconds / 60).toFixed(2));
     day.tasks.push({
       taskId: s.taskId,
-      content: s.content,
+      content: stripEmojisServer(s.content),
       durationSeconds: dur,
       durationMinutes: Number((dur / 60).toFixed(2)),
       estimatedMinutes: entry.estimatedMinutes,
@@ -346,18 +355,14 @@ function writeTimesData(data) {
   try {
     fs.writeFileSync(LOCAL_TIMES_FILE, jsonStr, 'utf8');
     writtenPaths.push(LOCAL_TIMES_FILE);
-  } catch (err) {
-    console.error('Erro ao gravar LOCAL_TIMES_FILE:', err.message);
-  }
+  } catch (err) {}
 
   try {
     if (fs.existsSync(MISS_MINUTOS_STORE_DIR)) {
       fs.writeFileSync(MISS_MINUTOS_TIMES_FILE, jsonStr, 'utf8');
       writtenPaths.push(MISS_MINUTOS_TIMES_FILE);
     }
-  } catch (err) {
-    console.error('Erro ao gravar MISS_MINUTOS_TIMES_FILE:', err.message);
-  }
+  } catch (err) {}
 
   return { data: enriched, writtenPaths };
 }
@@ -365,7 +370,7 @@ function writeTimesData(data) {
 writeTimesData(readTimesData());
 
 // ============================================================================
-// Leitura e Gravação do Snapshot de Tarefas do Hoje
+// Snapshot & Multi-User Store (data/users.json + persistent backup)
 // ============================================================================
 function readSnapshot() {
   try {
@@ -376,17 +381,16 @@ function readSnapshot() {
       if (Array.isArray(snap.tasks)) {
         snap.tasks = snap.tasks.map((t) => {
           const customEst = estMap[String(t.id)];
+          const cleanContent = stripEmojisServer(t.content);
           if (customEst !== undefined && customEst !== null) {
-            return { ...t, estimatedMinutes: Number(customEst) || null };
+            return { ...t, content: cleanContent, estimatedMinutes: Number(customEst) || null };
           }
-          return t;
+          return { ...t, content: cleanContent };
         });
       }
       return snap;
     }
-  } catch (err) {
-    console.error('Erro ao ler snapshot:', err.message);
-  }
+  } catch (err) {}
   return {
     syncedAt: getSaoPauloNow().isoStr,
     date: getSaoPauloNow().dateStr,
@@ -406,9 +410,251 @@ function writeSnapshot(snapshot) {
     if (fs.existsSync(path.dirname(publicSeedPath))) {
       fs.writeFileSync(publicSeedPath, jsContent, 'utf8');
     }
-  } catch (err) {
-    console.error('Erro ao salvar snapshot:', err.message);
+  } catch (err) {}
+}
+
+function buildOnboardingTasks() {
+  const { dateStr, isoStr } = getSaoPauloNow();
+  return [
+    {
+      id: 'lf_sample_1',
+      content: 'Pressione Q para criar uma tarefa rapida com atalhos de agenda',
+      description: 'Experimente digitar no modal Q: "Revisar apresentacao comercial amanha 14:30 25m p1 #produto" — o parser transforma data, horario, duracao e prioridade em chips automaticamente.',
+      dueDate: dateStr,
+      dueTime: '14:00',
+      recurring: false,
+      priority: 'p1',
+      projectId: 'inbox',
+      projectName: 'LightFocus · Onboarding',
+      labels: ['atalhos'],
+      checked: false,
+      estimatedMinutes: 15,
+      dayOrder: 1,
+      subtasks: [
+        { id: 'lf_sub_1', content: 'Testar atalho de data (hoje, amanha, seg, 30/10)', checked: false },
+        { id: 'lf_sub_2', content: 'Testar atalho de duracao (15m, 25m, 45m) e prioridade (p1..p4)', checked: false }
+      ],
+      addedAt: isoStr
+    },
+    {
+      id: 'lf_sample_2',
+      content: 'Pressione Cmd+K (ou Ctrl+K) para abrir o Spotlight de busca e comandos',
+      description: 'Busque qualquer tarefa instantaneamente ou execute acoes rapidas como iniciar o foco, alternar o modo Liquid Glass escuro, abrir relatorios de XP ou sincronizar com o Todoist.',
+      dueDate: dateStr,
+      dueTime: '15:00',
+      recurring: false,
+      priority: 'p2',
+      projectId: 'inbox',
+      projectName: 'LightFocus · Onboarding',
+      labels: ['spotlight'],
+      checked: false,
+      estimatedMinutes: 10,
+      dayOrder: 2,
+      subtasks: [],
+      addedAt: isoStr
+    },
+    {
+      id: 'lf_sample_3',
+      content: 'Inicie o cronometro de foco (Espaco) ou conecte seu Todoist',
+      description: 'Conclua tarefas com foco cronometrado para acumular XP (+50 XP por tarefa + 5 XP por minuto focado), subir de nivel no sistema Cristal -> Arquitetonico e acompanhar sua previsao de termino do dia.',
+      dueDate: dateStr,
+      dueTime: null,
+      recurring: 'todo dia',
+      priority: 'p3',
+      projectId: 'inbox',
+      projectName: 'LightFocus · Onboarding',
+      labels: ['foco'],
+      checked: false,
+      estimatedMinutes: 25,
+      dayOrder: 3,
+      subtasks: [],
+      addedAt: isoStr
+    }
+  ];
+}
+
+function computeLevelInfo(xpInput) {
+  const xp = Math.max(0, Math.round(Number(xpInput || 0)));
+  const levels = [
+    { level: 1, title: 'Cristal', minXp: 0 },
+    { level: 2, title: 'Lente Pura', minXp: 150 },
+    { level: 3, title: 'Prisma', minXp: 350 },
+    { level: 4, title: 'Refracao', minXp: 650 },
+    { level: 5, title: 'Horizonte', minXp: 1050 },
+    { level: 6, title: 'Meridiano', minXp: 1550 },
+    { level: 7, title: 'Zenite', minXp: 2200 },
+    { level: 8, title: 'Especular', minXp: 3000 },
+    { level: 9, title: 'Singularidade', minXp: 4000 },
+    { level: 10, title: 'Arquitetonico', minXp: 5200 }
+  ];
+  let current = levels[0];
+  let next = levels[1];
+  for (let i = 0; i < levels.length; i++) {
+    if (xp >= levels[i].minXp) {
+      current = levels[i];
+      next = levels[i + 1] || { level: 10, title: 'Arquitetonico Max', minXp: current.minXp + 1500 };
+    }
   }
+  const span = Math.max(1, next.minXp - current.minXp);
+  const progress = Math.min(100, Math.max(0, Math.round(((xp - current.minXp) / span) * 100)));
+  return {
+    xp,
+    level: current.level,
+    levelTitle: current.title,
+    nextLevelXp: next.minXp,
+    levelProgressPct: progress
+  };
+}
+
+function createFounderUserObject() {
+  const { isoStr } = getSaoPauloNow();
+  const snap = readSnapshot();
+  const times = readTimesData();
+  const completedCount = (snap.tasks || []).filter((t) => t.checked).length;
+  const focusedMinutes = Object.values(times.dailySummary || {}).reduce(
+    (acc, d) => acc + Number(d.totalFocusedMinutes || 0),
+    0
+  );
+  const baseXp = Math.max(380, completedCount * 50 + Math.round(focusedMinutes * 5));
+  const lvl = computeLevelInfo(baseXp);
+  return {
+    id: 'usr_walace',
+    name: 'Walace Messias',
+    email: 'walacetkwl@gmail.com',
+    role: 'founder',
+    passwordHash: DEFAULT_ADMIN_SHA256,
+    createdAt: isoStr,
+    xp: lvl.xp,
+    level: lvl.level,
+    levelTitle: lvl.levelTitle,
+    streak: 5,
+    todoistToken: getStoredTodoistToken() || '',
+    settings: {
+      theme: 'light',
+      pulseIntervalMinutes: 5,
+      soundEnabled: true
+    }
+  };
+}
+
+function readUsersStore() {
+  const candidates = [USERS_FILE, PERSISTENT_USERS_FILE];
+  for (const file of candidates) {
+    try {
+      if (fs.existsSync(file)) {
+        const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+        if (parsed && typeof parsed === 'object' && Array.isArray(parsed.users)) {
+          const hasWalace = parsed.users.some(
+            (u) => u.id === 'usr_walace' || String(u.email || '').toLowerCase() === 'walacetkwl@gmail.com'
+          );
+          if (!hasWalace) {
+            parsed.users.unshift(createFounderUserObject());
+          }
+          return parsed;
+        }
+      }
+    } catch (e) {}
+  }
+  const initial = {
+    updatedAt: getSaoPauloNow().isoStr,
+    users: [createFounderUserObject()]
+  };
+  writeUsersStore(initial);
+  return initial;
+}
+
+function writeUsersStore(store) {
+  store.updatedAt = getSaoPauloNow().isoStr;
+  const jsonStr = JSON.stringify(store, null, 2);
+  try {
+    fs.writeFileSync(USERS_FILE, jsonStr, { encoding: 'utf8', mode: 0o600 });
+  } catch (e) {}
+  try {
+    if (fs.existsSync(PERSISTENT_STORE_DIR)) {
+      fs.writeFileSync(PERSISTENT_USERS_FILE, jsonStr, { encoding: 'utf8', mode: 0o600 });
+    }
+  } catch (e) {}
+}
+
+function sanitizeUserForClient(user) {
+  if (!user) return null;
+  const lvl = computeLevelInfo(user.xp || 0);
+  const isFounder = user.id === 'usr_walace' || String(user.email || '').toLowerCase() === 'walacetkwl@gmail.com';
+  const hasToken = Boolean(user.todoistToken || (isFounder && getStoredTodoistToken()));
+  return {
+    id: user.id,
+    name: user.name || 'Usuario',
+    email: user.email || '',
+    role: user.role || 'member',
+    xp: lvl.xp,
+    level: lvl.level,
+    levelTitle: lvl.levelTitle,
+    nextLevelXp: lvl.nextLevelXp,
+    levelProgressPct: lvl.levelProgressPct,
+    streak: Number(user.streak || 1),
+    hasTodoistToken: hasToken,
+    settings: user.settings || { theme: 'light', pulseIntervalMinutes: 5, soundEnabled: true }
+  };
+}
+
+function getUserById(userId) {
+  const store = readUsersStore();
+  return store.users.find((u) => u.id === userId) || null;
+}
+
+function updateUserRecord(userId, updaterFn) {
+  const store = readUsersStore();
+  let updatedUser = null;
+  store.users = store.users.map((u) => {
+    if (u.id === userId) {
+      updatedUser = updaterFn({ ...u });
+      return updatedUser;
+    }
+    return u;
+  });
+  writeUsersStore(store);
+  return updatedUser;
+}
+
+function getUserTasksSnapshot(user) {
+  const isFounder = !user || user.id === 'usr_walace' || String(user.email || '').toLowerCase() === 'walacetkwl@gmail.com';
+  if (isFounder) {
+    return readSnapshot();
+  }
+  const { dateStr, isoStr } = getSaoPauloNow();
+  if (!Array.isArray(user.tasks)) {
+    const seeded = buildOnboardingTasks();
+    updateUserRecord(user.id, (u) => ({ ...u, tasks: seeded }));
+    return {
+      syncedAt: isoStr,
+      date: dateStr,
+      timezone: 'America/Sao_Paulo',
+      source: 'lightfocus_cloud',
+      totalToday: seeded.length,
+      tasks: seeded
+    };
+  }
+  return {
+    syncedAt: user.updatedAt || isoStr,
+    date: dateStr,
+    timezone: 'America/Sao_Paulo',
+    source: user.todoistToken ? 'todoist_sync_v9' : 'lightfocus_cloud',
+    totalToday: user.tasks.length,
+    tasks: user.tasks
+  };
+}
+
+function saveUserTasksSnapshot(user, snapshot) {
+  const isFounder = !user || user.id === 'usr_walace' || String(user.email || '').toLowerCase() === 'walacetkwl@gmail.com';
+  if (isFounder) {
+    writeSnapshot(snapshot);
+    return;
+  }
+  updateUserRecord(user.id, (u) => ({
+    ...u,
+    updatedAt: getSaoPauloNow().isoStr,
+    tasks: Array.isArray(snapshot.tasks) ? snapshot.tasks : []
+  }));
 }
 
 function extractEstimatedMinutes(desc, durationObj) {
@@ -432,7 +678,7 @@ function updateDescriptionWithEstimate(desc, minutes) {
 }
 
 // ============================================================================
-// Integração Direta Todoist Sync API v9 / REST API v2
+// Todoist Sync API v9 & REST API v2 Operations
 // ============================================================================
 async function flushQueueToTodoist(token) {
   const queue = readSyncQueue();
@@ -449,6 +695,8 @@ async function flushQueueToTodoist(token) {
         await updateTaskEstimateOnTodoist(token, op.taskId, op.estimatedMinutes, op.description);
       } else if (op.action === 'reorder') {
         await reorderTasksOnTodoist(token, op.orderedIds);
+      } else if (op.action === 'create') {
+        await createTaskOnTodoist(token, op.payload);
       }
     } catch (e) {
       remaining.push(op);
@@ -457,10 +705,46 @@ async function flushQueueToTodoist(token) {
   writeSyncQueue(remaining);
 }
 
-async function syncFromTodoistApi(token) {
-  const { dateStr, isoStr } = getSaoPauloNow();
+async function createTaskOnTodoist(token, payload) {
+  if (!token) return null;
+  const priorityMap = { p1: 4, p2: 3, p3: 2, p4: 1 };
+  const apiPriority = priorityMap[String(payload.priority || 'p4').toLowerCase()] || 1;
+  const bodyObj = {
+    content: stripEmojisServer(payload.content),
+    description: payload.description || '',
+    priority: apiPriority
+  };
+  if (payload.dueString) {
+    bodyObj.due_string = payload.dueString;
+  } else if (payload.dueDate && payload.dueTime) {
+    bodyObj.due_datetime = `${payload.dueDate}T${payload.dueTime}:00`;
+  } else if (payload.dueDate) {
+    bodyObj.due_date = payload.dueDate;
+  }
+  if (payload.estimatedMinutes && Number(payload.estimatedMinutes) > 0) {
+    bodyObj.duration = Math.round(Number(payload.estimatedMinutes));
+    bodyObj.duration_unit = 'minute';
+  }
+  const resp = await fetch('https://api.todoist.com/rest/v2/tasks', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(bodyObj)
+  });
+  if (resp.ok) {
+    return await resp.json();
+  }
+  return null;
+}
 
-  await flushQueueToTodoist(token);
+async function syncFromTodoistApi(token, user) {
+  const { dateStr, isoStr } = getSaoPauloNow();
+  const isFounder = !user || user.id === 'usr_walace' || String(user.email || '').toLowerCase() === 'walacetkwl@gmail.com';
+  if (isFounder) {
+    await flushQueueToTodoist(token);
+  }
 
   const body = new URLSearchParams({
     sync_token: '*',
@@ -487,10 +771,10 @@ async function syncFromTodoistApi(token) {
   const projects = Array.isArray(syncData.projects) ? syncData.projects : [];
   const projectNames = {};
   for (const p of projects) {
-    projectNames[String(p.id)] = p.name;
+    projectNames[String(p.id)] = stripEmojisServer(p.name);
   }
 
-  const prevSnapshot = readSnapshot();
+  const prevSnapshot = getUserTasksSnapshot(user);
   const prevTasksById = new Map(
     (Array.isArray(prevSnapshot.tasks) ? prevSnapshot.tasks : []).map((t) => [String(t.id), t])
   );
@@ -508,7 +792,7 @@ async function syncFromTodoistApi(token) {
       if (!childrenByParent[pid]) childrenByParent[pid] = [];
       childrenByParent[pid].push({
         id: String(item.id),
-        content: item.content,
+        content: stripEmojisServer(item.content),
         description: item.description || '',
         priority: `p${5 - Number(item.priority || 1)}`,
         checked: Boolean(item.checked),
@@ -520,7 +804,6 @@ async function syncFromTodoistApi(token) {
     childrenByParent[pid].sort((a, b) => a.childOrder - b.childOrder);
   }
 
-  // Tarefas ativas vencendo hoje ou atrasadas
   const todayTopItems = activeItems.filter((item) => {
     if (item.parent_id) return false;
     const dueDate = item.due && item.due.date ? String(item.due.date).slice(0, 10) : null;
@@ -558,7 +841,6 @@ async function syncFromTodoistApi(token) {
 
   const activeTodayIds = new Set(todayTopItems.map((it) => String(it.id)));
 
-  // Constrói lista combinada preservando as tarefas concluídas hoje no Todoist + a nova ordem das pendentes
   const formattedActive = todayTopItems.map((item) => {
     const id = String(item.id);
     const desc = item.description || '';
@@ -568,11 +850,16 @@ async function syncFromTodoistApi(token) {
       customEstimates[id] !== undefined
         ? Number(customEstimates[id])
         : extractEstimatedMinutes(desc, item.duration) || (prev ? prev.estimatedMinutes : null);
+    let dueTime = null;
+    if (due.date && String(due.date).includes('T')) {
+      dueTime = String(due.date).slice(11, 16);
+    }
     return {
       id,
-      content: item.content,
+      content: stripEmojisServer(item.content),
       description: desc,
       dueDate: due.date ? String(due.date).slice(0, 10) : dateStr,
+      dueTime,
       recurring: due.is_recurring ? due.string || 'recorrente' : false,
       priority: `p${5 - Number(item.priority || 1)}`,
       projectId: String(item.project_id || '6CrgFRpqRPQVfgjG'),
@@ -585,14 +872,14 @@ async function syncFromTodoistApi(token) {
     };
   });
 
-  // Preserva tarefas do snapshot de hoje que já foram concluídas no Todoist (ou avançaram a data recorrente)
   const completedTodayTasks = [];
   if (prevSnapshot.date === dateStr && Array.isArray(prevSnapshot.tasks)) {
     for (const oldTask of prevSnapshot.tasks) {
       const id = String(oldTask.id);
       if (!activeTodayIds.has(id)) {
         const remoteItem = itemsById.get(id);
-        const remoteDue = remoteItem && remoteItem.due && remoteItem.due.date ? String(remoteItem.due.date).slice(0, 10) : null;
+        const remoteDue =
+          remoteItem && remoteItem.due && remoteItem.due.date ? String(remoteItem.due.date).slice(0, 10) : null;
         const wasCompletedInTodoist =
           !remoteItem ||
           remoteItem.checked ||
@@ -602,6 +889,7 @@ async function syncFromTodoistApi(token) {
         if (wasCompletedInTodoist) {
           completedTodayTasks.push({
             ...oldTask,
+            content: stripEmojisServer(oldTask.content),
             checked: true,
             completedAt: oldTask.completedAt || isoStr,
             estimatedMinutes:
@@ -612,8 +900,12 @@ async function syncFromTodoistApi(token) {
     }
   }
 
-  // Intercala ou mantém as pendentes na ordem exata do Todoist e as concluídas marcadas
-  const combined = [...completedTodayTasks, ...formattedActive].map((t, idx) => ({
+  // Keep native local tasks created inside LightFocus that were not on Todoist
+  const localOnlyTasks = (Array.isArray(prevSnapshot.tasks) ? prevSnapshot.tasks : []).filter(
+    (t) => String(t.id).startsWith('lf_') && !activeTodayIds.has(String(t.id)) && !t.checked
+  );
+
+  const combined = [...completedTodayTasks, ...localOnlyTasks, ...formattedActive].map((t, idx) => ({
     ...t,
     dayOrder: idx + 1
   }));
@@ -627,11 +919,12 @@ async function syncFromTodoistApi(token) {
     tasks: combined
   };
 
-  writeSnapshot(snapshot);
+  saveUserTasksSnapshot(user, snapshot);
   return snapshot;
 }
 
 async function closeTaskOnTodoist(token, taskId) {
+  if (String(taskId).startsWith('lf_')) return { ok: true, method: 'local_only' };
   const uuid = crypto.randomUUID();
   const body = new URLSearchParams({
     commands: JSON.stringify([
@@ -659,9 +952,7 @@ async function closeTaskOnTodoist(token, taskId) {
 
   const restResp = await fetch(`https://api.todoist.com/rest/v2/tasks/${encodeURIComponent(taskId)}/close`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
+    headers: { Authorization: `Bearer ${token}` }
   });
   if (restResp.ok || restResp.status === 204) {
     return { ok: true, method: 'rest_v2_close' };
@@ -671,6 +962,7 @@ async function closeTaskOnTodoist(token, taskId) {
 }
 
 async function reopenTaskOnTodoist(token, taskId) {
+  if (String(taskId).startsWith('lf_')) return { ok: true, method: 'local_only' };
   const uuid = crypto.randomUUID();
   const body = new URLSearchParams({
     commands: JSON.stringify([
@@ -697,9 +989,7 @@ async function reopenTaskOnTodoist(token, taskId) {
 
   const restResp = await fetch(`https://api.todoist.com/rest/v2/tasks/${encodeURIComponent(taskId)}/reopen`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
+    headers: { Authorization: `Bearer ${token}` }
   });
   if (restResp.ok || restResp.status === 204) {
     return { ok: true, method: 'rest_v2_reopen' };
@@ -709,6 +999,7 @@ async function reopenTaskOnTodoist(token, taskId) {
 }
 
 async function updateTaskEstimateOnTodoist(token, taskId, estimatedMinutes, currentDescription) {
+  if (String(taskId).startsWith('lf_')) return { ok: true, method: 'local_only', estimatedMinutes };
   const mins = estimatedMinutes && Number(estimatedMinutes) > 0 ? Math.round(Number(estimatedMinutes)) : null;
   const newDesc = updateDescriptionWithEstimate(currentDescription || '', mins);
   const uuid = crypto.randomUUID();
@@ -748,7 +1039,9 @@ async function reorderTasksOnTodoist(token, orderedIds) {
   if (!Array.isArray(orderedIds) || !orderedIds.length) return { ok: true };
   const idsToOrder = {};
   orderedIds.forEach((id, idx) => {
-    idsToOrder[String(id)] = idx + 1;
+    if (!String(id).startsWith('lf_')) {
+      idsToOrder[String(id)] = idx + 1;
+    }
   });
   const uuid = crypto.randomUUID();
   const body = new URLSearchParams({
@@ -776,14 +1069,11 @@ async function reorderTasksOnTodoist(token, orderedIds) {
   return { ok: false };
 }
 
-// ============================================================================
-// Utilitários HTTP
-// ============================================================================
 function sendJson(res, status, payload, extraHeaders = {}) {
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Todoist-Token, X-LightFocus-Auth, Authorization',
     ...extraHeaders
   });
@@ -822,7 +1112,7 @@ const MIME_TYPES = {
 };
 
 // ============================================================================
-// Servidor Principal
+// HTTP Server & Commercial Multi-User SaaS API Routes
 // ============================================================================
 const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
@@ -833,51 +1123,149 @@ const server = http.createServer(async (req, res) => {
   const pathname = parsedUrl.pathname;
 
   try {
-    // 1. Healthcheck público (sem expor tarefas)
+    // 1. Public Healthcheck
     if (pathname === '/api/health' && req.method === 'GET') {
       const hasToken = Boolean(getStoredTodoistToken());
       const { dateStr, isoStr } = getSaoPauloNow();
+      const store = readUsersStore();
       return sendJson(res, 200, {
         ok: true,
-        app: 'LightFocus v2 — estrelando Miss Minutos',
-        version: '2.0.0',
+        app: 'LightFocus v3 — Apple Liquid Glass Commercial SaaS',
+        version: '3.0.0',
         date: dateStr,
         now: isoStr,
         timezone: 'America/Sao_Paulo',
         authRequired: true,
+        registeredUsersCount: store.users.length,
         hasServerTodoistToken: hasToken,
         pendingQueueCount: readSyncQueue().length
       });
     }
 
-    // 2. Rotas de Autenticação (Login / Verify / Logout)
+    // 2. Auth Verify / Session Status
     if ((pathname === '/api/auth/verify' || pathname === '/api/auth/status') && req.method === 'GET') {
-      const authed = isRequestAuthorized(req);
+      const uid = getAuthenticatedUserId(req);
+      const user = uid ? getUserById(uid) : null;
+      const authed = Boolean(user);
       return sendJson(res, 200, {
         ok: true,
         authenticated: authed,
-        hasServerTodoistToken: authed ? Boolean(getStoredTodoistToken()) : false
+        user: authed ? sanitizeUserForClient(user) : null,
+        hasServerTodoistToken: authed ? sanitizeUserForClient(user).hasTodoistToken : false
       });
     }
 
-    if (pathname === '/api/auth/login' && req.method === 'POST') {
+    // 3. SaaS User Registration (POST /api/auth/register)
+    if (pathname === '/api/auth/register' && req.method === 'POST') {
       const body = await parseBody(req);
+      const name = stripEmojisServer(String(body.name || '').trim()) || 'Novo Usuario';
+      const email = String(body.email || '').trim().toLowerCase();
       const password = String(body.password || '').trim();
-      if (!password) {
-        return sendJson(res, 400, { ok: false, error: 'Digite sua senha de acesso.' });
-      }
-      const candidateHash = computePasswordHash(password);
-      const allowedHashes = getAllowedPasswordHashes();
 
-      if (!allowedHashes.has(candidateHash)) {
-        return sendJson(res, 401, {
+      if (!email || !email.includes('@')) {
+        return sendJson(res, 400, { ok: false, error: 'Informe um e-mail valido para criar sua conta.' });
+      }
+      if (!password || password.length < 4) {
+        return sendJson(res, 400, { ok: false, error: 'A senha precisa ter pelo menos 4 caracteres.' });
+      }
+
+      const store = readUsersStore();
+      const existing = store.users.find((u) => String(u.email || '').toLowerCase() === email);
+      if (existing) {
+        return sendJson(res, 409, {
           ok: false,
-          error: 'Senha incorreta. Use a sua senha Admin padrão (Vault: Afilify / PalcoGestão).'
+          error: 'Ja existe uma conta com este e-mail. Use a aba Entrar.'
         });
       }
 
-      const token = createAuthToken();
+      const { isoStr } = getSaoPauloNow();
+      const newUserId = 'usr_' + crypto.randomUUID().slice(0, 12);
+      const onboardingTasks = buildOnboardingTasks();
+      const newUser = {
+        id: newUserId,
+        name,
+        email,
+        role: 'member',
+        passwordHash: computePasswordHash(password),
+        createdAt: isoStr,
+        updatedAt: isoStr,
+        xp: 50,
+        level: 1,
+        levelTitle: 'Cristal',
+        streak: 1,
+        todoistToken: '',
+        settings: {
+          theme: 'light',
+          pulseIntervalMinutes: 5,
+          soundEnabled: true
+        },
+        tasks: onboardingTasks
+      };
+
+      store.users.push(newUser);
+      writeUsersStore(store);
+
+      const token = createAuthToken(newUser.id);
       const cookieHeader = `lf_auth=${encodeURIComponent(token)}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax`;
+      return sendJson(
+        res,
+        201,
+        {
+          ok: true,
+          authenticated: true,
+          token,
+          user: sanitizeUserForClient(newUser),
+          hasServerTodoistToken: false
+        },
+        { 'Set-Cookie': cookieHeader }
+      );
+    }
+
+    // 4. SaaS Login (POST /api/auth/login) — supports email + password OR quick password for Walace
+    if (pathname === '/api/auth/login' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const email = String(body.email || '').trim().toLowerCase();
+      const password = String(body.password || '').trim();
+      if (!password) {
+        return sendJson(res, 400, { ok: false, error: 'Digite sua senha para acessar.' });
+      }
+
+      const candidateHash = computePasswordHash(password);
+      const founderHashes = getFounderAllowedHashes();
+      const store = readUsersStore();
+
+      let matchedUser = null;
+
+      if (email && email !== 'walacetkwl@gmail.com') {
+        const userByEmail = store.users.find((u) => String(u.email || '').toLowerCase() === email);
+        if (!userByEmail) {
+          return sendJson(res, 401, { ok: false, error: 'Conta nao encontrada com este e-mail.' });
+        }
+        if (userByEmail.passwordHash === candidateHash) {
+          matchedUser = userByEmail;
+        } else {
+          return sendJson(res, 401, { ok: false, error: 'Senha incorreta para esta conta.' });
+        }
+      } else {
+        // Founder login or quick password-only login
+        if (founderHashes.has(candidateHash)) {
+          matchedUser = store.users.find((u) => u.id === 'usr_walace') || createFounderUserObject();
+        } else {
+          const anyUser = store.users.find((u) => u.passwordHash === candidateHash);
+          if (anyUser) matchedUser = anyUser;
+        }
+      }
+
+      if (!matchedUser) {
+        return sendJson(res, 401, {
+          ok: false,
+          error: 'Credenciais invalidas. Verifique seu e-mail e senha.'
+        });
+      }
+
+      const token = createAuthToken(matchedUser.id);
+      const cookieHeader = `lf_auth=${encodeURIComponent(token)}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax`;
+      const clientUser = sanitizeUserForClient(matchedUser);
       return sendJson(
         res,
         200,
@@ -885,150 +1273,335 @@ const server = http.createServer(async (req, res) => {
           ok: true,
           authenticated: true,
           token,
-          hasServerTodoistToken: Boolean(getStoredTodoistToken())
+          user: clientUser,
+          hasServerTodoistToken: clientUser.hasTodoistToken
         },
         { 'Set-Cookie': cookieHeader }
       );
     }
 
+    // 5. Logout
     if (pathname === '/api/auth/logout' && req.method === 'POST') {
       const cookieHeader = 'lf_auth=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax';
       return sendJson(res, 200, { ok: true, authenticated: false }, { 'Set-Cookie': cookieHeader });
     }
 
-    // 3. Proteção das rotas da API (/api/*)
+    // 6. Auth Guard for all /api/* routes
+    let currentUser = null;
     if (pathname.startsWith('/api/')) {
-      if (!isRequestAuthorized(req)) {
+      const uid = getAuthenticatedUserId(req);
+      currentUser = uid ? getUserById(uid) : null;
+      if (!currentUser) {
         return sendJson(res, 401, {
           ok: false,
           authRequired: true,
-          error: 'Sessão bloqueada. Faça login com sua senha para acessar suas tarefas.'
+          error: 'Sessao expirada ou nao autenticada. Entre na sua conta LightFocus.'
         });
       }
     }
 
-    // 4. GET /api/tasks
+    const isFounder =
+      currentUser &&
+      (currentUser.id === 'usr_walace' || String(currentUser.email || '').toLowerCase() === 'walacetkwl@gmail.com');
+
+    function resolveEffectiveTodoistToken(reqHeaderToken, bodyToken) {
+      if (bodyToken && String(bodyToken).trim()) return String(bodyToken).trim();
+      if (reqHeaderToken && String(reqHeaderToken).trim()) return String(reqHeaderToken).trim();
+      if (currentUser && currentUser.todoistToken) return String(currentUser.todoistToken).trim();
+      if (isFounder) return getStoredTodoistToken();
+      return '';
+    }
+
+    // 7. GET /api/tasks
     if (pathname === '/api/tasks' && req.method === 'GET') {
       const headerToken = (req.headers['x-todoist-token'] || '').toString().trim();
-      const token = headerToken || getStoredTodoistToken();
+      const token = resolveEffectiveTodoistToken(headerToken, '');
       const forceLive = parsedUrl.searchParams.get('live') === '1';
 
       if (token && forceLive) {
         try {
-          const liveSnapshot = await syncFromTodoistApi(token);
+          const liveSnapshot = await syncFromTodoistApi(token, currentUser);
           return sendJson(res, 200, {
             ok: true,
             mode: 'live_todoist',
+            user: sanitizeUserForClient(getUserById(currentUser.id)),
             hasServerTodoistToken: true,
             snapshot: liveSnapshot
           });
         } catch (syncErr) {
-          const fallback = readSnapshot();
+          const fallback = getUserTasksSnapshot(currentUser);
           return sendJson(res, 200, {
             ok: true,
             mode: 'snapshot_fallback',
             syncError: syncErr.message,
-            hasServerTodoistToken: Boolean(getStoredTodoistToken()),
+            user: sanitizeUserForClient(currentUser),
+            hasServerTodoistToken: Boolean(token),
             snapshot: fallback
           });
         }
       }
 
-      const snapshot = readSnapshot();
+      const snapshot = getUserTasksSnapshot(currentUser);
       return sendJson(res, 200, {
         ok: true,
-        mode: token ? 'token_ready' : 'snapshot_mcp',
-        hasServerTodoistToken: Boolean(getStoredTodoistToken()),
-        pendingQueueCount: readSyncQueue().length,
+        mode: token ? 'token_ready' : 'cloud_workspace',
+        user: sanitizeUserForClient(currentUser),
+        hasServerTodoistToken: Boolean(token),
+        pendingQueueCount: isFounder ? readSyncQueue().length : 0,
         snapshot
       });
     }
 
-    // 5. POST /api/sync
+    // 8. POST /api/tasks/create — Quick Add ('Q') with Natural Language Schedule Support
+    if (pathname === '/api/tasks/create' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const rawContent = stripEmojisServer(String(body.content || '').trim());
+      if (!rawContent) {
+        return sendJson(res, 400, { ok: false, error: 'O titulo da tarefa nao pode ficar vazio.' });
+      }
+
+      const { dateStr, isoStr } = getSaoPauloNow();
+      const estimatedMinutes =
+        body.estimatedMinutes && Number(body.estimatedMinutes) > 0
+          ? Math.min(480, Math.round(Number(body.estimatedMinutes)))
+          : null;
+      const priority = ['p1', 'p2', 'p3', 'p4'].includes(String(body.priority || '').toLowerCase())
+        ? String(body.priority).toLowerCase()
+        : 'p4';
+      const dueDate = body.dueDate ? String(body.dueDate).slice(0, 10) : dateStr;
+      const dueTime = body.dueTime ? String(body.dueTime).slice(0, 5) : null;
+      const recurring = body.recurring ? String(body.recurring) : false;
+      const projectName = stripEmojisServer(body.projectName || 'Hoje · Principal');
+      const labels = Array.isArray(body.labels) ? body.labels.map((l) => stripEmojisServer(l)) : [];
+      const rawDesc = String(body.description || '').trim();
+      const finalDesc = updateDescriptionWithEstimate(rawDesc, estimatedMinutes);
+
+      const headerToken = (req.headers['x-todoist-token'] || '').toString().trim();
+      const token = resolveEffectiveTodoistToken(headerToken, body.token);
+
+      let taskId = 'lf_' + crypto.randomUUID().slice(0, 10);
+      let todoistSynced = false;
+
+      if (token) {
+        try {
+          const remoteTask = await createTaskOnTodoist(token, {
+            content: rawContent,
+            description: finalDesc,
+            priority,
+            dueDate,
+            dueTime,
+            dueString: recurring || undefined,
+            estimatedMinutes
+          });
+          if (remoteTask && remoteTask.id) {
+            taskId = String(remoteTask.id);
+            todoistSynced = true;
+          }
+        } catch (e) {
+          if (isFounder) {
+            enqueueTodoistOperation({
+              action: 'create',
+              payload: { content: rawContent, description: finalDesc, priority, dueDate, dueTime, estimatedMinutes }
+            });
+          }
+        }
+      }
+
+      const snapshot = getUserTasksSnapshot(currentUser);
+      const tasks = Array.isArray(snapshot.tasks) ? snapshot.tasks : [];
+      const newTask = {
+        id: taskId,
+        content: rawContent,
+        description: finalDesc,
+        dueDate,
+        dueTime,
+        recurring,
+        priority,
+        projectId: 'inbox',
+        projectName,
+        labels,
+        checked: false,
+        estimatedMinutes,
+        subtasks: [],
+        addedAt: isoStr,
+        dayOrder: 1
+      };
+
+      // Insert at top of active tasks
+      const completed = tasks.filter((t) => t.checked);
+      const pending = [newTask, ...tasks.filter((t) => !t.checked)];
+      snapshot.tasks = [...completed, ...pending].map((t, idx) => ({ ...t, dayOrder: idx + 1 }));
+      snapshot.totalToday = snapshot.tasks.length;
+      snapshot.syncedAt = isoStr;
+      saveUserTasksSnapshot(currentUser, snapshot);
+
+      if (estimatedMinutes) {
+        const timesData = readTimesData();
+        timesData.taskEstimates = timesData.taskEstimates || {};
+        timesData.taskEstimates[taskId] = estimatedMinutes;
+        writeTimesData(timesData);
+      }
+
+      // Award +10 XP for planning a structured task
+      const updatedUser = updateUserRecord(currentUser.id, (u) => {
+        const nextXp = Number(u.xp || 0) + 10;
+        const lvl = computeLevelInfo(nextXp);
+        return { ...u, xp: lvl.xp, level: lvl.level, levelTitle: lvl.levelTitle };
+      });
+
+      return sendJson(res, 201, {
+        ok: true,
+        task: newTask,
+        todoistSynced,
+        user: sanitizeUserForClient(updatedUser || currentUser),
+        snapshot
+      });
+    }
+
+    // 9. POST /api/tasks/update — Edit task title, description, schedule, priority, or subtasks
+    if (pathname === '/api/tasks/update' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const taskId = String(body.taskId || '').trim();
+      if (!taskId) {
+        return sendJson(res, 400, { ok: false, error: 'taskId obrigatorio' });
+      }
+      const snapshot = getUserTasksSnapshot(currentUser);
+      if (Array.isArray(snapshot.tasks)) {
+        snapshot.tasks = snapshot.tasks.map((t) => {
+          if (String(t.id) !== taskId) return t;
+          return {
+            ...t,
+            content: body.content !== undefined ? stripEmojisServer(body.content) : t.content,
+            description: body.description !== undefined ? String(body.description) : t.description,
+            dueDate: body.dueDate !== undefined ? body.dueDate : t.dueDate,
+            dueTime: body.dueTime !== undefined ? body.dueTime : t.dueTime,
+            priority: body.priority !== undefined ? body.priority : t.priority,
+            estimatedMinutes:
+              body.estimatedMinutes !== undefined ? body.estimatedMinutes : t.estimatedMinutes,
+            subtasks: Array.isArray(body.subtasks) ? body.subtasks : t.subtasks
+          };
+        });
+        snapshot.syncedAt = getSaoPauloNow().isoStr;
+        saveUserTasksSnapshot(currentUser, snapshot);
+      }
+      return sendJson(res, 200, { ok: true, snapshot });
+    }
+
+    // 10. POST /api/tasks/delete — Delete task
+    if (pathname === '/api/tasks/delete' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const taskId = String(body.taskId || '').trim();
+      if (!taskId) {
+        return sendJson(res, 400, { ok: false, error: 'taskId obrigatorio' });
+      }
+      const snapshot = getUserTasksSnapshot(currentUser);
+      if (Array.isArray(snapshot.tasks)) {
+        snapshot.tasks = snapshot.tasks
+          .filter((t) => String(t.id) !== taskId)
+          .map((t, i) => ({ ...t, dayOrder: i + 1 }));
+        snapshot.totalToday = snapshot.tasks.length;
+        snapshot.syncedAt = getSaoPauloNow().isoStr;
+        saveUserTasksSnapshot(currentUser, snapshot);
+      }
+      return sendJson(res, 200, { ok: true, snapshot });
+    }
+
+    // 11. POST /api/sync
     if ((pathname === '/api/sync' || pathname === '/api/todoist/sync') && req.method === 'POST') {
       const body = await parseBody(req);
       const headerToken = (req.headers['x-todoist-token'] || '').toString().trim();
-      const token = (body.token || headerToken || getStoredTodoistToken()).trim();
+      const token = resolveEffectiveTodoistToken(headerToken, body.token);
 
       if (body.token && body.saveToken !== false) {
-        saveTodoistToken(body.token);
+        const cleanTok = String(body.token).trim();
+        updateUserRecord(currentUser.id, (u) => ({ ...u, todoistToken: cleanTok }));
+        if (isFounder) saveTodoistToken(cleanTok);
       }
 
       if (token) {
-        const liveSnapshot = await syncFromTodoistApi(token);
+        const liveSnapshot = await syncFromTodoistApi(token, currentUser);
         return sendJson(res, 200, {
           ok: true,
           mode: 'live_todoist',
+          user: sanitizeUserForClient(getUserById(currentUser.id)),
           hasServerTodoistToken: true,
           snapshot: liveSnapshot
         });
       }
 
-      const snapshot = readSnapshot();
+      const snapshot = getUserTasksSnapshot(currentUser);
       return sendJson(res, 200, {
         ok: true,
-        mode: 'snapshot_mcp',
+        mode: 'cloud_workspace',
+        user: sanitizeUserForClient(currentUser),
         hasServerTodoistToken: false,
-        message: 'Estado sincronizado carregado.',
+        message: 'Workspace sincronizado.',
         snapshot
       });
     }
 
-    // 6. POST /api/config/token
+    // 12. POST /api/config/token
     if ((pathname === '/api/config/token' || pathname === '/api/todoist/token') && req.method === 'POST') {
       const body = await parseBody(req);
       const token = String(body.token || '').trim();
+      updateUserRecord(currentUser.id, (u) => ({ ...u, todoistToken: token }));
+      if (isFounder) saveTodoistToken(token);
+
       if (!token) {
-        saveTodoistToken('');
-        return sendJson(res, 200, { ok: true, hasServerTodoistToken: false });
+        return sendJson(res, 200, {
+          ok: true,
+          hasServerTodoistToken: false,
+          user: sanitizeUserForClient(getUserById(currentUser.id))
+        });
       }
-      const saved = saveTodoistToken(token);
+
       let syncResult = null;
       try {
-        syncResult = await syncFromTodoistApi(token);
+        syncResult = await syncFromTodoistApi(token, getUserById(currentUser.id));
       } catch (err) {
         return sendJson(res, 400, { ok: false, error: err.message });
       }
       return sendJson(res, 200, {
-        ok: saved,
+        ok: true,
         hasServerTodoistToken: true,
+        user: sanitizeUserForClient(getUserById(currentUser.id)),
         snapshot: syncResult
       });
     }
 
-    // 7. POST /api/tasks/complete (Concluir tarefa no LightFocus + Todoist)
+    // 13. POST /api/tasks/complete
     if ((pathname === '/api/tasks/complete' || pathname === '/api/todoist/complete') && req.method === 'POST') {
       const body = await parseBody(req);
       const taskId = String(body.taskId || '').trim();
       if (!taskId) {
-        return sendJson(res, 400, { ok: false, error: 'taskId é obrigatório' });
+        return sendJson(res, 400, { ok: false, error: 'taskId obrigatorio' });
       }
 
       const headerToken = (req.headers['x-todoist-token'] || '').toString().trim();
-      const token = (body.token || headerToken || getStoredTodoistToken()).trim();
-      let todoistRemoteResult = { synced: false, reason: 'queued_for_sync' };
+      const token = resolveEffectiveTodoistToken(headerToken, body.token);
+      let todoistRemoteResult = { synced: false, reason: 'local_or_queued' };
 
       if (token) {
         try {
           const r = await closeTaskOnTodoist(token, taskId);
           todoistRemoteResult = { synced: true, ...r };
         } catch (err) {
-          enqueueTodoistOperation({ action: 'complete', taskId });
+          if (isFounder) enqueueTodoistOperation({ action: 'complete', taskId });
           todoistRemoteResult = { synced: false, queued: true, error: err.message };
         }
-      } else {
+      } else if (isFounder) {
         enqueueTodoistOperation({ action: 'complete', taskId });
         todoistRemoteResult = { synced: false, queued: true };
       }
 
       const { dateStr, isoStr } = getSaoPauloNow();
-      const snapshot = readSnapshot();
+      const snapshot = getUserTasksSnapshot(currentUser);
       if (Array.isArray(snapshot.tasks)) {
         snapshot.tasks = snapshot.tasks.map((t) =>
           String(t.id) === taskId ? { ...t, checked: true, completedAt: isoStr } : t
         );
         snapshot.syncedAt = isoStr;
-        writeSnapshot(snapshot);
+        saveUserTasksSnapshot(currentUser, snapshot);
       }
 
       const durationSeconds = Math.max(0, Math.round(Number(body.durationSeconds || 0)));
@@ -1037,15 +1610,17 @@ const server = http.createServer(async (req, res) => {
       const timesData = readTimesData();
       const sessionEntry = {
         sessionId: body.sessionId || crypto.randomUUID(),
+        userId: currentUser.id,
         taskId,
-        content: body.content || 'Tarefa concluída',
+        content: stripEmojisServer(body.content || 'Tarefa concluida'),
         projectId: body.projectId || '6CrgFRpqRPQVfgjG',
         date: body.date || dateStr,
         startedAt: body.startedAt || isoStr,
         endedAt: body.endedAt || isoStr,
         durationSeconds,
         durationMinutes: Number((durationSeconds / 60).toFixed(2)),
-        estimatedMinutes: body.estimatedMinutes || (timesData.taskEstimates && timesData.taskEstimates[taskId]) || null,
+        estimatedMinutes:
+          body.estimatedMinutes || (timesData.taskEstimates && timesData.taskEstimates[taskId]) || null,
         completed: true,
         completedWithoutTimer,
         todoistSynced: Boolean(todoistRemoteResult.synced)
@@ -1053,8 +1628,25 @@ const server = http.createServer(async (req, res) => {
       timesData.sessions.push(sessionEntry);
       const savedTimes = writeTimesData(timesData);
 
+      // Award XP: +50 XP per completed task + 5 XP per focused minute
+      const focusedMins = Math.floor(durationSeconds / 60);
+      const xpGain = 50 + focusedMins * 5;
+      const updatedUser = updateUserRecord(currentUser.id, (u) => {
+        const nextXp = Number(u.xp || 0) + xpGain;
+        const lvl = computeLevelInfo(nextXp);
+        return {
+          ...u,
+          xp: lvl.xp,
+          level: lvl.level,
+          levelTitle: lvl.levelTitle,
+          streak: Math.max(1, Number(u.streak || 1))
+        };
+      });
+
       return sendJson(res, 200, {
         ok: true,
+        xpGained: xpGain,
+        user: sanitizeUserForClient(updatedUser || currentUser),
         todoist: todoistRemoteResult,
         session: sessionEntry,
         writtenPaths: savedTimes.writtenPaths,
@@ -1063,54 +1655,54 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 8. POST /api/tasks/uncomplete (Desmarcar / Reabrir tarefa no LightFocus + Todoist)
+    // 14. POST /api/tasks/uncomplete
     if ((pathname === '/api/tasks/uncomplete' || pathname === '/api/todoist/uncomplete') && req.method === 'POST') {
       const body = await parseBody(req);
       const taskId = String(body.taskId || '').trim();
       if (!taskId) {
-        return sendJson(res, 400, { ok: false, error: 'taskId é obrigatório' });
+        return sendJson(res, 400, { ok: false, error: 'taskId obrigatorio' });
       }
 
       const headerToken = (req.headers['x-todoist-token'] || '').toString().trim();
-      const token = (body.token || headerToken || getStoredTodoistToken()).trim();
-      let todoistRemoteResult = { synced: false, reason: 'queued_for_sync' };
+      const token = resolveEffectiveTodoistToken(headerToken, body.token);
+      let todoistRemoteResult = { synced: false };
 
       if (token) {
         try {
           const r = await reopenTaskOnTodoist(token, taskId);
           todoistRemoteResult = { synced: true, ...r };
         } catch (err) {
-          enqueueTodoistOperation({ action: 'uncomplete', taskId });
+          if (isFounder) enqueueTodoistOperation({ action: 'uncomplete', taskId });
           todoistRemoteResult = { synced: false, queued: true, error: err.message };
         }
-      } else {
+      } else if (isFounder) {
         enqueueTodoistOperation({ action: 'uncomplete', taskId });
-        todoistRemoteResult = { synced: false, queued: true };
       }
 
       const { isoStr } = getSaoPauloNow();
-      const snapshot = readSnapshot();
+      const snapshot = getUserTasksSnapshot(currentUser);
       if (Array.isArray(snapshot.tasks)) {
         snapshot.tasks = snapshot.tasks.map((t) =>
           String(t.id) === taskId ? { ...t, checked: false, completedAt: null } : t
         );
         snapshot.syncedAt = isoStr;
-        writeSnapshot(snapshot);
+        saveUserTasksSnapshot(currentUser, snapshot);
       }
 
       return sendJson(res, 200, {
         ok: true,
+        user: sanitizeUserForClient(currentUser),
         todoist: todoistRemoteResult,
         snapshot
       });
     }
 
-    // 9. POST /api/tasks/estimate (Definir Média / Estimativa de Tempo por Tarefa no Planejamento)
+    // 15. POST /api/tasks/estimate
     if ((pathname === '/api/tasks/estimate' || pathname === '/api/todoist/estimate') && req.method === 'POST') {
       const body = await parseBody(req);
       const taskId = String(body.taskId || '').trim();
       if (!taskId) {
-        return sendJson(res, 400, { ok: false, error: 'taskId é obrigatório' });
+        return sendJson(res, 400, { ok: false, error: 'taskId obrigatorio' });
       }
       const rawMin = body.estimatedMinutes;
       const estimatedMinutes =
@@ -1118,7 +1710,7 @@ const server = http.createServer(async (req, res) => {
           ? Math.min(480, Math.max(1, Math.round(Number(rawMin))))
           : null;
 
-      const snapshot = readSnapshot();
+      const snapshot = getUserTasksSnapshot(currentUser);
       let taskDesc = '';
       if (Array.isArray(snapshot.tasks)) {
         snapshot.tasks = snapshot.tasks.map((t) => {
@@ -1134,7 +1726,7 @@ const server = http.createServer(async (req, res) => {
           return t;
         });
         snapshot.syncedAt = getSaoPauloNow().isoStr;
-        writeSnapshot(snapshot);
+        saveUserTasksSnapshot(currentUser, snapshot);
       }
 
       const timesData = readTimesData();
@@ -1147,7 +1739,7 @@ const server = http.createServer(async (req, res) => {
       const savedTimes = writeTimesData(timesData);
 
       const headerToken = (req.headers['x-todoist-token'] || '').toString().trim();
-      const token = (body.token || headerToken || getStoredTodoistToken()).trim();
+      const token = resolveEffectiveTodoistToken(headerToken, body.token);
       let todoistRemoteResult = { synced: false };
 
       if (token) {
@@ -1155,22 +1747,12 @@ const server = http.createServer(async (req, res) => {
           const r = await updateTaskEstimateOnTodoist(token, taskId, estimatedMinutes, taskDesc);
           todoistRemoteResult = { synced: true, ...r };
         } catch (err) {
-          enqueueTodoistOperation({
-            action: 'estimate',
-            taskId,
-            estimatedMinutes,
-            description: taskDesc
-          });
-          todoistRemoteResult = { synced: false, queued: true, error: err.message };
+          if (isFounder) {
+            enqueueTodoistOperation({ action: 'estimate', taskId, estimatedMinutes, description: taskDesc });
+          }
         }
-      } else {
-        enqueueTodoistOperation({
-          action: 'estimate',
-          taskId,
-          estimatedMinutes,
-          description: taskDesc
-        });
-        todoistRemoteResult = { synced: false, queued: true };
+      } else if (isFounder) {
+        enqueueTodoistOperation({ action: 'estimate', taskId, estimatedMinutes, description: taskDesc });
       }
 
       return sendJson(res, 200, {
@@ -1183,11 +1765,11 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 10. POST /api/tasks/reorder
+    // 16. POST /api/tasks/reorder
     if ((pathname === '/api/tasks/reorder' || pathname === '/api/todoist/reorder') && req.method === 'POST') {
       const body = await parseBody(req);
       const orderedIds = Array.isArray(body.orderedIds) ? body.orderedIds.map(String) : [];
-      const snapshot = readSnapshot();
+      const snapshot = getUserTasksSnapshot(currentUser);
       if (orderedIds.length > 0 && Array.isArray(snapshot.tasks)) {
         const mapById = new Map(snapshot.tasks.map((t) => [String(t.id), t]));
         const reordered = [];
@@ -1202,50 +1784,26 @@ const server = http.createServer(async (req, res) => {
         }
         snapshot.tasks = reordered.map((t, i) => ({ ...t, dayOrder: i + 1 }));
         snapshot.syncedAt = getSaoPauloNow().isoStr;
-        writeSnapshot(snapshot);
+        saveUserTasksSnapshot(currentUser, snapshot);
 
         const headerToken = (req.headers['x-todoist-token'] || '').toString().trim();
-        const token = (body.token || headerToken || getStoredTodoistToken()).trim();
+        const token = resolveEffectiveTodoistToken(headerToken, body.token);
         if (token) {
           reorderTasksOnTodoist(token, orderedIds).catch(() => {});
-        } else {
+        } else if (isFounder) {
           enqueueTodoistOperation({ action: 'reorder', orderedIds });
         }
       }
       return sendJson(res, 200, { ok: true, snapshot });
     }
 
-    // 11. Bridge Endpoints (para sincronização externa / Miss Minutos)
-    if (pathname === '/api/bridge/queue' && req.method === 'GET') {
-      return sendJson(res, 200, {
-        ok: true,
-        queue: readSyncQueue(),
-        snapshot: readSnapshot()
-      });
-    }
-
-    if (pathname === '/api/bridge/sync' && req.method === 'POST') {
-      const body = await parseBody(req);
-      if (body.clearQueue) {
-        writeSyncQueue([]);
-      }
-      if (body.snapshot && Array.isArray(body.snapshot.tasks)) {
-        writeSnapshot(body.snapshot);
-      }
-      return sendJson(res, 200, {
-        ok: true,
-        snapshot: readSnapshot(),
-        queue: readSyncQueue()
-      });
-    }
-
-    // 12. GET & POST /api/times
+    // 17. GET & POST /api/times
     if (pathname === '/api/times' && req.method === 'GET') {
       const data = readTimesData();
       return sendJson(res, 200, {
         ok: true,
-        missMinutosStorePath: MISS_MINUTOS_TIMES_FILE,
         localTimesPath: LOCAL_TIMES_FILE,
+        user: sanitizeUserForClient(currentUser),
         data
       });
     }
@@ -1260,8 +1818,9 @@ const server = http.createServer(async (req, res) => {
         const dur = Math.max(0, Math.round(Number(s.durationSeconds || 0)));
         current.sessions.push({
           sessionId: s.sessionId || crypto.randomUUID(),
+          userId: currentUser.id,
           taskId: String(s.taskId || ''),
-          content: s.content || 'Tarefa',
+          content: stripEmojisServer(s.content || 'Tarefa'),
           projectId: s.projectId || '6CrgFRpqRPQVfgjG',
           date: s.date || dateStr,
           startedAt: s.startedAt || isoStr,
@@ -1272,12 +1831,6 @@ const server = http.createServer(async (req, res) => {
           completed: s.completed !== false,
           completedWithoutTimer: Boolean(s.completedWithoutTimer || dur === 0)
         });
-      } else if (Array.isArray(body.sessions)) {
-        const existingIds = new Set(current.sessions.map((x) => x.sessionId).filter(Boolean));
-        for (const s of body.sessions) {
-          if (s.sessionId && existingIds.has(s.sessionId)) continue;
-          current.sessions.push(s);
-        }
       }
 
       const saved = writeTimesData(current);
@@ -1288,25 +1841,28 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 13. Protege /tasks-seed.js se o visitante não estiver autenticado
+    // 18. Protected /tasks-seed.js
     if (pathname === '/tasks-seed.js') {
       res.writeHead(200, {
         'Content-Type': 'application/javascript; charset=utf-8',
         'Cache-Control': 'no-store'
       });
-      if (!isRequestAuthorized(req)) {
+      const uid = getAuthenticatedUserId(req);
+      const u = uid ? getUserById(uid) : null;
+      if (!u) {
         return res.end('window.LIGHTFOCUS_INITIAL_SNAPSHOT = null;\n');
       }
-      const snap = readSnapshot();
+      const snap = getUserTasksSnapshot(u);
       return res.end('window.LIGHTFOCUS_INITIAL_SNAPSHOT = ' + JSON.stringify(snap) + ';\n');
     }
 
-    // 14. Servir arquivos estáticos (bloqueando acesso direto a dados sensíveis)
+    // 19. Static Files
     let relPath = pathname === '/' ? '/index.html' : pathname;
     relPath = path.normalize(relPath).replace(/^(\.\.(\/|\\|$))+/, '');
     if (
       relPath.includes('.todoist-token') ||
       relPath.includes('.auth-sha256') ||
+      relPath.includes('users.json') ||
       relPath.includes('.env') ||
       relPath.startsWith('/data/') ||
       relPath.startsWith('\\data\\') ||
@@ -1340,12 +1896,11 @@ const server = http.createServer(async (req, res) => {
       res.end('Not found');
     }
   } catch (err) {
-    console.error('Erro na requisição:', err);
+    console.error('Erro na requisicao:', err);
     sendJson(res, 500, { ok: false, error: err.message });
   }
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[LightFocus v2] Rodando em http://0.0.0.0:${PORT}`);
-  console.log(`[LightFocus v2] Logs sincronizados em: ${MISS_MINUTOS_TIMES_FILE}`);
+  console.log(`[LightFocus v3 Liquid Glass SaaS] Rodando em http://0.0.0.0:${PORT}`);
 });
