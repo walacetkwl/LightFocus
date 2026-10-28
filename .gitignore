@@ -1,0 +1,6 @@
+node_modules/
+.env
+.env.*
+data/.todoist-token
+.DS_Store
+*.log
