@@ -1,0 +1,58 @@
+{
+  "id": "/?app=1",
+  "name": "Lightfocus",
+  "short_name": "Lightfocus",
+  "description": "Pare de olhar para tudo o que você tem para fazer. Foque apenas na próxima tarefa e deixe seu dia mais light.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "/?app=1",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#0A0B0E",
+  "theme_color": "#0A0B0E",
+  "categories": [
+    "productivity",
+    "lifestyle",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Focar na Próxima Tarefa",
+      "short_name": "Foco",
+      "url": "/?app=1",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Modo Janela Compacta",
+      "short_name": "Janela",
+      "url": "/?app=1&compact=1",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

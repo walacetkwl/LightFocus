@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * LightFocus v3 — Apple Liquid Glass Commercial SaaS Edition
+ * Lightfocus Edition
  * Zero external npm dependencies (runs natively on node:20-alpine)
  * Features:
  * - Multi-user commercial SaaS registration & authentication (data/users.json + persistent store backup)
@@ -10,6 +10,7 @@
  */
 
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -27,6 +28,8 @@ const SYNC_QUEUE_FILE = path.join(DATA_DIR, 'todoist-sync-queue.json');
 
 const PERSISTENT_STORE_DIR = '/cursor/stores/store-299e4d2b-b1b8-4b9f-b8a2-8d06b3bf0b20';
 const PERSISTENT_USERS_FILE = path.join(PERSISTENT_STORE_DIR, 'lightfocus-users.json');
+const STRIPE_CONFIG_FILE = path.join(DATA_DIR, 'stripe-config.json');
+const PERSISTENT_STRIPE_FILE = path.join(PERSISTENT_STORE_DIR, 'lightfocus-stripe.json');
 
 const MISS_MINUTOS_STORE_DIR = '/cursor/stores/store-5b2033df-0366-49bc-b749-db89d38460ab';
 const MISS_MINUTOS_TIMES_FILE = path.join(MISS_MINUTOS_STORE_DIR, 'lightfocus-times.json');
@@ -226,7 +229,7 @@ function enqueueTodoistOperation(op) {
 function defaultTimesPayload() {
   const { isoStr } = getSaoPauloNow();
   return {
-    app: 'LightFocus',
+    app: 'Lightfocus',
     owner: 'Walace Messias',
     timezone: 'America/Sao_Paulo',
     updatedAt: isoStr,
@@ -426,7 +429,7 @@ function buildOnboardingTasks() {
       recurring: false,
       priority: 'p1',
       projectId: 'inbox',
-      projectName: 'LightFocus · Onboarding',
+      projectName: 'Lightfocus · Onboarding',
       labels: ['atalhos'],
       checked: false,
       estimatedMinutes: 15,
@@ -446,7 +449,7 @@ function buildOnboardingTasks() {
       recurring: false,
       priority: 'p2',
       projectId: 'inbox',
-      projectName: 'LightFocus · Onboarding',
+      projectName: 'Lightfocus · Onboarding',
       labels: ['spotlight'],
       checked: false,
       estimatedMinutes: 10,
@@ -463,7 +466,7 @@ function buildOnboardingTasks() {
       recurring: false,
       priority: 'p3',
       projectId: 'inbox',
-      projectName: 'LightFocus · Onboarding',
+      projectName: 'Lightfocus · Onboarding',
       labels: ['foco'],
       checked: false,
       estimatedMinutes: 25,
@@ -934,7 +937,7 @@ async function syncFromTodoistApi(token, user) {
     }
   }
 
-  // Keep native local tasks created inside LightFocus that were not on Todoist
+  // Keep native local tasks created inside Lightfocus that were not on Todoist
   const localOnlyTasks = (Array.isArray(prevSnapshot.tasks) ? prevSnapshot.tasks : []).filter(
     (t) => String(t.id).startsWith('lf_') && !activeTodayIds.has(String(t.id)) && !t.checked
   );
@@ -1108,7 +1111,7 @@ function sendJson(res, status, payload, extraHeaders = {}) {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Todoist-Token, X-LightFocus-Auth, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Todoist-Token, X-Lightfocus-Auth, Authorization',
     ...extraHeaders
   });
   res.end(JSON.stringify(payload));
@@ -1213,11 +1216,148 @@ function parseIcsContent(icsText) {
   return events;
 }
 
+function readStripeConfig() {
+  const candidates = [STRIPE_CONFIG_FILE, PERSISTENT_STRIPE_FILE];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        const parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
+        if (parsed && typeof parsed === 'object') {
+          return {
+            secretKey: String(parsed.secretKey || process.env.STRIPE_SECRET_KEY || '').trim(),
+            publishableKey: String(parsed.publishableKey || process.env.STRIPE_PUBLISHABLE_KEY || '').trim(),
+            paymentLink: String(parsed.paymentLink || process.env.STRIPE_PAYMENT_LINK || '').trim(),
+            pixKey: String(parsed.pixKey || process.env.LIGHTFOCUS_PIX_KEY || 'walacetkwl@gmail.com').trim(),
+            priceCents: Number(parsed.priceCents || 9900),
+            currency: 'brl'
+          };
+        }
+      }
+    } catch (_) {}
+  }
+  return {
+    secretKey: String(process.env.STRIPE_SECRET_KEY || '').trim(),
+    publishableKey: String(process.env.STRIPE_PUBLISHABLE_KEY || '').trim(),
+    paymentLink: String(process.env.STRIPE_PAYMENT_LINK || '').trim(),
+    pixKey: String(process.env.LIGHTFOCUS_PIX_KEY || 'walacetkwl@gmail.com').trim(),
+    priceCents: 9900,
+    currency: 'brl'
+  };
+}
+
+function writeStripeConfig(nextCfg) {
+  const current = readStripeConfig();
+  const merged = {
+    secretKey: nextCfg.secretKey !== undefined ? String(nextCfg.secretKey).trim() : current.secretKey,
+    publishableKey: nextCfg.publishableKey !== undefined ? String(nextCfg.publishableKey).trim() : current.publishableKey,
+    paymentLink: nextCfg.paymentLink !== undefined ? String(nextCfg.paymentLink).trim() : current.paymentLink,
+    pixKey: nextCfg.pixKey !== undefined ? String(nextCfg.pixKey).trim() : current.pixKey,
+    priceCents: 9900,
+    currency: 'brl',
+    updatedAt: getSaoPauloNow().isoStr
+  };
+  const payload = JSON.stringify(merged, null, 2);
+  try {
+    fs.writeFileSync(STRIPE_CONFIG_FILE, payload, 'utf8');
+  } catch (_) {}
+  try {
+    if (fs.existsSync(PERSISTENT_STORE_DIR)) {
+      fs.writeFileSync(PERSISTENT_STRIPE_FILE, payload, 'utf8');
+    }
+  } catch (_) {}
+  return merged;
+}
+
+function createStripeCheckoutSessionHttps(secretKey, opts = {}) {
+  const origin = opts.origin || 'https://lightfocus.0loicj.easypanel.host';
+  const methodPref = opts.paymentMethod === 'pix' ? 'pix' : 'card';
+  const customerEmail = String(opts.email || '').trim();
+
+  function postForm(paramsObj) {
+    return new Promise((resolve, reject) => {
+      const formBody = new URLSearchParams(paramsObj).toString();
+      const req = https.request(
+        {
+          hostname: 'api.stripe.com',
+          port: 443,
+          path: '/v1/checkout/sessions',
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer ' + secretKey,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': Buffer.byteLength(formBody)
+          }
+        },
+        (res) => {
+          let raw = '';
+          res.on('data', (chunk) => (raw += chunk));
+          res.on('end', () => {
+            try {
+              const parsed = JSON.parse(raw);
+              resolve({ status: res.statusCode, data: parsed });
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }
+      );
+      req.on('error', reject);
+      req.write(formBody);
+      req.end();
+    });
+  }
+
+  const baseParams = {
+    mode: 'payment',
+    success_url: origin + '/?app=1&checkout=success&session_id={CHECKOUT_SESSION_ID}',
+    cancel_url: origin + '/?lp=1&checkout=canceled',
+    'line_items[0][price_data][currency]': 'brl',
+    'line_items[0][price_data][unit_amount]': '9900',
+    'line_items[0][price_data][product_data][name]': 'Lightfocus — Acesso Vitalício',
+    'line_items[0][price_data][product_data][description]': 'Licença vitalícia Lightfocus (pagamento único R$ 99 · PIX ou Cartão em até 12x)',
+    'line_items[0][quantity]': '1',
+    'allow_promotion_codes': 'true'
+  };
+  if (customerEmail && customerEmail.includes('@')) {
+    baseParams.customer_email = customerEmail;
+  }
+
+  // First attempt: both card + pix + installments
+  const attempt1 = {
+    ...baseParams,
+    'payment_method_types[0]': methodPref === 'pix' ? 'pix' : 'card',
+    'payment_method_types[1]': methodPref === 'pix' ? 'card' : 'pix',
+    'payment_method_options[card][installments][enabled]': 'true'
+  };
+
+  return postForm(attempt1).then((res1) => {
+    if (res1.status >= 200 && res1.status < 300 && res1.data && res1.data.url) {
+      return res1.data;
+    }
+    // Fallback if PIX or installments are not enabled on the Stripe account yet
+    const attempt2 = {
+      ...baseParams,
+      'payment_method_types[0]': 'card'
+    };
+    return postForm(attempt2).then((res2) => {
+      if (res2.status >= 200 && res2.status < 300 && res2.data && res2.data.url) {
+        return res2.data;
+      }
+      const errMsg =
+        (res1.data && res1.data.error && res1.data.error.message) ||
+        (res2.data && res2.data.error && res2.data.error.message) ||
+        'Não foi possível iniciar a sessão do Stripe.';
+      throw new Error(errMsg);
+    });
+  });
+}
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.ico': 'image/x-icon'
@@ -1242,7 +1382,7 @@ const server = http.createServer(async (req, res) => {
       const store = readUsersStore();
       return sendJson(res, 200, {
         ok: true,
-        app: 'LightFocus v3 — Apple Liquid Glass Commercial SaaS',
+        app: 'Lightfocus',
         version: '3.0.0',
         date: dateStr,
         now: isoStr,
@@ -1398,6 +1538,79 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true, authenticated: false }, { 'Set-Cookie': cookieHeader });
     }
 
+// 5B. Public Stripe Config & Checkout Session (R$ 99 Vitalício — PIX ou Cartão Parcelado)
+    if (pathname === '/api/config/stripe' && req.method === 'GET') {
+      const cfg = readStripeConfig();
+      return sendJson(res, 200, {
+        ok: true,
+        priceBrl: 99,
+        priceCents: 9900,
+        currency: 'BRL',
+        hasSecretKey: Boolean(cfg.secretKey),
+        hasPaymentLink: Boolean(cfg.paymentLink),
+        paymentLink: cfg.paymentLink || null,
+        publishableKey: cfg.publishableKey || null,
+        pixKey: cfg.pixKey || 'walacetkwl@gmail.com',
+        installmentsNote: 'Parcelamento em até 12x no cartão com acréscimo da operadora por conta do comprador, ou R$ 99 à vista no PIX.'
+      });
+    }
+
+    if (pathname === '/api/checkout/stripe' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const cfg = readStripeConfig();
+      const proto = req.headers['x-forwarded-proto'] || 'https';
+      const host = req.headers.host || 'lightfocus.0loicj.easypanel.host';
+      const origin = `${proto}://${host}`;
+
+      if (cfg.secretKey && cfg.secretKey.startsWith('sk_')) {
+        try {
+          const session = await createStripeCheckoutSessionHttps(cfg.secretKey, {
+            origin,
+            paymentMethod: body.paymentMethod || 'pix',
+            email: body.email || ''
+          });
+          return sendJson(res, 200, {
+            ok: true,
+            mode: 'stripe_session',
+            checkoutUrl: session.url,
+            sessionId: session.id
+          });
+        } catch (stripeErr) {
+          if (cfg.paymentLink) {
+            return sendJson(res, 200, {
+              ok: true,
+              mode: 'payment_link_fallback',
+              checkoutUrl: cfg.paymentLink,
+              warning: stripeErr.message
+            });
+          }
+          return sendJson(res, 200, {
+            ok: true,
+            mode: 'interactive_checkout',
+            priceBrl: 99,
+            pixKey: cfg.pixKey || 'walacetkwl@gmail.com',
+            stripeError: stripeErr.message
+          });
+        }
+      }
+
+      if (cfg.paymentLink && cfg.paymentLink.startsWith('http')) {
+        return sendJson(res, 200, {
+          ok: true,
+          mode: 'payment_link',
+          checkoutUrl: cfg.paymentLink
+        });
+      }
+
+      return sendJson(res, 200, {
+        ok: true,
+        mode: 'interactive_checkout',
+        priceBrl: 99,
+        pixKey: cfg.pixKey || 'walacetkwl@gmail.com',
+        message: 'Checkout direto Lightfocus R$ 99 Vitalício (PIX ou Cartão Parcelado).'
+      });
+    }
+
     // 6. Auth Guard for all /api/* routes
     let currentUser = null;
     if (pathname.startsWith('/api/')) {
@@ -1407,7 +1620,7 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 401, {
           ok: false,
           authRequired: true,
-          error: 'Sessao expirada ou nao autenticada. Entre na sua conta LightFocus.'
+          error: 'Sessao expirada ou nao autenticada. Entre na sua conta Lightfocus.'
         });
       }
     }
@@ -1947,6 +2160,12 @@ const server = http.createServer(async (req, res) => {
         if (body.attentionIntervalMinutes !== undefined) {
           nextSettings.attentionIntervalMinutes = Math.max(1, Number(body.attentionIntervalMinutes || 5));
         }
+        if (body.notifyTimeEnding !== undefined) {
+          nextSettings.notifyTimeEnding = Boolean(body.notifyTimeEnding);
+        }
+        if (body.notifyThresholdMinutes !== undefined) {
+          nextSettings.notifyThresholdMinutes = Math.max(1, Number(body.notifyThresholdMinutes || 1));
+        }
         const next = { ...u, settings: nextSettings };
         if (icsUrl !== undefined) next.gcalIcsUrl = icsUrl;
         if (Array.isArray(fetchedEvents) && fetchedEvents.length > 0) {
@@ -1961,6 +2180,25 @@ const server = http.createServer(async (req, res) => {
         ok: true,
         user: sanitizeUserForClient(updatedUser || currentUser),
         ...gcal
+      });
+    }
+
+// 16B. POST /api/config/stripe — Save Stripe Secret Key, Payment Link, or PIX Key
+    if (pathname === '/api/config/stripe' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const saved = writeStripeConfig({
+        secretKey: body.secretKey,
+        publishableKey: body.publishableKey,
+        paymentLink: body.paymentLink,
+        pixKey: body.pixKey
+      });
+      return sendJson(res, 200, {
+        ok: true,
+        hasSecretKey: Boolean(saved.secretKey),
+        hasPaymentLink: Boolean(saved.paymentLink),
+        paymentLink: saved.paymentLink || '',
+        publishableKey: saved.publishableKey || '',
+        pixKey: saved.pixKey || 'walacetkwl@gmail.com'
       });
     }
 
@@ -2030,6 +2268,7 @@ const server = http.createServer(async (req, res) => {
       relPath.includes('.todoist-token') ||
       relPath.includes('.auth-sha256') ||
       relPath.includes('users.json') ||
+      relPath.includes('stripe-config.json') ||
       relPath.includes('.env') ||
       relPath.startsWith('/data/') ||
       relPath.startsWith('\\data\\') ||
@@ -2053,10 +2292,14 @@ const server = http.createServer(async (req, res) => {
     if (fs.existsSync(filePath) && !fs.statSync(filePath).isDirectory()) {
       const ext = path.extname(filePath).toLowerCase();
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-      res.writeHead(200, {
+      const headers = {
         'Content-Type': contentType,
         'Cache-Control': 'no-cache'
-      });
+      };
+      if (relPath === '/sw.js' || relPath.endsWith('/sw.js')) {
+        headers['Service-Worker-Allowed'] = '/';
+      }
+      res.writeHead(200, headers);
       fs.createReadStream(filePath).pipe(res);
     } else {
       res.writeHead(404);
@@ -2069,5 +2312,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[LightFocus v3 Liquid Glass SaaS] Rodando em http://0.0.0.0:${PORT}`);
+  console.log(`[Lightfocus] Rodando em http://0.0.0.0:${PORT}`);
 });
