@@ -1,7 +1,7 @@
 /* ============================================================================
    Lightfocus — Official Service Worker (PWA Installability + Task Notifications)
    ============================================================================ */
-const CACHE_NAME = 'lightfocus-pwa-v9';
+const CACHE_NAME = 'lightfocus-pwa-v10';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
