@@ -192,6 +192,7 @@
   // ATTENTION CALL (LUMINOSO, SONORO, AMBOS) & TOAST
   // ==========================================================================
   function triggerLightPulse() {
+    try { if (typeof renderBotanicalEverywhere === 'function') renderBotanicalEverywhere(true); } catch (_) {}
     const overlay = document.getElementById('lightPulseOverlay');
     if (!overlay) return;
     overlay.classList.remove('active');
@@ -663,6 +664,7 @@
   }
 
   function renderUserHeaderAndXP() {
+    try { if (typeof renderBotanicalEverywhere === 'function') renderBotanicalEverywhere(false); } catch (_) {}
     const u = state.user || {
       name: 'Walace Messias',
       email: 'walacetkwl@gmail.com',
@@ -1943,7 +1945,7 @@
   }
 
   function closeAllModals() {
-    ['quickAddModal', 'spotlightModal', 'reportsModal', 'settingsModal'].forEach((id) => {
+    ['quickAddModal', 'spotlightModal', 'reportsModal', 'settingsModal', 'tutorialModal'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.classList.add('hidden');
     });
@@ -2530,10 +2532,531 @@
     });
   }
 
+  // ==========================================================================
+  // 8-STAGE SLOW-GROWING BOTANICAL TREE (6 MONTHS / 180 DAYS OF CONSISTENCY)
+  // ==========================================================================
+  const BOTANICAL_STAGES = [
+    { level: 1, title: 'Semente Despertando', short: 'Semente', period: 'Dias 1–7', minXp: 0, nextXp: 450, desc: 'A semente germina na terra fertil com os primeiros minutos de foco.' },
+    { level: 2, title: 'Broto Inicial', short: 'Broto', period: 'Semanas 2–3', minXp: 450, nextXp: 1500, desc: 'As duas primeiras folhinhas se abrem buscando luz.' },
+    { level: 3, title: 'Muda Jovem', short: 'Muda', period: 'Mes 1', minXp: 1500, nextXp: 3500, desc: 'Caule firme e quatro folhas vibrantes apos o primeiro mes.' },
+    { level: 4, title: 'Arbusto Ramificado', short: 'Arbusto', period: 'Mes 2', minXp: 3500, nextXp: 6500, desc: 'Primeiros galhos laterais e raizes profundas no segundo mes.' },
+    { level: 5, title: 'Arvore Jovem', short: 'Arvore Jovem', period: 'Mes 3', minXp: 6500, nextXp: 10000, desc: 'Tronco de madeira estruturado e copa ganhando volume.' },
+    { level: 6, title: 'Arvore Frondosa', short: 'Frondosa', period: 'Mes 4', minXp: 10000, nextXp: 14000, desc: 'Copa densa em multiplas camadas oferecendo sombra e clareza.' },
+    { level: 7, title: 'Arvore em Flor', short: 'Em Flor', period: 'Mes 5', minXp: 14000, nextXp: 18000, desc: 'Flores delicadas desabrocham celebrando 5 meses de disciplina.' },
+    { level: 8, title: 'Super Arvore Ancestral', short: 'Super Arvore', period: '6 Meses+', minXp: 18000, nextXp: 18000, desc: 'O apice de 6 meses seguidos: arvore majestosa com frutos dourados e luz.' }
+  ];
+
+  function computeBotanicalStage(xpInput) {
+    const xp = Math.max(0, Math.round(Number(xpInput || 0)));
+    let cur = BOTANICAL_STAGES[0];
+    let next = BOTANICAL_STAGES[1];
+    for (let i = 0; i < BOTANICAL_STAGES.length; i++) {
+      if (xp >= BOTANICAL_STAGES[i].minXp) {
+        cur = BOTANICAL_STAGES[i];
+        next = BOTANICAL_STAGES[i + 1] || BOTANICAL_STAGES[BOTANICAL_STAGES.length - 1];
+      }
+    }
+    const span = Math.max(1, next.minXp - cur.minXp);
+    const stagePct = cur.level === 8 ? 100 : Math.min(100, Math.max(4, Math.round(((xp - cur.minXp) / span) * 100)));
+    const sixMonthPct = Math.min(100, Number(((xp / 18000) * 100).toFixed(1)));
+    return { xp, stage: cur, nextStage: next, stagePct, sixMonthPct };
+  }
+
+  function getBotanicalStageSvg(stageNum) {
+    const s = Math.min(8, Math.max(1, Number(stageNum || 1)));
+    const soil = `<ellipse cx="40" cy="70" rx="24" ry="5.5" fill="rgba(120, 82, 48, 0.32)"/><path d="M20 70 Q40 65 60 70" stroke="#8B5E34" stroke-width="2.2" stroke-linecap="round" fill="none"/>`;
+
+    if (s === 1) {
+      // Stage 1: Seed cracking open with tiny green tip
+      return `<svg viewBox="0 0 80 80" fill="none">
+        ${soil}
+        <g class="tree-sway-group">
+          <ellipse cx="40" cy="65" rx="7" ry="5" fill="#A47148" stroke="#6F4518" stroke-width="1.5"/>
+          <path d="M40 62 C40 56 42 53 45 51" stroke="#22C55E" stroke-width="2.4" stroke-linecap="round"/>
+          <circle cx="45.5" cy="50.5" r="2.5" fill="#4ADE80" class="tree-canopy-breath"/>
+        </g>
+      </svg>`;
+    }
+    if (s === 2) {
+      // Stage 2: Tender sprout with 2 cotyledon leaves
+      return `<svg viewBox="0 0 80 80" fill="none">
+        ${soil}
+        <g class="tree-sway-group">
+          <path d="M40 69 Q39 55 40 44" stroke="#16A34A" stroke-width="2.8" stroke-linecap="round"/>
+          <g class="tree-canopy-breath">
+            <path d="M40 47 C31 45 27 38 34 36 C38 35 40 41 40 47 Z" fill="#22C55E"/>
+            <path d="M40 45 C49 43 53 36 46 34 C42 33 40 39 40 45 Z" fill="#4ADE80"/>
+          </g>
+        </g>
+      </svg>`;
+    }
+    if (s === 3) {
+      // Stage 3: Young sapling with 4 vibrant leaves (Month 1)
+      return `<svg viewBox="0 0 80 80" fill="none">
+        ${soil}
+        <g class="tree-sway-group">
+          <path d="M40 69 Q41 50 40 34" stroke="#15803D" stroke-width="3.2" stroke-linecap="round"/>
+          <g class="tree-canopy-breath">
+            <path d="M40 53 C28 51 25 43 32 41 C37 40 39 47 40 53 Z" fill="#16A34A"/>
+            <path d="M40 50 C52 48 55 40 48 38 C43 37 41 44 40 50 Z" fill="#22C55E"/>
+            <path d="M40 38 C30 34 29 25 36 25 C40 25 40 33 40 38 Z" fill="#22C55E"/>
+            <path d="M40 36 C50 32 51 23 44 23 C40 23 40 31 40 36 Z" fill="#4ADE80"/>
+          </g>
+        </g>
+      </svg>`;
+    }
+    if (s === 4) {
+      // Stage 4: Branched shrub (Month 2)
+      return `<svg viewBox="0 0 80 80" fill="none">
+        ${soil}
+        <g class="tree-sway-group">
+          <path d="M40 70 L40 34 M40 52 L29 42 M40 48 L51 38" stroke="#784B2A" stroke-width="3.6" stroke-linecap="round"/>
+          <g class="tree-canopy-breath">
+            <circle cx="28" cy="39" r="9" fill="#16A34A"/>
+            <circle cx="52" cy="36" r="9.5" fill="#15803D"/>
+            <circle cx="40" cy="28" r="12" fill="#22C55E"/>
+            <circle cx="37" cy="25" r="7" fill="#4ADE80" fill-opacity="0.7"/>
+          </g>
+        </g>
+      </svg>`;
+    }
+    if (s === 5) {
+      // Stage 5: Young Structured Tree (Month 3)
+      return `<svg viewBox="0 0 80 80" fill="none">
+        ${soil}
+        <g class="tree-sway-group">
+          <path d="M36 70 Q39 52 38 35 L42 35 Q41 52 44 70 Z" fill="#7C4D2B"/>
+          <path d="M39 48 L26 36 M41 45 L54 34" stroke="#7C4D2B" stroke-width="3.2" stroke-linecap="round"/>
+          <g class="tree-canopy-breath">
+            <circle cx="26" cy="34" r="11" fill="#15803D"/>
+            <circle cx="54" cy="33" r="11" fill="#16A34A"/>
+            <circle cx="40" cy="24" r="15" fill="#22C55E"/>
+            <circle cx="36" cy="20" r="9" fill="#4ADE80" fill-opacity="0.65"/>
+          </g>
+        </g>
+      </svg>`;
+    }
+    if (s === 6) {
+      // Stage 6: Lush Layered Canopy Tree (Month 4)
+      return `<svg viewBox="0 0 80 80" fill="none">
+        ${soil}
+        <g class="tree-sway-group">
+          <path d="M33 70 Q38 50 37 32 L43 32 Q42 50 47 70 Z" fill="#6F4518"/>
+          <path d="M38 46 L22 33 M42 44 L58 31 M40 36 L30 22 M40 36 L50 22" stroke="#6F4518" stroke-width="3.4" stroke-linecap="round"/>
+          <g class="tree-canopy-breath">
+            <circle cx="22" cy="34" r="12.5" fill="#14532D"/>
+            <circle cx="58" cy="33" r="12.5" fill="#15803D"/>
+            <circle cx="31" cy="22" r="14" fill="#16A34A"/>
+            <circle cx="49" cy="22" r="14" fill="#22C55E"/>
+            <circle cx="40" cy="17" r="13" fill="#4ADE80"/>
+          </g>
+        </g>
+      </svg>`;
+    }
+    if (s === 7) {
+      // Stage 7: Flowering Tree (Month 5)
+      return `<svg viewBox="0 0 80 80" fill="none">
+        ${soil}
+        <g class="tree-sway-group">
+          <path d="M32 70 Q37 49 36 30 L44 30 Q43 49 48 70 Z" fill="#6F4518"/>
+          <g class="tree-canopy-breath">
+            <circle cx="21" cy="34" r="13" fill="#15803D"/>
+            <circle cx="59" cy="33" r="13" fill="#16A34A"/>
+            <circle cx="30" cy="21" r="14.5" fill="#16A34A"/>
+            <circle cx="50" cy="21" r="14.5" fill="#22C55E"/>
+            <circle cx="40" cy="16" r="14" fill="#4ADE80"/>
+            <!-- Blossoms -->
+            <circle cx="24" cy="29" r="3" fill="#F472B6"/>
+            <circle cx="36" cy="14" r="3.2" fill="#FB7185"/>
+            <circle cx="48" cy="19" r="3" fill="#F472B6"/>
+            <circle cx="56" cy="31" r="2.8" fill="#FBBF24"/>
+            <circle cx="31" cy="36" r="2.8" fill="#F472B6"/>
+          </g>
+        </g>
+      </svg>`;
+    }
+    // Stage 8: 6-Month Super Ancestral Tree (Majestic canopy, roots, golden fruits & floating spores)
+    return `<svg viewBox="0 0 80 80" fill="none">
+      <ellipse cx="40" cy="71" rx="29" ry="6" fill="rgba(52, 199, 89, 0.22)"/>
+      <g class="tree-sway-group">
+        <!-- Deep Roots & Majestic Trunk -->
+        <path d="M26 72 Q35 66 35 45 L36 28 L44 28 L45 45 Q45 66 54 72 Z" fill="#583101"/>
+        <path d="M37 44 L19 29 M43 42 L61 28 M39 34 L27 18 M41 34 L53 18" stroke="#583101" stroke-width="3.8" stroke-linecap="round"/>
+        <g class="tree-canopy-breath">
+          <circle cx="19" cy="33" r="14" fill="#14532D"/>
+          <circle cx="61" cy="32" r="14" fill="#15803D"/>
+          <circle cx="29" cy="19" r="15.5" fill="#16A34A"/>
+          <circle cx="51" cy="19" r="15.5" fill="#22C55E"/>
+          <circle cx="40" cy="14" r="15" fill="#4ADE80"/>
+          <circle cx="40" cy="28" r="13" fill="#22C55E"/>
+          <!-- Golden Wisdom Fruits & Light Spores -->
+          <circle cx="23" cy="27" r="3.3" fill="#FBBF24" class="tree-spore-dot"/>
+          <circle cx="38" cy="12" r="3.5" fill="#F59E0B" class="tree-spore-dot"/>
+          <circle cx="53" cy="21" r="3.3" fill="#FBBF24" class="tree-spore-dot"/>
+          <circle cx="32" cy="31" r="3.1" fill="#FDE047" class="tree-spore-dot"/>
+          <circle cx="58" cy="34" r="3.1" fill="#F59E0B" class="tree-spore-dot"/>
+        </g>
+      </g>
+    </svg>`;
+  }
+
+  let previewedStageLevel = null;
+
+  function renderBotanicalEverywhere(triggerBurst) {
+    const xp = (state.user && Number(state.user.xp)) || 0;
+    const info = computeBotanicalStage(xp);
+    const activeStageNum = previewedStageLevel || info.stage.level;
+    const svgMarkup = getBotanicalStageSvg( info.stage.level );
+
+    // 1. Top Bar Capsule
+    const topHost = document.getElementById('topPlantSvgHost');
+    const topLbl = document.getElementById('topLevelLabel');
+    const topXp = document.getElementById('topXpValue');
+    if (topHost) topHost.innerHTML = svgMarkup;
+    if (topLbl) topLbl.textContent = `Est. ${info.stage.level} · ${info.stage.short}`;
+    if (topXp) topXp.textContent = `${info.xp} XP`;
+
+    // 2. Sidebar Botanical Card
+    const sideSvg = document.getElementById('sidebarTreeStageSvg');
+    const sidePeriod = document.getElementById('sidebarTreePeriodBadge');
+    const sideTitle = document.getElementById('sidebarTreeStageTitle');
+    const sideSub = document.getElementById('sidebarTreeSubText');
+    const sideFill = document.getElementById('sidebarTreeProgressFill');
+    const sideXpLbl = document.getElementById('sidebarTreeXpLabel');
+    const sideSixPct = document.getElementById('sidebarSixMonthPctLabel');
+    const sideCard = document.getElementById('botanicalSidebarCard');
+
+    if (sideSvg) sideSvg.innerHTML = svgMarkup;
+    if (sidePeriod) sidePeriod.textContent = info.stage.period;
+    if (sideTitle) sideTitle.textContent = info.stage.title;
+    if (sideSub) sideSub.textContent = info.stage.desc;
+    if (sideFill) sideFill.style.width = `${info.stagePct}%`;
+    if (sideXpLbl) {
+      sideXpLbl.textContent =
+        info.stage.level === 8
+          ? `${info.xp} XP (Estagio Maximo)`
+          : `${info.xp} / ${info.nextStage.minXp} XP p/ ${info.nextStage.short}`;
+    }
+    if (sideSixPct) sideSixPct.textContent = `${info.sixMonthPct}% de 6 meses`;
+
+    if (triggerBurst && sideCard) {
+      sideCard.classList.add('nutrir-burst');
+      setTimeout(() => sideCard.classList.remove('nutrir-burst'), 1100);
+    }
+
+    // 3. Reports Modal Showcase & 8-Stage Interactive Timeline
+    const modalSvg = document.getElementById('modalTreeStageSvg');
+    const repTitle = document.getElementById('reportLevelTitle');
+    const repSub = document.getElementById('reportXpSubtitle');
+    const repFill = document.getElementById('reportXpBarFill');
+    const timeline = document.getElementById('treeStagesTimeline');
+    const previewHint = document.getElementById('treePreviewHint');
+
+    const shownStage = BOTANICAL_STAGES.find((s) => s.level === activeStageNum) || info.stage;
+    if (modalSvg) modalSvg.innerHTML = getBotanicalStageSvg(shownStage.level);
+    if (repTitle) repTitle.textContent = `Estagio ${shownStage.level} · ${shownStage.title} (${shownStage.period})`;
+    if (repSub) {
+      repSub.textContent = `${shownStage.desc} — Voce acumula XP diariamente ate atingir a Super Arvore Ancestral em 6 meses (18.000 XP).`;
+    }
+    if (repFill) repFill.style.width = `${info.stagePct}%`;
+    if (previewHint) {
+      previewHint.textContent =
+        shownStage.level === info.stage.level
+          ? `Seu estagio atual (${info.sixMonthPct}% da jornada de 6 meses)`
+          : `Pre-visualizando Estagio ${shownStage.level} (${shownStage.period})`;
+    }
+
+    if (timeline) {
+      timeline.innerHTML = BOTANICAL_STAGES.map((st) => {
+        const isUnlocked = info.xp >= st.minXp;
+        const isActive = st.level === shownStage.level;
+        return `
+          <button type="button" class="tree-stage-node ${isUnlocked ? 'unlocked' : ''} ${isActive ? 'active-preview' : ''}" data-preview-stage="${st.level}">
+            <div class="stage-node-svg">${getBotanicalStageSvg(st.level)}</div>
+            <span class="stage-node-title">${st.short}</span>
+            <span class="stage-node-period">${st.period}</span>
+          </button>
+        `;
+      }).join('');
+    }
+  }
+
+  // ==========================================================================
+  // OPTIONAL LO-FI & AMBIENT SOUNDSCAPE SYNTHESIZER (WebAudio Realtime)
+  // ==========================================================================
+  const lofiEngine = {
+    playing: false,
+    station: localStorage.getItem('lf_v36_lofi_station') || 'lofi_chill',
+    volume: Number(localStorage.getItem('lf_v36_lofi_vol') || 40),
+    ctx: null,
+    masterGain: null,
+    nodes: [],
+    chordTimer: null
+  };
+
+  function stopLofiNodes() {
+    if (lofiEngine.chordTimer) {
+      clearInterval(lofiEngine.chordTimer);
+      lofiEngine.chordTimer = null;
+    }
+    lofiEngine.nodes.forEach((n) => {
+      try {
+        if (n.stop) n.stop();
+        if (n.disconnect) n.disconnect();
+      } catch (_) {}
+    });
+    lofiEngine.nodes = [];
+  }
+
+  function startLofiSynth() {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    stopLofiNodes();
+
+    const master = ctx.createGain();
+    master.gain.setValueAtTime((lofiEngine.volume / 100) * 0.28, ctx.currentTime);
+    master.connect(ctx.destination);
+    lofiEngine.masterGain = master;
+
+    // Subtle warm vinyl/rain noise bed
+    const bufferSize = ctx.sampleRate * 2;
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.997 * b0 + white * 0.029;
+      b1 = 0.985 * b1 + white * 0.032;
+      b2 = 0.950 * b2 + white * 0.048;
+      output[i] = (b0 + b1 + b2) * 0.35;
+    }
+    const whiteNoise = ctx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
+    whiteNoise.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = lofiEngine.station === 'rain_glass' ? 950 : 420;
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.value = lofiEngine.station === 'rain_glass' ? 0.55 : 0.14;
+    whiteNoise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(master);
+    whiteNoise.start();
+    lofiEngine.nodes.push(whiteNoise, filter, noiseGain);
+
+    if (lofiEngine.station === 'lofi_chill') {
+      // Warm Rhodes Jazzy Lo-Fi chord progression
+      const chords = [
+        [261.63, 329.63, 392.00, 493.88], // Cmaj7
+        [220.00, 261.63, 329.63, 392.00], // Am7
+        [293.66, 349.23, 440.00, 523.25], // Dm7
+        [196.00, 246.94, 293.66, 349.23]  // G7
+      ];
+      let cIdx = 0;
+      const playChord = () => {
+        if (!lofiEngine.playing) return;
+        const notes = chords[cIdx % chords.length];
+        cIdx += 1;
+        const now = ctx.currentTime;
+        notes.forEach((freq) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.linearRampToValueAtTime(0.08, now + 0.45);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 3.4);
+          osc.connect(g);
+          g.connect(master);
+          osc.start(now);
+          osc.stop(now + 3.5);
+        });
+      };
+      playChord();
+      lofiEngine.chordTimer = setInterval(playChord, 3500);
+    } else if (lofiEngine.station === 'binaural_alpha') {
+      // 432Hz + 442Hz (10Hz Alpha Focus Wave)
+      [216, 226].forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        g.gain.value = 0.16;
+        osc.connect(g);
+        g.connect(master);
+        osc.start();
+        lofiEngine.nodes.push(osc, g);
+      });
+    } else if (lofiEngine.station === 'night_cafe') {
+      // Warm harmonic pad drone
+      [146.83, 220.0, 277.18].forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass';
+        lpf.frequency.value = 340;
+        g.gain.value = 0.12;
+        osc.connect(lpf);
+        lpf.connect(g);
+        g.connect(master);
+        osc.start();
+        lofiEngine.nodes.push(osc, lpf, g);
+      });
+    }
+  }
+
+  function syncLofiUI() {
+    const pillBtn = document.getElementById('lofiTogglePillBtn');
+    const eq = document.getElementById('lofiLiveizer');
+    const playMasterBtn = document.getElementById('lofiPlayMasterBtn');
+    const playMasterLbl = document.getElementById('lofiPlayMasterLabel');
+    const volSlider = document.getElementById('lofiVolumeSlider');
+    const volVal = document.getElementById('lofiVolumeVal');
+
+    if (pillBtn) pillBtn.classList.toggle('playing', lofiEngine.playing);
+    if (eq) eq.classList.toggle('hidden', !lofiEngine.playing);
+    if (playMasterBtn) playMasterBtn.classList.toggle('active', lofiEngine.playing);
+    if (playMasterLbl) playMasterLbl.textContent = lofiEngine.playing ? 'Pausar' : 'Tocar';
+    if (volSlider) volSlider.value = String(lofiEngine.volume);
+    if (volVal) volVal.textContent = `${lofiEngine.volume}%`;
+
+    document.querySelectorAll('.lofi-station-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-lofi-station') === lofiEngine.station);
+    });
+  }
+
+  function toggleLofiPlay() {
+    lofiEngine.playing = !lofiEngine.playing;
+    if (lofiEngine.playing) {
+      startLofiSynth();
+      showToast('Lo-Fi ambiente ativado.');
+    } else {
+      stopLofiNodes();
+      showToast('Lo-Fi pausado.');
+    }
+    syncLofiUI();
+  }
+
+  // ==========================================================================
+  // LIGHT FIRST-ACCESS TUTORIAL CONTROLLER
+  // ==========================================================================
+  function openTutorialModal() {
+    closeAllModals();
+    const modal = document.getElementById('tutorialModal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  function checkFirstAccessTutorial() {
+    const seen = localStorage.getItem('lf_v36_tutorial_seen');
+    if (!seen && state.authenticated) {
+      localStorage.setItem('lf_v36_tutorial_seen', '1');
+      setTimeout(() => {
+        openTutorialModal();
+      }, 450);
+    }
+  }
+
+  function bindV36Enhancements() {
+    // Botanical Sidebar Card click opens Reports & Tree Timeline Modal
+    const botCard = document.getElementById('botanicalSidebarCard');
+    if (botCard) {
+      botCard.addEventListener('click', () => {
+        previewedStageLevel = null;
+        openReportsModal();
+        renderBotanicalEverywhere(false);
+      });
+    }
+
+    // Interactive 8-Stage Timeline clicks inside Reports Modal
+    const timeline = document.getElementById('treeStagesTimeline');
+    if (timeline) {
+      timeline.addEventListener('click', (e) => {
+        const node = e.target.closest('[data-preview-stage]');
+        if (!node) return;
+        previewedStageLevel = Number(node.getAttribute('data-preview-stage') || 1);
+        renderBotanicalEverywhere(false);
+      });
+    }
+
+    // Lo-Fi Popover & Controls
+    const lofiPill = document.getElementById('lofiTogglePillBtn');
+    const lofiPop = document.getElementById('lofiStudioPopover');
+    const lofiMasterBtn = document.getElementById('lofiPlayMasterBtn');
+    const lofiSlider = document.getElementById('lofiVolumeSlider');
+
+    if (lofiPill && lofiPop) {
+      lofiPill.addEventListener('click', (e) => {
+        e.stopPropagation();
+        lofiPop.classList.toggle('hidden');
+      });
+      document.addEventListener('click', (e) => {
+        if (!lofiPop.classList.contains('hidden') && !lofiPop.contains(e.target) && e.target !== lofiPill) {
+          lofiPop.classList.add('hidden');
+        }
+      });
+    }
+
+    if (lofiMasterBtn) {
+      lofiMasterBtn.addEventListener('click', toggleLofiPlay);
+    }
+
+    document.querySelectorAll('.lofi-station-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        lofiEngine.station = btn.getAttribute('data-lofi-station') || 'lofi_chill';
+        localStorage.setItem('lf_v36_lofi_station', lofiEngine.station);
+        if (!lofiEngine.playing) {
+          lofiEngine.playing = true;
+        }
+        startLofiSynth();
+        syncLofiUI();
+      });
+    });
+
+    if (lofiSlider) {
+      lofiSlider.addEventListener('input', () => {
+        lofiEngine.volume = Number(lofiSlider.value || 40);
+        localStorage.setItem('lf_v36_lofi_vol', String(lofiEngine.volume));
+        if (lofiEngine.masterGain && lofiEngine.ctx) {
+          lofiEngine.masterGain.gain.setValueAtTime((lofiEngine.volume / 100) * 0.28, lofiEngine.ctx.currentTime);
+        }
+        syncLofiUI();
+      });
+    }
+
+    // Tutorial Modal buttons
+    const openTutBtn = document.getElementById('openTutorialBtn');
+    const tutDoneBtn = document.getElementById('tutorialDoneBtn');
+    const tutQuickBtn = document.getElementById('tutorialOpenQuickAddBtn');
+
+    if (openTutBtn) openTutBtn.addEventListener('click', openTutorialModal);
+    if (tutDoneBtn) {
+      tutDoneBtn.addEventListener('click', () => {
+        localStorage.setItem('lf_v36_tutorial_seen', '1');
+        closeAllModals();
+      });
+    }
+    if (tutQuickBtn) {
+      tutQuickBtn.addEventListener('click', () => {
+        localStorage.setItem('lf_v36_tutorial_seen', '1');
+        openQuickAddModal('Planejar metas toda segunda 14:30 35m p1 ');
+      });
+    }
+
+    syncLofiUI();
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     applyTheme(state.theme);
     syncAttentionUI();
     bindEvents();
-    checkSessionAndBoot();
+    bindV36Enhancements();
+    checkSessionAndBoot().then(() => {
+      renderBotanicalEverywhere(false);
+      checkFirstAccessTutorial();
+    });
   });
 })();

@@ -460,7 +460,7 @@ function buildOnboardingTasks() {
       description: 'Conclua tarefas com foco cronometrado para acumular XP (+50 XP por tarefa + 5 XP por minuto focado), subir de nivel no sistema Cristal -> Arquitetonico e acompanhar sua previsao de termino do dia.',
       dueDate: dateStr,
       dueTime: null,
-      recurring: 'todo dia',
+      recurring: false,
       priority: 'p3',
       projectId: 'inbox',
       projectName: 'LightFocus · Onboarding',
@@ -476,34 +476,36 @@ function buildOnboardingTasks() {
 
 function computeLevelInfo(xpInput) {
   const xp = Math.max(0, Math.round(Number(xpInput || 0)));
+  // 6-Month (180 Days) Continuous Botanical Growth Curve (~100 XP/day = 18,000 XP for Super Tree)
   const levels = [
-    { level: 1, title: 'Cristal', minXp: 0 },
-    { level: 2, title: 'Lente Pura', minXp: 150 },
-    { level: 3, title: 'Prisma', minXp: 350 },
-    { level: 4, title: 'Refracao', minXp: 650 },
-    { level: 5, title: 'Horizonte', minXp: 1050 },
-    { level: 6, title: 'Meridiano', minXp: 1550 },
-    { level: 7, title: 'Zenite', minXp: 2200 },
-    { level: 8, title: 'Especular', minXp: 3000 },
-    { level: 9, title: 'Singularidade', minXp: 4000 },
-    { level: 10, title: 'Arquitetonico', minXp: 5200 }
+    { level: 1, title: 'Semente Despertando', period: 'Dias 1–7', minXp: 0 },
+    { level: 2, title: 'Broto Inicial', period: 'Semanas 2–3', minXp: 450 },
+    { level: 3, title: 'Muda Jovem', period: 'Mes 1', minXp: 1500 },
+    { level: 4, title: 'Arbusto Ramificado', period: 'Mes 2', minXp: 3500 },
+    { level: 5, title: 'Arvore Jovem', period: 'Mes 3', minXp: 6500 },
+    { level: 6, title: 'Arvore Frondosa', period: 'Mes 4', minXp: 10000 },
+    { level: 7, title: 'Arvore em Flor', period: 'Mes 5', minXp: 14000 },
+    { level: 8, title: 'Super Arvore Ancestral', period: '6 Meses+', minXp: 18000 }
   ];
   let current = levels[0];
   let next = levels[1];
   for (let i = 0; i < levels.length; i++) {
     if (xp >= levels[i].minXp) {
       current = levels[i];
-      next = levels[i + 1] || { level: 10, title: 'Arquitetonico Max', minXp: current.minXp + 1500 };
+      next = levels[i + 1] || { level: 8, title: 'Super Arvore Ancestral', period: '6 Meses+', minXp: 18000 };
     }
   }
   const span = Math.max(1, next.minXp - current.minXp);
-  const progress = Math.min(100, Math.max(0, Math.round(((xp - current.minXp) / span) * 100)));
+  const progress = current.level === 8 ? 100 : Math.min(100, Math.max(0, Math.round(((xp - current.minXp) / span) * 100)));
+  const totalSixMonthPct = Math.min(100, Number(((xp / 18000) * 100).toFixed(1)));
   return {
     xp,
     level: current.level,
     levelTitle: current.title,
+    levelPeriod: current.period,
     nextLevelXp: next.minXp,
-    levelProgressPct: progress
+    levelProgressPct: progress,
+    totalSixMonthPct
   };
 }
 
@@ -641,7 +643,7 @@ function getUserTasksSnapshot(user) {
     timezone: 'America/Sao_Paulo',
     source: user.todoistToken ? 'todoist_sync_v9' : 'lightfocus_cloud',
     totalToday: user.tasks.length,
-    tasks: user.tasks
+    tasks: user.tasks.map((t) => (t.id === 'lf_sample_3' ? { ...t, recurring: false, recurrenceRule: null } : t))
   };
 }
 

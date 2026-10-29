@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=20261028v5" />
+  <link rel="stylesheet" href="/styles.css?v=20261028v6" />
 </head>
 <body>
   <!-- Ambient Optical Canvas & Refractive Light Pulse Overlay -->
@@ -160,7 +160,7 @@
         </button>
       </div>
 
-      <!-- Right Controls: Quick Add (Q), Ultra Foco, XP Capsule, Sync, Theme, User -->
+      <!-- Right Controls: Quick Add (Q), Ultra Foco, Lo-Fi Opcional, Plant XP Capsule, Tutorial, Sync, Theme, User -->
       <div class="top-bar-right">
         <button type="button" id="openQuickAddBtn" class="glass-pill-btn quick-add-trigger" title="Criar nova tarefa com tags de agenda (Tecla Q)">
           <svg class="icon-16" viewBox="0 0 24 24" fill="none">
@@ -179,13 +179,85 @@
           <span>Ultra Foco</span>
         </button>
 
-        <button type="button" id="openReportsBtn" class="glass-pill-btn xp-capsule" title="Ver Relatorios de Foco e Progresso de XP">
-          <svg class="xp-ring-mini" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" stroke-opacity="0.18"/>
-            <circle id="topXpArc" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" stroke-dasharray="56.5" stroke-dashoffset="20" stroke-linecap="round" transform="rotate(-90 12 12)"/>
-          </svg>
-          <span id="topLevelLabel" class="xp-level-text">Nv 1 · Cristal</span>
+        <!-- Optional Lo-Fi & Ambient Soundscapes Dropdown Trigger -->
+        <div class="lofi-dropdown-anchor">
+          <button type="button" id="lofiTogglePillBtn" class="glass-pill-btn lofi-pill-trigger" title="Sons Lo-Fi & Ambiente Opcionais">
+            <svg class="icon-16 lofi-wave-svg" viewBox="0 0 24 24" fill="none">
+              <path d="M3 18V12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12V18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+              <rect x="2" y="14" width="4" height="6" rx="2" stroke="currentColor" stroke-width="1.75"/>
+              <rect x="18" y="14" width="4" height="6" rx="2" stroke="currentColor" stroke-width="1.75"/>
+            </svg>
+            <span id="lofiPillStatusText">Lo-Fi</span>
+            <span id="lofiLiveizer" class="lofi-eq-bars hidden" aria-hidden="true">
+              <i></i><i></i><i></i>
+            </span>
+          </button>
+
+          <!-- Floating Liquid Glass Lo-Fi Studio Popover -->
+          <div id="lofiStudioPopover" class="lofi-studio-popover hidden" role="dialog" aria-label="Player Lo-Fi e Sons de Foco Opcionais">
+            <div class="lofi-pop-header">
+              <div>
+                <strong class="lofi-pop-title">Lo-Fi & Ambiente Opcional</strong>
+                <span class="lofi-pop-sub">Sintese acustica em tempo real para imersao</span>
+              </div>
+              <button type="button" id="lofiPlayMasterBtn" class="lofi-play-master-btn">
+                <span id="lofiPlayMasterLabel">Tocar</span>
+              </button>
+            </div>
+            <div class="lofi-stations-list">
+              <button type="button" class="lofi-station-btn active" data-lofi-station="lofi_chill">
+                <span class="station-dot"></span>
+                <div class="station-info">
+                  <strong>Lo-Fi Warm Rhodes</strong>
+                  <span>Acordes suaves + vinil relaxante</span>
+                </div>
+              </button>
+              <button type="button" class="lofi-station-btn" data-lofi-station="rain_glass">
+                <span class="station-dot"></span>
+                <div class="station-info">
+                  <strong>Chuva Suave na Janela</strong>
+                  <span>Ruido rosa filtrado + gotas acusticas</span>
+                </div>
+              </button>
+              <button type="button" class="lofi-station-btn" data-lofi-station="binaural_alpha">
+                <span class="station-dot"></span>
+                <div class="station-info">
+                  <strong>Ondas Alpha & Gamma (Foco Profundo)</strong>
+                  <span>Frequencia 432Hz + pulso cognitivo 10Hz</span>
+                </div>
+              </button>
+              <button type="button" class="lofi-station-btn" data-lofi-station="night_cafe">
+                <span class="station-dot"></span>
+                <div class="station-info">
+                  <strong>Estudio Noturno Zen</strong>
+                  <span>Drone atmosferico quente e silencioso</span>
+                </div>
+              </button>
+            </div>
+            <div class="lofi-volume-row">
+              <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+                <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+                <path d="M15.54 8.46C16.47 9.39 17 10.66 17 12C17 13.34 16.47 14.61 15.54 15.54" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+              </svg>
+              <input type="range" id="lofiVolumeSlider" class="lofi-volume-slider" min="0" max="100" value="40" />
+              <span id="lofiVolumeVal" class="lofi-vol-label">40%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slow-Growing Botanical Tree XP Capsule (6-Month Journey) -->
+        <button type="button" id="openReportsBtn" class="glass-pill-btn xp-capsule plant-xp-capsule" title="Sua Arvore de Foco (Jornada de 6 Meses) & Relatorios">
+          <span id="topPlantSvgHost" class="top-plant-svg-host" aria-hidden="true"></span>
+          <span id="topLevelLabel" class="xp-level-text">Semente</span>
           <span id="topXpValue" class="xp-points-badge">0 XP</span>
+        </button>
+
+        <button type="button" id="openTutorialBtn" class="glass-icon-btn" title="Guia Rapido & Tutorial do LightFocus">
+          <svg class="icon-18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/>
+            <path d="M9.5 9.5C9.5 8.12 10.62 7 12 7C13.38 7 14.5 8.12 14.5 9.5C14.5 10.88 12 11.5 12 13.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+            <circle cx="12" cy="17" r="1" fill="currentColor"/>
+          </svg>
         </button>
 
         <button type="button" id="syncNowBtn" class="glass-icon-btn" title="Sincronizar Todoist e Google Agenda">
@@ -462,8 +534,31 @@
         </article>
       </section>
 
-      <!-- RIGHT: Minimalist Apple Activity Bento & Agenda do Dia Queue -->
+      <!-- RIGHT: Minimalist Apple Activity Bento, 6-Month Botanical Tree & Agenda do Dia Queue -->
       <aside class="agenda-sidebar" aria-label="Resumo do dia e fila de agenda">
+        <!-- Slow-Growing Botanical Tree Card (6-Month Consistency Journey) -->
+        <div id="botanicalSidebarCard" class="liquid-bento-card botanical-bento-card" title="Clique para ver a linha do tempo de 6 meses da sua arvore">
+          <div id="sidebarPlantTerrarium" class="plant-terrarium-box">
+            <div id="sidebarTreeStageSvg" class="plant-svg-stage"></div>
+            <div id="plantSparklesLayer" class="plant-sparkles-layer" aria-hidden="true"></div>
+          </div>
+          <div class="botanical-info-col">
+            <div class="botanical-eyebrow-row">
+              <span class="bento-eyebrow">JORNADA 6 MESES</span>
+              <span id="sidebarTreePeriodBadge" class="botanical-period-pill">Mes 1</span>
+            </div>
+            <strong id="sidebarTreeStageTitle" class="botanical-stage-title">Semente Despertando</strong>
+            <span id="sidebarTreeSubText" class="botanical-sub-text">Cresce lentamente a cada dia focado</span>
+            <div class="botanical-progress-track">
+              <div id="sidebarTreeProgressFill" class="botanical-progress-fill" style="width: 8%"></div>
+            </div>
+            <div class="botanical-meta-foot">
+              <span id="sidebarTreeXpLabel">0 / 450 XP</span>
+              <span id="sidebarSixMonthPctLabel">Rumo a Super Arvore</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Day Progress & ETA Glass Card -->
         <div class="liquid-bento-card day-overview-card">
           <div class="bento-ring-wrap">
@@ -721,12 +816,13 @@
         </button>
       </div>
 
-      <!-- XP & Level Hero Banner -->
-      <div class="xp-bento-banner">
+      <!-- Botanical Tree Evolution Hero Banner (6-Month Slow Growth) -->
+      <div class="xp-bento-banner botanical-modal-banner">
+        <div id="modalTreeStageSvg" class="modal-tree-showcase-svg"></div>
         <div class="xp-banner-left">
-          <span class="xp-eyebrow">NIVEL DE ARQUITETURA COGNITIVA</span>
-          <h4 id="reportLevelTitle" class="xp-hero-title">Nivel 1 · Cristal</h4>
-          <p id="reportXpSubtitle" class="xp-hero-sub">0 XP acumulados · Proximo nivel em 150 XP</p>
+          <span class="xp-eyebrow">EVOLUCAO BOTANICA · JORNADA DE 6 MESES (180 DIAS)</span>
+          <h4 id="reportLevelTitle" class="xp-hero-title">Estagio 1 · Semente Despertando</h4>
+          <p id="reportXpSubtitle" class="xp-hero-sub">Sua planta cresce aos poucos com a consistencia diaria ate se tornar uma Super Arvore Ancestral em 6 meses.</p>
           <div class="xp-progress-rail">
             <div id="reportXpBarFill" class="xp-progress-fill" style="width: 15%"></div>
           </div>
@@ -741,6 +837,15 @@
             <span class="xp-stat-lbl">XP Total</span>
           </div>
         </div>
+      </div>
+
+      <!-- Interactive 8-Stage Botanical Timeline (Click to Preview Motion SVGs up to 6 Months) -->
+      <div class="tree-timeline-section">
+        <div class="tree-timeline-header">
+          <span class="picker-label">Estagios da Arvore (clique em qualquer fase para visualizar o SVG em movimento)</span>
+          <span id="treePreviewHint" class="tree-preview-hint">Visualizando seu estagio atual</span>
+        </div>
+        <div id="treeStagesTimeline" class="tree-stages-timeline"></div>
       </div>
 
       <!-- 4 KPI Bento Cards -->
@@ -859,13 +964,79 @@
     </div>
   </div>
 
+  <!-- ====================================================================
+       7. MODAL: TUTORIAL LEVE DE PRIMEIRO ACESSO (ONBOARDING)
+       ==================================================================== -->
+  <div id="tutorialModal" class="glass-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="tutorialModalTitle">
+    <div class="glass-modal-sheet tutorial-sheet">
+      <div class="modal-sheet-header">
+        <div class="modal-title-group">
+          <span class="modal-kbd-badge">Guia</span>
+          <h3 id="tutorialModalTitle" class="modal-title">Bem-vindo ao LightFocus · Como Funciona</h3>
+        </div>
+        <button type="button" data-close-modal="tutorialModal" class="glass-close-btn" aria-label="Fechar">
+          <svg class="icon-18" viewBox="0 0 24 24" fill="none">
+            <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="tutorial-body">
+        <p class="tutorial-lead">
+          Desenhado para voce executar uma unica atividade por vez, sem poluicao visual e com sincronizacao total.
+        </p>
+
+        <div class="tutorial-steps-grid">
+          <div class="tutorial-step-card">
+            <div class="tut-step-badge">1</div>
+            <div class="tut-step-content">
+              <strong>Tecla <kbd>Q</kbd> · Tags Vivas no Texto</strong>
+              <p>Aperte <kbd>Q</kbd> a qualquer momento e digite natural: <code>Reuniao toda segunda 14:30 35m p1</code>. O sistema demarca cada comando em cores e explica exatamente quando a tarefa vai entrar.</p>
+            </div>
+          </div>
+
+          <div class="tutorial-step-card">
+            <div class="tut-step-badge">2</div>
+            <div class="tut-step-content">
+              <strong>Modo Ultra Foco (<kbd>U</kbd>) & Chamada de Atencao</strong>
+              <p>Precisa de imersao total? Aperte <kbd>U</kbd> para esconder toda a interface e deixar apenas a tarefa, o cronometro e o alerta configuravel (Luminoso, Sonoro ou Ambos no intervalo que voce quiser).</p>
+            </div>
+          </div>
+
+          <div class="tutorial-step-card">
+            <div class="tut-step-badge">3</div>
+            <div class="tut-step-content">
+              <strong>Agenda do Dia, Agenda Geral & Google Agenda</strong>
+              <p>Alterne entre a fila de hoje e o calendario mensal completo. Na barra lateral, escolha com 1 clique se os eventos do Google Agenda entram ou nao na sua lista do dia.</p>
+            </div>
+          </div>
+
+          <div class="tutorial-step-card">
+            <div class="tut-step-badge">4</div>
+            <div class="tut-step-content">
+              <strong>Sua Arvore de 6 Meses & Lo-Fi Opcional</strong>
+              <p>Cada tarefa concluida nutre sua semente em SVG. Ela cresce devagar ao longo de 180 dias de consistencia ate virar uma Super Arvore Ancestral. Se quiser som ambiente, ative o player <strong>Lo-Fi</strong> no topo.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-sheet-footer tutorial-footer">
+          <button type="button" id="tutorialOpenQuickAddBtn" class="glass-btn-ghost">Testar Tecla Q Agora</button>
+          <button type="button" id="tutorialDoneBtn" class="glass-btn-obsidian">
+            <span>Entendi, Comecar a Focar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Minimalist Floating Toast Notification -->
   <div id="glassToast" class="glass-toast hidden" role="status" aria-live="polite">
     <span id="glassToastDot" class="toast-dot"></span>
     <span id="glassToastText" class="toast-text">Pronto</span>
   </div>
 
-  <script src="/tasks-seed.js?v=20261028v5"></script>
-  <script src="/app.js?v=20261028v5"></script>
+  <script src="/tasks-seed.js?v=20261028v6"></script>
+  <script src="/app.js?v=20261028v6"></script>
 </body>
 </html>
