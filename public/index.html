@@ -10,15 +10,918 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Lightfocus" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261029v12" />
-  <link rel="alternate icon" href="/favicon.ico?v=20261029v12" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261029v12" />
-  <link rel="manifest" href="/manifest.webmanifest?v=20261029v12" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261029v13" />
+  <link rel="alternate icon" href="/favicon.ico?v=20261029v13" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261029v13" />
+  <link rel="manifest" href="/manifest.webmanifest?v=20261029v13" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=20261029v12" />
-  <link rel="stylesheet" href="/lp.css?v=20261029v12" />
+  <link rel="stylesheet" href="/styles.css?v=20261029v13" />
+  <link rel="stylesheet" href="/lp.css?v=20261029v13" />
+  <style id="lpStoryStyles">
+    /* ===================================================================
+       LIGHTFOCUS LANDING · STORYTELLING + MOTIONS (escopo: #landingPageSection)
+       Monocromático, Liquid Glass, sem bibliotecas externas.
+       =================================================================== */
+    #landingPageSection {
+      --lp-bg: #EEF0F4;
+      --lp-ink: #0B0C10;
+      --lp-ink-2: rgba(11, 12, 16, 0.74);
+      --lp-ink-3: rgba(11, 12, 16, 0.52);
+      --lp-ink-4: rgba(11, 12, 16, 0.30);
+      --lp-ink-5: rgba(11, 12, 16, 0.12);
+      --lp-line: rgba(11, 12, 16, 0.08);
+      --lp-glass: rgba(255, 255, 255, 0.58);
+      --lp-glass-2: rgba(255, 255, 255, 0.78);
+      --lp-glass-edge: rgba(255, 255, 255, 0.9);
+      --lp-solid: #FFFFFF;
+      --lp-invert: #0B0C10;
+      --lp-invert-ink: #FFFFFF;
+      --lp-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 0 0 1px rgba(11, 12, 16, 0.05), 0 24px 60px -30px rgba(20, 24, 36, 0.35);
+      --lp-shadow-soft: 0 0 0 1px rgba(11, 12, 16, 0.05), 0 10px 30px -18px rgba(20, 24, 36, 0.3);
+      --lp-radius-xl: 28px;
+      --lp-radius-lg: 22px;
+      --lp-radius-md: 16px;
+      --lp-ease: cubic-bezier(0.22, 0.7, 0.2, 1);
+      --lp-gutter: 20px;
+      position: relative;
+      isolation: isolate;
+      overflow-x: clip;
+      max-width: 100%;
+      color: var(--lp-ink);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      background:
+        radial-gradient(1100px 620px at 85% -10%, rgba(255, 255, 255, 0.95), transparent 60%),
+        radial-gradient(900px 600px at -10% 18%, rgba(205, 210, 220, 0.55), transparent 60%),
+        radial-gradient(800px 700px at 110% 62%, rgba(214, 218, 228, 0.6), transparent 60%),
+        var(--lp-bg);
+    }
+    html[data-theme="dark"] #landingPageSection {
+      --lp-bg: #0A0B0E;
+      --lp-ink: #F4F5F7;
+      --lp-ink-2: rgba(244, 245, 247, 0.76);
+      --lp-ink-3: rgba(244, 245, 247, 0.54);
+      --lp-ink-4: rgba(244, 245, 247, 0.32);
+      --lp-ink-5: rgba(244, 245, 247, 0.12);
+      --lp-line: rgba(244, 245, 247, 0.09);
+      --lp-glass: rgba(28, 30, 36, 0.55);
+      --lp-glass-2: rgba(36, 38, 46, 0.78);
+      --lp-glass-edge: rgba(255, 255, 255, 0.08);
+      --lp-solid: #17181D;
+      --lp-invert: #F4F5F7;
+      --lp-invert-ink: #0B0C10;
+      --lp-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 0 0 1px rgba(255, 255, 255, 0.06), 0 24px 60px -30px rgba(0, 0, 0, 0.8);
+      --lp-shadow-soft: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 10px 30px -18px rgba(0, 0, 0, 0.7);
+      background:
+        radial-gradient(1000px 600px at 85% -10%, rgba(90, 96, 110, 0.35), transparent 60%),
+        radial-gradient(900px 600px at -10% 30%, rgba(60, 64, 76, 0.35), transparent 60%),
+        var(--lp-bg);
+    }
+    #landingPageSection *,
+    #landingPageSection *::before,
+    #landingPageSection *::after { box-sizing: border-box; }
+    #landingPageSection h1,
+    #landingPageSection h2,
+    #landingPageSection h3,
+    #landingPageSection p { margin: 0; overflow-wrap: break-word; }
+    #landingPageSection svg { flex-shrink: 0; }
+    #landingPageSection .icon-14 { width: 14px; height: 14px; }
+    #landingPageSection .icon-16 { width: 16px; height: 16px; }
+    #landingPageSection .icon-18 { width: 18px; height: 18px; }
+    #landingPageSection kbd {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 1.6em; padding: 1px 6px; border-radius: 6px;
+      font: 600 0.78em/1.4 "Inter", -apple-system, sans-serif;
+      font-variant-numeric: tabular-nums;
+      background: var(--lp-glass-2); color: var(--lp-ink);
+      box-shadow: 0 0 0 1px var(--lp-line), 0 1px 0 var(--lp-ink-5);
+    }
+    #landingPageSection .lp-num,
+    #landingPageSection .lp-mf-clock,
+    #landingPageSection .lp-amount,
+    #landingPageSection .lp-cents,
+    #landingPageSection .lp-mf-pill,
+    #landingPageSection .lp-fca-timer,
+    #landingPageSection .lp-fca-step,
+    #landingPageSection .lp-fca-est { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+    /* ---------- Container e ritmo vertical ---------- */
+    #landingPageSection .lp-container {
+      width: 100%; max-width: 1120px; margin: 0 auto;
+      padding: 0 var(--lp-gutter);
+    }
+    #landingPageSection section[id] { scroll-margin-top: 76px; }
+
+    /* ---------- Navbar ---------- */
+    #landingPageSection .lp-navbar {
+      position: sticky; top: 0; z-index: 60;
+      padding: 10px var(--lp-gutter) 0;
+    }
+    #landingPageSection .lp-nav-inner {
+      max-width: 1120px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 8px 8px 8px 14px;
+      border-radius: 999px;
+      background: var(--lp-glass);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      backdrop-filter: blur(22px) saturate(180%);
+      box-shadow: var(--lp-shadow);
+      transition: background 0.4s var(--lp-ease), box-shadow 0.4s var(--lp-ease);
+    }
+    #landingPageSection.is-scrolled .lp-nav-inner { background: var(--lp-glass-2); }
+    #landingPageSection .lp-brand-lockup {
+      display: inline-flex; align-items: center; gap: 9px; min-width: 0;
+      color: var(--lp-ink); text-decoration: none;
+    }
+    #landingPageSection .lp-brand-orb { width: 26px; height: 26px; display: inline-flex; color: var(--lp-ink); }
+    #landingPageSection .lp-brand-orb svg { width: 100%; height: 100%; }
+    #landingPageSection .lp-brand-orb svg circle:nth-child(1) { transform-origin: 18px 18px; animation: lpOrbSpin 14s linear infinite; stroke-dasharray: 6 4; }
+    #landingPageSection .lp-brand-name { font-weight: 700; letter-spacing: -0.02em; font-size: 16px; }
+    #landingPageSection .lp-nav-links { display: flex; gap: 2px; }
+    #landingPageSection .lp-nav-link {
+      padding: 8px 12px; border-radius: 999px;
+      font-size: 13.5px; font-weight: 500; color: var(--lp-ink-2); text-decoration: none;
+      transition: background 0.25s, color 0.25s;
+    }
+    #landingPageSection .lp-nav-link:hover,
+    #landingPageSection .lp-nav-link.is-current { background: var(--lp-ink-5); color: var(--lp-ink); }
+    #landingPageSection .lp-nav-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    #landingPageSection .lp-btn-glass-sm,
+    #landingPageSection .lp-btn-enter {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 36px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer;
+      font: 600 13px/1 "Inter", -apple-system, sans-serif; white-space: nowrap;
+      transition: transform 0.2s var(--lp-ease), background 0.25s, box-shadow 0.25s;
+    }
+    #landingPageSection .lp-btn-glass-sm { background: var(--lp-glass-2); color: var(--lp-ink); box-shadow: 0 0 0 1px var(--lp-line); }
+    #landingPageSection .lp-btn-glass-sm:hover { background: var(--lp-solid); }
+    #landingPageSection .lp-btn-enter { background: var(--lp-invert); color: var(--lp-invert-ink); padding: 0 14px; }
+    #landingPageSection .lp-btn-enter:hover { transform: translateY(-1px); }
+    #landingPageSection .lp-btn-glass-sm:active,
+    #landingPageSection .lp-btn-enter:active { transform: scale(0.97); }
+
+    /* ---------- Tipografia de seção ---------- */
+    #landingPageSection .lp-section-header { max-width: 760px; margin: 0 auto 36px; text-align: center; }
+    #landingPageSection .lp-eyebrow {
+      display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px;
+      font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--lp-ink-3); margin-bottom: 14px;
+    }
+    #landingPageSection .lp-eyebrow .lp-chapter-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--lp-invert); color: var(--lp-invert-ink);
+      font-size: 11px; letter-spacing: 0; font-variant-numeric: tabular-nums;
+    }
+    #landingPageSection .lp-section-title {
+      font-size: clamp(28px, 4.2vw, 48px); line-height: 1.08; letter-spacing: -0.035em; font-weight: 700;
+      color: var(--lp-ink); text-wrap: balance;
+    }
+    #landingPageSection .lp-section-desc {
+      margin-top: 16px; font-size: clamp(15px, 1.5vw, 17.5px); line-height: 1.6; color: var(--lp-ink-2);
+      text-wrap: pretty;
+    }
+    #landingPageSection .lp-section-desc strong { color: var(--lp-ink); font-weight: 600; }
+
+    /* ---------- HERO ---------- */
+    #landingPageSection .lp-hero {
+      position: relative; text-align: center;
+      padding: clamp(56px, 10vw, 112px) 0 clamp(24px, 4vw, 40px);
+      max-width: 900px; margin: 0 auto;
+    }
+    #landingPageSection .lp-hero-pill {
+      display: inline-flex; align-items: center; gap: 9px; max-width: 100%;
+      padding: 7px 14px 7px 10px; border-radius: 999px;
+      background: var(--lp-glass); box-shadow: var(--lp-shadow-soft);
+      -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+      font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; color: var(--lp-ink-2);
+    }
+    #landingPageSection .lp-pulse-dot {
+      position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--lp-ink); flex-shrink: 0;
+    }
+    #landingPageSection .lp-pulse-dot::after {
+      content: ""; position: absolute; inset: -5px; border-radius: 50%;
+      border: 1.5px solid var(--lp-ink); opacity: 0; animation: lpPing 2.4s var(--lp-ease) infinite;
+    }
+    #landingPageSection .lp-hero-title {
+      margin-top: 24px;
+      font-size: clamp(34px, 6.4vw, 72px); line-height: 1.02; letter-spacing: -0.045em; font-weight: 700;
+      text-wrap: balance;
+    }
+    #landingPageSection .lp-text-gradient {
+      background: linear-gradient(100deg, var(--lp-ink) 0%, var(--lp-ink-3) 45%, var(--lp-ink) 90%);
+      background-size: 220% 100%;
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      animation: lpShine 7s ease-in-out infinite;
+    }
+    #landingPageSection .lp-hero-subtitle {
+      margin: 22px auto 0; max-width: 640px;
+      font-size: clamp(16px, 1.8vw, 19px); line-height: 1.6; color: var(--lp-ink-2); text-wrap: pretty;
+    }
+    #landingPageSection .lp-hero-subtitle strong { color: var(--lp-ink); font-weight: 600; }
+    #landingPageSection .lp-hero-cta-row { margin-top: 32px; display: flex; justify-content: center; }
+    #landingPageSection .lp-cta-primary {
+      position: relative; overflow: hidden;
+      display: inline-flex; align-items: center; gap: 10px;
+      height: 54px; padding: 0 26px; border-radius: 999px;
+      background: var(--lp-invert); color: var(--lp-invert-ink); text-decoration: none;
+      font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+      box-shadow: 0 14px 36px -14px rgba(11, 12, 16, 0.55);
+      transition: transform 0.25s var(--lp-ease), box-shadow 0.25s;
+    }
+    #landingPageSection .lp-cta-primary::before {
+      content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%;
+      background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+      transform: skewX(-20deg); animation: lpSheen 4.5s ease-in-out infinite 1.5s;
+    }
+    #landingPageSection .lp-cta-primary:hover { transform: translateY(-2px); }
+    #landingPageSection .lp-cta-primary svg { animation: lpNudge 2.2s ease-in-out infinite; }
+
+    /* Visual do hero: lente que foca um único card */
+    #landingPageSection .lp-hero-visual {
+      position: relative; margin: 8px auto 0; max-width: 760px; height: 340px; overflow: hidden;
+      display: grid; place-items: center;
+    }
+    #landingPageSection .lp-lens-rings { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+    #landingPageSection .lp-lens-rings span {
+      position: absolute; border-radius: 50%; border: 1px solid var(--lp-ink-5);
+      width: var(--s); height: var(--s); animation: lpBreathRing 8s ease-in-out infinite; animation-delay: var(--dl, 0s);
+    }
+    #landingPageSection .lp-ghost {
+      position: absolute; left: 50%; top: 50%;
+      width: 230px; padding: 12px 14px; border-radius: 14px;
+      display: flex; align-items: center; gap: 10px;
+      background: var(--lp-glass); box-shadow: var(--lp-shadow-soft);
+      font-size: 13px; color: var(--lp-ink-2); white-space: nowrap; overflow: hidden;
+      transform: translate(calc(-50% + var(--x) * var(--sx, 1)), calc(-50% + var(--y) * var(--sy, 1))) rotate(var(--r));
+      filter: blur(3.5px); opacity: 0.55;
+      animation: lpGhostDrift 9s ease-in-out infinite; animation-delay: var(--dl, 0s);
+    }
+    #landingPageSection .lp-ghost i { width: 8px; height: 8px; border-radius: 50%; background: var(--lp-ink-3); flex-shrink: 0; }
+    #landingPageSection .lp-hero-focus {
+      position: relative; z-index: 2; width: min(360px, 100%);
+      padding: 18px; border-radius: var(--lp-radius-lg);
+      background: var(--lp-glass-2); box-shadow: var(--lp-shadow);
+      -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+      text-align: left; animation: lpFloat 6s ease-in-out infinite;
+    }
+    #landingPageSection .lp-hf-top { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; font-weight: 600; color: var(--lp-ink-3); letter-spacing: 0.04em; }
+    #landingPageSection .lp-hf-title { display: flex; gap: 12px; align-items: flex-start; margin-top: 14px; }
+    #landingPageSection .lp-hf-check { width: 26px; height: 26px; border-radius: 50%; border: 1.8px solid var(--lp-ink-4); flex-shrink: 0; margin-top: 1px; }
+    #landingPageSection .lp-hf-title strong { font-size: 17px; line-height: 1.3; letter-spacing: -0.015em; }
+    #landingPageSection .lp-hf-bottom { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    #landingPageSection .lp-hf-timer { display: flex; align-items: center; gap: 8px; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+    #landingPageSection .lp-hf-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lp-ink); animation: lpBlink 2s ease-in-out infinite; }
+    #landingPageSection .lp-hf-btn { padding: 8px 14px; border-radius: 999px; background: var(--lp-invert); color: var(--lp-invert-ink); font-size: 13px; font-weight: 600; }
+    #landingPageSection .lp-hf-rail { margin-top: 14px; height: 4px; border-radius: 4px; background: var(--lp-ink-5); overflow: hidden; }
+    #landingPageSection .lp-hf-rail i { display: block; height: 100%; width: 0; background: var(--lp-ink); border-radius: inherit; transition: width 1s linear; }
+    #landingPageSection .lp-scroll-cue {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      margin: 10px auto 0; font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; color: var(--lp-ink-3); text-transform: uppercase;
+    }
+    #landingPageSection .lp-scroll-cue span { width: 1px; height: 36px; background: linear-gradient(var(--lp-ink-4), transparent); animation: lpCue 2.4s ease-in-out infinite; transform-origin: top; }
+
+    /* Frase-ponte entre capítulos */
+    #landingPageSection .lp-bridge-line {
+      max-width: 760px; margin: 0 auto; padding: clamp(40px, 7vw, 80px) 0;
+      text-align: center; font-size: clamp(22px, 3vw, 34px); line-height: 1.25; letter-spacing: -0.03em; font-weight: 600;
+      color: var(--lp-ink-4); text-wrap: balance;
+    }
+    #landingPageSection .lp-bridge-line b { color: var(--lp-ink); font-weight: 600; }
+
+    /* ---------- CAPÍTULO 1: DA DOR AO ALÍVIO ---------- */
+    #landingPageSection .lp-philosophy-section { padding: clamp(56px, 8vw, 96px) 0 0; }
+    #landingPageSection .lp-chaos-vs-light-grid {
+      display: grid; grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr); gap: 16px; align-items: stretch;
+    }
+    #landingPageSection .lp-compare-card {
+      position: relative; min-width: 0;
+      padding: 22px; border-radius: var(--lp-radius-xl);
+      background: var(--lp-glass); box-shadow: var(--lp-shadow);
+      -webkit-backdrop-filter: blur(20px) saturate(170%); backdrop-filter: blur(20px) saturate(170%);
+      transition: transform 0.8s var(--lp-ease), opacity 0.8s var(--lp-ease), box-shadow 0.8s;
+    }
+    #landingPageSection .lp-compare-badge {
+      display: inline-flex; padding: 5px 10px; border-radius: 999px;
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em;
+    }
+    #landingPageSection .lp-badge-danger { background: var(--lp-ink-5); color: var(--lp-ink-2); }
+    #landingPageSection .lp-badge-blue { background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-compare-title { margin-top: 14px; font-size: 21px; letter-spacing: -0.025em; font-weight: 700; }
+    #landingPageSection .lp-compare-sub { margin-top: 4px; font-size: 14px; color: var(--lp-ink-3); }
+    #landingPageSection .lp-chaos-stack { margin-top: 18px; display: grid; gap: 8px; }
+    #landingPageSection .lp-chaos-row {
+      display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 12px;
+      background: var(--lp-glass-2); box-shadow: 0 0 0 1px var(--lp-line);
+      font-size: 13px; color: var(--lp-ink-2);
+      transition: opacity 0.7s var(--lp-ease), filter 0.7s var(--lp-ease), transform 0.7s var(--lp-ease);
+      transition-delay: calc(var(--i, 0) * 110ms);
+    }
+    #landingPageSection .lp-chaos-row > span:nth-child(2) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #landingPageSection .lp-chaos-row:nth-child(1) { --i: 0; }
+    #landingPageSection .lp-chaos-row:nth-child(2) { --i: 1; }
+    #landingPageSection .lp-chaos-row:nth-child(3) { --i: 2; }
+    #landingPageSection .lp-chaos-row:nth-child(4) { --i: 3; }
+    #landingPageSection .lp-chaos-row:nth-child(5) { --i: 4; }
+    #landingPageSection .c-dot { width: 8px; height: 8px; border-radius: 50%; }
+    #landingPageSection .c-dot.red { background: var(--lp-ink); }
+    #landingPageSection .c-dot.orange { background: var(--lp-ink-2); }
+    #landingPageSection .c-dot.blue { background: var(--lp-ink-3); }
+    #landingPageSection .c-dot.gray { background: var(--lp-ink-4); }
+    #landingPageSection .c-tag {
+      padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      background: var(--lp-ink-5); color: var(--lp-ink-2); white-space: nowrap; font-variant-numeric: tabular-nums;
+    }
+    #landingPageSection .lp-chaos-vs-light-grid.is-live:not(.is-filtering) .lp-chaos-row { animation: lpJitter 0.9s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -0.17s); }
+    #landingPageSection .lp-chaos-vs-light-grid.is-filtering .lp-chaos-row {
+      opacity: 0.12; filter: blur(5px); transform: translateX(24px) scale(0.96);
+    }
+    #landingPageSection .lp-chaos-vs-light-grid.is-filtering .lp-chaos-card { opacity: 0.75; }
+    #landingPageSection .lp-transform-bridge { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+    #landingPageSection .lp-bridge-orb {
+      position: relative; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+      background: var(--lp-invert); color: var(--lp-invert-ink); box-shadow: 0 16px 36px -16px rgba(11, 12, 16, 0.55);
+    }
+    #landingPageSection .lp-bridge-orb svg { width: 22px; height: 22px; }
+    #landingPageSection .lp-bridge-orb::after {
+      content: ""; position: absolute; inset: -8px; border-radius: 50%; border: 1px solid var(--lp-ink-4); opacity: 0;
+    }
+    #landingPageSection .lp-chaos-vs-light-grid.is-filtering .lp-bridge-orb::after { animation: lpPing 1.4s var(--lp-ease) 2; }
+    #landingPageSection .lp-bridge-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lp-ink-3); text-align: center; }
+    #landingPageSection .lp-serene-card { opacity: 0.86; }
+    #landingPageSection .lp-chaos-vs-light-grid.is-focused .lp-serene-card { opacity: 1; transform: translateY(-4px); box-shadow: var(--lp-shadow), 0 0 0 1px var(--lp-ink-4); }
+    #landingPageSection .lp-motion-focus-preview {
+      margin-top: 18px; padding: 16px; border-radius: 18px;
+      background: var(--lp-solid); box-shadow: var(--lp-shadow-soft);
+    }
+    #landingPageSection .lp-mf-top { display: flex; flex-wrap: wrap; gap: 6px; }
+    #landingPageSection .lp-mf-pill { padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--lp-ink-5); color: var(--lp-ink-2); }
+    #landingPageSection .lp-mf-pill.blue { background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-mf-hero { display: flex; gap: 12px; margin-top: 14px; align-items: flex-start; }
+    #landingPageSection .lp-mf-check-anim {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+      border: 1.8px solid var(--lp-ink-4); color: transparent; transition: all 0.5s var(--lp-ease);
+    }
+    #landingPageSection .lp-mf-check-anim svg { width: 16px; height: 16px; }
+    #landingPageSection .lp-mf-check-anim path { stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset 0.6s var(--lp-ease) 0.2s; }
+    #landingPageSection .lp-chaos-vs-light-grid.is-focused .lp-mf-check-anim { background: var(--lp-invert); border-color: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-chaos-vs-light-grid.is-focused .lp-mf-check-anim path { stroke-dashoffset: 0; }
+    #landingPageSection .lp-mf-texts { display: grid; gap: 4px; min-width: 0; }
+    #landingPageSection .lp-mf-texts strong { font-size: 15.5px; line-height: 1.35; letter-spacing: -0.01em; }
+    #landingPageSection .lp-mf-texts span { font-size: 12.5px; color: var(--lp-ink-3); }
+    #landingPageSection .lp-mf-timer-bar { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    #landingPageSection .lp-mf-timer-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+    #landingPageSection .lp-mf-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lp-ink); animation: lpBlink 2s infinite; }
+    #landingPageSection .lp-mf-clock { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; }
+    #landingPageSection .lp-mf-status { font-size: 12px; color: var(--lp-ink-3); }
+    #landingPageSection .lp-mf-btn-sim { padding: 8px 14px; border-radius: 999px; background: var(--lp-invert); color: var(--lp-invert-ink); font-size: 12.5px; font-weight: 600; flex-shrink: 0; }
+    #landingPageSection .lp-mf-progress-rail { margin-top: 12px; height: 4px; border-radius: 4px; background: var(--lp-ink-5); overflow: hidden; }
+    #landingPageSection .lp-mf-progress-fill { height: 100%; width: 38%; background: var(--lp-ink); border-radius: inherit; animation: lpRail 12s linear infinite; }
+    #landingPageSection .lp-relief-caption {
+      margin: 22px auto 0; max-width: 620px; text-align: center; font-size: 14px; color: var(--lp-ink-3);
+      display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;
+    }
+    #landingPageSection .lp-relief-state {
+      display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px;
+      background: var(--lp-glass-2); box-shadow: 0 0 0 1px var(--lp-line); font-weight: 600; color: var(--lp-ink-2);
+    }
+    #landingPageSection .lp-relief-state i { width: 7px; height: 7px; border-radius: 50%; background: var(--lp-ink); }
+
+    /* ---------- Capítulos novos: base ---------- */
+    #landingPageSection .lp-story-section { padding: clamp(56px, 8vw, 104px) 0 0; }
+    #landingPageSection .lp-story-grid {
+      display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 56px); align-items: center;
+    }
+    #landingPageSection .lp-story-grid.reverse > :first-child { order: 2; }
+    #landingPageSection .lp-story-copy .lp-section-header { text-align: left; margin: 0; }
+    #landingPageSection .lp-story-points { list-style: none; padding: 0; margin: 26px 0 0; display: grid; gap: 10px; }
+    #landingPageSection .lp-story-points li {
+      display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; align-items: start;
+      padding: 12px 14px; border-radius: var(--lp-radius-md);
+      background: var(--lp-glass); box-shadow: var(--lp-shadow-soft);
+    }
+    #landingPageSection .lp-sp-icon {
+      width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+      background: var(--lp-invert); color: var(--lp-invert-ink);
+    }
+    #landingPageSection .lp-sp-icon svg { width: 17px; height: 17px; }
+    #landingPageSection .lp-story-points li > div > strong { display: block; font-size: 15px; letter-spacing: -0.01em; }
+    #landingPageSection .lp-story-points li > div > span { display: block; font-size: 13.5px; color: var(--lp-ink-3); margin-top: 2px; line-height: 1.5; }
+    #landingPageSection .lp-stage {
+      position: relative; min-width: 0; padding: 18px; border-radius: var(--lp-radius-xl);
+      background: var(--lp-glass); box-shadow: var(--lp-shadow);
+      -webkit-backdrop-filter: blur(20px) saturate(170%); backdrop-filter: blur(20px) saturate(170%);
+    }
+    #landingPageSection .lp-stage-label {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lp-ink-3);
+      margin-bottom: 14px;
+    }
+
+    /* ---------- CAPÍTULO 2: SAÚDE VISUAL (antes e depois com cortina) ---------- */
+    #landingPageSection .lp-vh-device {
+      position: relative; height: 340px; border-radius: 18px; overflow: hidden;
+      background: var(--lp-solid); box-shadow: 0 0 0 1px var(--lp-line);
+    }
+    #landingPageSection .lp-vh-layer { position: absolute; inset: 0; padding: 46px 14px 14px; }
+    #landingPageSection .lp-vh-noisy { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 10px; background: var(--lp-solid); }
+    #landingPageSection .lp-vh-toolbar { display: flex; gap: 5px; flex-wrap: wrap; }
+    #landingPageSection .lp-vh-toolbar b {
+      padding: 3px 7px; border-radius: 6px; font-size: 10px; font-weight: 700;
+      background: var(--lp-invert); color: var(--lp-invert-ink); font-variant-numeric: tabular-nums;
+    }
+    #landingPageSection .lp-vh-toolbar b:nth-child(even) { background: var(--lp-ink-5); color: var(--lp-ink); }
+    #landingPageSection .lp-vh-toolbar b.blink { animation: lpBlink 0.9s steps(2) infinite; }
+    #landingPageSection .lp-vh-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    #landingPageSection .lp-vh-stats div { height: 34px; border-radius: 8px; background: repeating-linear-gradient(90deg, var(--lp-ink-5) 0 3px, transparent 3px 6px); box-shadow: 0 0 0 1px var(--lp-line); }
+    #landingPageSection .lp-vh-list { display: grid; gap: 5px; align-content: start; overflow: hidden; }
+    #landingPageSection .lp-vh-list div {
+      display: grid; grid-template-columns: 8px minmax(0, 1fr) 30px 22px; gap: 7px; align-items: center;
+      padding: 6px 8px; border-radius: 7px; background: var(--lp-ink-5); font-size: 10.5px; color: var(--lp-ink-2);
+    }
+    #landingPageSection .lp-vh-list div span:nth-child(2) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #landingPageSection .lp-vh-list i { width: 8px; height: 8px; border-radius: 50%; background: var(--lp-ink); }
+    #landingPageSection .lp-vh-list em { font-style: normal; font-size: 9.5px; font-weight: 700; text-align: center; padding: 2px 0; border-radius: 4px; background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-vh-list u { text-decoration: none; height: 6px; border-radius: 3px; background: var(--lp-ink-3); }
+    #landingPageSection .lp-vh-calm {
+      display: grid; place-items: center; background: var(--lp-solid);
+      clip-path: inset(0 0 0 52%);
+    }
+    #landingPageSection .lp-vh-calm-card { width: min(250px, 92%); text-align: center; }
+    #landingPageSection .lp-vh-calm-card small { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: var(--lp-ink-3); }
+    #landingPageSection .lp-vh-calm-card strong { display: block; margin-top: 10px; font-size: 18px; line-height: 1.3; letter-spacing: -0.02em; }
+    #landingPageSection .lp-vh-calm-card .lp-vh-time { display: block; margin-top: 14px; font-size: 34px; font-weight: 700; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+    #landingPageSection .lp-vh-calm-card .lp-vh-go { display: inline-block; margin-top: 12px; padding: 8px 18px; border-radius: 999px; background: var(--lp-invert); color: var(--lp-invert-ink); font-size: 13px; font-weight: 600; }
+    #landingPageSection .lp-vh-handle {
+      position: absolute; top: 0; bottom: 0; left: 52%; width: 2px; margin-left: -1px;
+      background: var(--lp-ink); z-index: 3;
+    }
+    #landingPageSection .lp-vh-handle::after {
+      content: ""; position: absolute; top: 50%; left: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px;
+      border-radius: 50%; background: var(--lp-invert); box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.5);
+    }
+    #landingPageSection .lp-vh-handle::before {
+      content: ""; position: absolute; top: 50%; left: 50%; width: 12px; height: 8px; margin: -4px 0 0 -6px; z-index: 1;
+      border-left: 2px solid var(--lp-invert-ink); border-right: 2px solid var(--lp-invert-ink);
+    }
+    #landingPageSection .lp-vh-tag {
+      position: absolute; top: 12px; z-index: 4; padding: 4px 10px; border-radius: 999px;
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em;
+      background: var(--lp-glass-2); box-shadow: 0 0 0 1px var(--lp-line); color: var(--lp-ink-2);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    }
+    #landingPageSection .lp-vh-tag.before { left: 12px; }
+    #landingPageSection .lp-vh-tag.after { right: 12px; background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-vh-stage.is-live .lp-vh-calm { animation: lpWipe 9s var(--lp-ease) infinite; }
+    #landingPageSection .lp-vh-stage.is-live .lp-vh-handle { animation: lpWipeHandle 9s var(--lp-ease) infinite; }
+    #landingPageSection .lp-noise-meter { margin-top: 14px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; }
+    #landingPageSection .lp-noise-meter span { font-size: 12px; font-weight: 600; color: var(--lp-ink-3); }
+    #landingPageSection .lp-noise-bars { display: flex; align-items: flex-end; gap: 3px; height: 28px; overflow: hidden; }
+    #landingPageSection .lp-noise-bars i {
+      flex: 1 1 0; min-width: 0; border-radius: 2px; background: var(--lp-ink-3);
+      height: var(--h, 60%); transform-origin: bottom;
+    }
+    #landingPageSection .lp-vh-stage.is-live .lp-noise-bars i { animation: lpNoise 9s var(--lp-ease) infinite; animation-delay: calc(var(--k, 0) * 18ms); }
+
+    /* ---------- CAPÍTULO 3: SAÚDE MENTAL (mente cheia vs próximo passo) ---------- */
+    #landingPageSection .lp-mind-toggle {
+      display: inline-flex; padding: 4px; border-radius: 999px; gap: 2px;
+      background: var(--lp-ink-5); margin-bottom: 14px; max-width: 100%;
+    }
+    #landingPageSection .lp-mind-toggle button {
+      border: 0; cursor: pointer; padding: 8px 14px; border-radius: 999px;
+      font: 600 12.5px/1.2 "Inter", -apple-system, sans-serif; color: var(--lp-ink-2); background: transparent;
+      transition: background 0.3s, color 0.3s;
+    }
+    #landingPageSection .lp-mind-toggle button[aria-pressed="true"] { background: var(--lp-solid); color: var(--lp-ink); box-shadow: var(--lp-shadow-soft); }
+    #landingPageSection .lp-mind-stage {
+      position: relative; height: 340px; border-radius: 18px; overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, var(--lp-glass-2), transparent 70%), var(--lp-ink-5);
+    }
+    #landingPageSection .lp-mind-halo {
+      position: absolute; left: 50%; top: 50%; width: 250px; height: 250px; margin: -125px 0 0 -125px; border-radius: 50%;
+      border: 1px dashed var(--lp-ink-4); transition: transform 1s var(--lp-ease), opacity 1s;
+    }
+    #landingPageSection .lp-mind-stage:not(.is-calm) .lp-mind-halo { animation: lpOrbSpin 30s linear infinite; }
+    #landingPageSection .lp-mind-stage.is-calm .lp-mind-halo { transform: scale(0.72); opacity: 0.6; border-style: solid; }
+    #landingPageSection .lp-mind-chip {
+      position: absolute; left: 50%; top: 50%; z-index: 1;
+      transform: translate(calc(-50% + var(--x) * var(--sx, 1)), calc(-50% + var(--y) * var(--sy, 1))) rotate(var(--r));
+      transition: transform 1.1s var(--lp-ease), opacity 0.9s var(--lp-ease), filter 0.9s var(--lp-ease);
+      transition-delay: calc(var(--k, 0) * 40ms);
+    }
+    #landingPageSection .lp-mind-chip > span {
+      display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+      padding: 7px 11px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      background: var(--lp-solid); color: var(--lp-ink-2); box-shadow: var(--lp-shadow-soft);
+    }
+    #landingPageSection .lp-mind-chip > span::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--lp-ink-3); }
+    #landingPageSection .lp-mind-stage.is-live:not(.is-calm) .lp-mind-chip > span { animation: lpWobble 2.6s ease-in-out infinite; animation-delay: calc(var(--k, 0) * -0.31s); }
+    #landingPageSection .lp-mind-stage.is-calm .lp-mind-chip:not(.is-next) {
+      transform: translate(-50%, calc(-50% + 132px)) scale(0.6); opacity: 0; filter: blur(4px);
+    }
+    #landingPageSection .lp-mind-chip.is-next { z-index: 3; }
+    #landingPageSection .lp-mind-chip.is-next > span { background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-mind-chip.is-next > span::before { background: var(--lp-invert-ink); }
+    #landingPageSection .lp-mind-stage.is-calm .lp-mind-chip.is-next { transform: translate(-50%, -50%) scale(1.35); }
+    #landingPageSection .lp-mind-queue {
+      position: absolute; left: 50%; bottom: 16px; transform: translate(-50%, 10px); opacity: 0;
+      display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+      padding: 6px 12px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--lp-ink-3);
+      background: var(--lp-glass-2); box-shadow: 0 0 0 1px var(--lp-line);
+      transition: opacity 0.8s var(--lp-ease) 0.5s, transform 0.8s var(--lp-ease) 0.5s;
+    }
+    #landingPageSection .lp-mind-stage.is-calm .lp-mind-queue { opacity: 1; transform: translate(-50%, 0); }
+    #landingPageSection .lp-mind-weight {
+      position: absolute; left: 14px; top: 14px; display: flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lp-ink-3);
+    }
+    #landingPageSection .lp-mind-weight i { display: block; width: 64px; height: 5px; border-radius: 5px; background: var(--lp-ink-5); overflow: hidden; position: relative; }
+    #landingPageSection .lp-mind-weight i::after { content: ""; position: absolute; inset: 0; width: 92%; background: var(--lp-ink); border-radius: inherit; transition: width 1.2s var(--lp-ease); }
+    #landingPageSection .lp-mind-stage.is-calm .lp-mind-weight i::after { width: 14%; }
+    #landingPageSection .lp-mind-compare { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin-top: 26px; }
+    #landingPageSection .lp-mind-col { padding: 16px; border-radius: var(--lp-radius-md); background: var(--lp-glass); box-shadow: var(--lp-shadow-soft); }
+    #landingPageSection .lp-mind-col.calm { background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-mind-col h3 { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
+    #landingPageSection .lp-mind-col ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 7px; }
+    #landingPageSection .lp-mind-col li { position: relative; padding-left: 16px; font-size: 13.5px; line-height: 1.45; opacity: 0.86; }
+    #landingPageSection .lp-mind-col li::before { content: ""; position: absolute; left: 0; top: 0.55em; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+
+    /* ---------- CAPÍTULO 4: CALMA (respiração + ritmo do dia) ---------- */
+    #landingPageSection .lp-calm-stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    @media (min-width: 1080px) { #landingPageSection .lp-calm-stage { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } }
+    #landingPageSection .lp-breath {
+      position: relative; min-height: 260px; border-radius: 18px; overflow: hidden;
+      display: grid; place-items: center; background: var(--lp-ink-5);
+    }
+    #landingPageSection .lp-breath-ring {
+      position: absolute; left: 50%; top: 50%; border-radius: 50%;
+      width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+      background: radial-gradient(circle, var(--lp-glass-2), transparent 70%);
+      border: 1px solid var(--lp-ink-5); transform: scale(0.72);
+    }
+    #landingPageSection .lp-breath-core {
+      position: absolute; left: 50%; top: 50%; width: 92px; height: 92px; margin: -46px 0 0 -46px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, var(--lp-ink-3), var(--lp-invert) 70%); box-shadow: 0 20px 50px -18px rgba(11, 12, 16, 0.6); transform: scale(0.8);
+    }
+    #landingPageSection .lp-breath.is-live .lp-breath-ring,
+    #landingPageSection .lp-breath.is-live .lp-breath-core { animation: lpBreathe 10s ease-in-out infinite; }
+    #landingPageSection .lp-breath.is-live .lp-breath-ring:nth-child(2) { animation-delay: 0.25s; }
+    #landingPageSection .lp-breath.is-live .lp-breath-ring:nth-child(3) { animation-delay: 0.5s; }
+    #landingPageSection .lp-breath-words { position: absolute; bottom: 18px; left: 0; right: 0; height: 20px; text-align: center; font-size: 13px; font-weight: 600; color: var(--lp-ink-2); }
+    #landingPageSection .lp-breath-words span { position: absolute; left: 0; right: 0; opacity: 0; }
+    #landingPageSection .lp-breath-words span:first-child { opacity: 1; }
+    #landingPageSection .lp-breath.is-live .lp-breath-words span:first-child { animation: lpWordIn 10s ease-in-out infinite; }
+    #landingPageSection .lp-breath.is-live .lp-breath-words span:last-child { animation: lpWordOut 10s ease-in-out infinite; }
+    #landingPageSection .lp-day {
+      position: relative; padding: 16px; border-radius: 18px; background: var(--lp-solid); box-shadow: 0 0 0 1px var(--lp-line);
+    }
+    #landingPageSection .lp-day-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12px; font-weight: 700; color: var(--lp-ink-3); letter-spacing: 0.08em; text-transform: uppercase; }
+    #landingPageSection .lp-day-head b { font-size: 13px; color: var(--lp-ink); font-variant-numeric: tabular-nums; letter-spacing: 0; text-transform: none; }
+    #landingPageSection .lp-day-body { position: relative; margin-top: 14px; }
+    #landingPageSection .lp-day-list { position: relative; list-style: none; margin: 0; padding: 0 0 0 4px; display: grid; gap: 12px; }
+    #landingPageSection .lp-day-list::before { content: ""; position: absolute; left: 14px; top: 10px; bottom: 10px; width: 2px; background: var(--lp-ink-5); border-radius: 2px; }
+    #landingPageSection .lp-day-progress { position: absolute; z-index: 0; left: 14px; top: 10px; width: 2px; height: 0; background: var(--lp-ink); border-radius: 2px; transition: height 0.9s var(--lp-ease); }
+    #landingPageSection .lp-day-item { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; transition: opacity 0.6s var(--lp-ease); }
+    #landingPageSection .lp-day-check {
+      position: relative; z-index: 1; width: 22px; height: 22px; border-radius: 50%;
+      display: grid; place-items: center; background: var(--lp-solid); border: 1.8px solid var(--lp-ink-4); color: transparent;
+      transition: background 0.4s, border-color 0.4s, color 0.4s, transform 0.4s var(--lp-ease);
+    }
+    #landingPageSection .lp-day-check svg { width: 12px; height: 12px; }
+    #landingPageSection .lp-day-item span { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.4s; }
+    #landingPageSection .lp-day-item time { font-size: 12px; color: var(--lp-ink-3); font-variant-numeric: tabular-nums; }
+    #landingPageSection .lp-day-item.is-done .lp-day-check { background: var(--lp-invert); border-color: var(--lp-invert); color: var(--lp-invert-ink); transform: scale(1.06); }
+    #landingPageSection .lp-day-item.is-done span { color: var(--lp-ink-3); }
+    #landingPageSection .lp-day-item.is-current span { font-weight: 700; }
+    #landingPageSection .lp-day-item.is-current .lp-day-check { border-color: var(--lp-ink); animation: lpPulseRing 1.8s ease-out infinite; }
+    #landingPageSection .lp-day-done {
+      margin-top: 14px; padding: 10px 12px; border-radius: 12px; text-align: center;
+      font-size: 13px; font-weight: 600; background: var(--lp-ink-5); color: var(--lp-ink-3);
+      transition: background 0.6s, color 0.6s, transform 0.6s var(--lp-ease);
+    }
+    #landingPageSection .lp-day.is-complete .lp-day-done { background: var(--lp-invert); color: var(--lp-invert-ink); transform: scale(1.02); }
+
+    /* ---------- CAPÍTULO 5: POR DENTRO DO APP ---------- */
+    #landingPageSection .lp-motions-section { padding: clamp(56px, 8vw, 104px) 0 0; }
+    #landingPageSection .lp-motions-bento { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    #landingPageSection .lp-motion-card {
+      position: relative; min-width: 0; overflow: hidden;
+      display: flex; flex-direction: column; gap: 18px;
+      padding: 22px; border-radius: var(--lp-radius-xl);
+      background: var(--lp-glass); box-shadow: var(--lp-shadow);
+      -webkit-backdrop-filter: blur(20px) saturate(170%); backdrop-filter: blur(20px) saturate(170%);
+      scroll-margin-top: 80px;
+    }
+    #landingPageSection .lp-mc-tag { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; color: var(--lp-ink-3); }
+    #landingPageSection .lp-mc-header h3 { margin-top: 8px; font-size: 20px; line-height: 1.25; letter-spacing: -0.025em; font-weight: 700; }
+    #landingPageSection .lp-mc-header p { margin-top: 8px; font-size: 14px; line-height: 1.55; color: var(--lp-ink-2); }
+    #landingPageSection .lp-mc-stage {
+      position: relative; margin-top: auto; min-height: 200px; border-radius: 18px; overflow: hidden;
+      display: grid; place-items: center; padding: 16px; background: var(--lp-ink-5);
+    }
+    /* NLP */
+    #landingPageSection .lp-nlp-window { width: 100%; max-width: 420px; padding: 14px; border-radius: 16px; background: var(--lp-solid); box-shadow: var(--lp-shadow-soft); }
+    #landingPageSection .lp-nlp-top { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--lp-ink-3); }
+    #landingPageSection .lp-kbd-q { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: var(--lp-invert); color: var(--lp-invert-ink); font-size: 11px; font-weight: 700; }
+    #landingPageSection .lp-nlp-typing-box {
+      margin-top: 12px; padding: 12px; border-radius: 12px; box-shadow: 0 0 0 1px var(--lp-line);
+      font-size: 14px; line-height: 1.9; display: flex; flex-wrap: wrap; align-items: center; gap: 0 2px;
+    }
+    #landingPageSection .lp-type-plain { white-space: pre; }
+    #landingPageSection .lp-type-token { padding: 1px 6px; border-radius: 6px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    #landingPageSection .lp-type-token.purple { background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-type-token.blue { background: var(--lp-ink-5); box-shadow: inset 0 0 0 1px var(--lp-ink-3); }
+    #landingPageSection .lp-type-token.green { background: transparent; box-shadow: inset 0 -2px 0 var(--lp-ink); border-radius: 2px; }
+    #landingPageSection .lp-type-token.orange { background: var(--lp-ink-4); }
+    #landingPageSection .lp-type-cursor { width: 2px; height: 18px; background: var(--lp-ink); animation: lpBlink 1s steps(2) infinite; }
+    #landingPageSection .lp-nlp-pills-row { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+    #landingPageSection .lp-mini-chip { padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--lp-ink-5); color: var(--lp-ink-2); }
+    #landingPageSection .lp-mini-chip.purple { background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-mc-stage.is-live .lp-type-token,
+    #landingPageSection .lp-mc-stage.is-live .lp-mini-chip { animation: lpTokIn 8s var(--lp-ease) infinite both; }
+    #landingPageSection .lp-mc-stage.is-live .lp-type-token:nth-of-type(2) { animation-delay: 0.6s; }
+    #landingPageSection .lp-mc-stage.is-live .lp-type-token:nth-of-type(3) { animation-delay: 1.2s; }
+    #landingPageSection .lp-mc-stage.is-live .lp-type-token:nth-of-type(4) { animation-delay: 1.8s; }
+    #landingPageSection .lp-mc-stage.is-live .lp-type-token:nth-of-type(5) { animation-delay: 2.4s; }
+    #landingPageSection .lp-mc-stage.is-live .lp-mini-chip:nth-child(1) { animation-delay: 0.9s; }
+    #landingPageSection .lp-mc-stage.is-live .lp-mini-chip:nth-child(2) { animation-delay: 1.5s; }
+    #landingPageSection .lp-mc-stage.is-live .lp-mini-chip:nth-child(3) { animation-delay: 2.1s; }
+    #landingPageSection .lp-mc-stage.is-live .lp-mini-chip:nth-child(4) { animation-delay: 2.7s; }
+    /* Janela solta */
+    #landingPageSection .lp-desktop-mock {
+      position: relative; width: 100%; max-width: 420px; height: 210px; border-radius: 14px; overflow: hidden;
+      background: var(--lp-solid); box-shadow: var(--lp-shadow-soft);
+    }
+    #landingPageSection .lp-desktop-bg-lines { position: absolute; inset: 18px 40% 18px 18px; display: grid; gap: 10px; align-content: start; }
+    #landingPageSection .lp-desktop-bg-lines span { height: 10px; border-radius: 5px; background: var(--lp-ink-5); }
+    #landingPageSection .lp-desktop-bg-lines span:nth-child(2) { width: 80%; }
+    #landingPageSection .lp-desktop-bg-lines span:nth-child(3) { width: 60%; }
+    #landingPageSection .lp-floating-chrome-app {
+      position: absolute; right: 14px; top: 14px; bottom: 14px; width: 46%; min-width: 140px;
+      border-radius: 14px; overflow: hidden; background: var(--lp-glass-2); box-shadow: var(--lp-shadow);
+      -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    }
+    #landingPageSection .lp-mc-stage.is-live .lp-floating-chrome-app { animation: lpPopWindow 7s var(--lp-ease) infinite; }
+    #landingPageSection .lp-fca-titlebar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; font-size: 11px; font-weight: 600; border-bottom: 1px solid var(--lp-line); }
+    #landingPageSection .lp-fca-dots { display: flex; gap: 4px; }
+    #landingPageSection .lp-fca-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--lp-ink-4); }
+    #landingPageSection .lp-fca-badge { margin-left: auto; padding: 1px 6px; border-radius: 5px; background: var(--lp-invert); color: var(--lp-invert-ink); font-size: 9.5px; }
+    #landingPageSection .lp-fca-body { padding: 10px; display: grid; gap: 10px; }
+    #landingPageSection .lp-fca-row1 { display: flex; justify-content: space-between; font-size: 10px; color: var(--lp-ink-3); font-weight: 600; }
+    #landingPageSection .lp-fca-task { display: flex; gap: 8px; align-items: flex-start; }
+    #landingPageSection .lp-fca-circle { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--lp-ink-4); flex-shrink: 0; margin-top: 1px; }
+    #landingPageSection .lp-fca-task strong { font-size: 12px; line-height: 1.3; }
+    #landingPageSection .lp-fca-timer { display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+    #landingPageSection .lp-fca-play { font-size: 9.5px; font-weight: 700; padding: 3px 7px; border-radius: 999px; background: var(--lp-invert); color: var(--lp-invert-ink); letter-spacing: 0; }
+    /* Notificação */
+    #landingPageSection .lp-notify-showcase { width: 100%; max-width: 420px; display: grid; gap: 12px; }
+    #landingPageSection .lp-os-notification {
+      display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start;
+      padding: 12px; border-radius: 16px; background: var(--lp-glass-2); box-shadow: var(--lp-shadow);
+      -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    }
+    #landingPageSection .lp-mc-stage.is-live .lp-os-notification { animation: lpNotif 6s var(--lp-ease) infinite; }
+    #landingPageSection .lp-os-notif-icon { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-os-notif-icon svg { width: 20px; height: 20px; }
+    #landingPageSection .lp-os-notif-top { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+    #landingPageSection .lp-os-notif-top span { color: var(--lp-ink-3); flex-shrink: 0; }
+    #landingPageSection .lp-os-notif-text p { margin-top: 3px; font-size: 12.5px; color: var(--lp-ink-2); line-height: 1.45; }
+    #landingPageSection .lp-notify-toggle-preview {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 10px 12px; border-radius: 12px; background: var(--lp-solid); box-shadow: 0 0 0 1px var(--lp-line); font-size: 12.5px;
+    }
+    #landingPageSection .lp-ntp-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    #landingPageSection .lp-ntp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lp-ink); flex-shrink: 0; }
+    #landingPageSection .lp-ntp-switch {
+      position: relative; flex-shrink: 0; padding: 4px 10px 4px 26px; border-radius: 999px;
+      background: var(--lp-invert); color: var(--lp-invert-ink); font-size: 11px; font-weight: 700;
+    }
+    #landingPageSection .lp-ntp-switch::before { content: ""; position: absolute; left: 5px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: var(--lp-invert-ink); }
+    /* Árvore */
+    #landingPageSection .lp-tree-showcase-row { width: 100%; max-width: 420px; display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 14px; align-items: center; }
+    #landingPageSection .lp-tree-orb-anim { width: 112px; height: 112px; border-radius: 50%; background: var(--lp-solid); box-shadow: var(--lp-shadow-soft); display: grid; place-items: center; }
+    #landingPageSection .lp-tree-orb-anim svg { width: 92px; height: 92px; overflow: visible; }
+    #landingPageSection .lp-tree-orb-anim circle { fill: var(--lp-ink-4); transform-box: fill-box; transform-origin: center; }
+    #landingPageSection .lp-tree-orb-anim circle:nth-of-type(1) { fill: var(--lp-ink-5); }
+    #landingPageSection .lp-tree-orb-anim circle:nth-of-type(4) { fill: var(--lp-ink-3); }
+    #landingPageSection .lp-tree-orb-anim path { stroke: var(--lp-ink); }
+    #landingPageSection .lp-tree-orb-anim path:last-child { stroke: var(--lp-ink-4); }
+    #landingPageSection .lp-mc-stage.is-live .lp-tree-orb-anim circle { animation: lpGrow 7s var(--lp-ease) infinite both; }
+    #landingPageSection .lp-mc-stage.is-live .lp-tree-orb-anim circle:nth-of-type(2) { animation-delay: 0.3s; }
+    #landingPageSection .lp-mc-stage.is-live .lp-tree-orb-anim circle:nth-of-type(3) { animation-delay: 0.45s; }
+    #landingPageSection .lp-mc-stage.is-live .lp-tree-orb-anim circle:nth-of-type(4) { animation-delay: 0.6s; }
+    #landingPageSection .lp-tree-metrics { display: grid; gap: 6px; min-width: 0; }
+    #landingPageSection .lp-tm-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--lp-ink-3); }
+    #landingPageSection .lp-tree-metrics strong { font-size: 16px; letter-spacing: -0.02em; }
+    #landingPageSection .lp-tm-bar { height: 6px; border-radius: 6px; background: var(--lp-solid); box-shadow: 0 0 0 1px var(--lp-line); overflow: hidden; }
+    #landingPageSection .lp-tm-fill { height: 100%; width: 62%; background: var(--lp-ink); border-radius: inherit; }
+    #landingPageSection .lp-mc-stage.is-live .lp-tm-fill { animation: lpFill 7s var(--lp-ease) infinite; }
+    #landingPageSection .lp-tm-sub { font-size: 11.5px; color: var(--lp-ink-3); }
+
+    /* ---------- CAPÍTULO 6: OFERTA ---------- */
+    #landingPageSection .lp-pricing-section { padding: clamp(56px, 8vw, 104px) 0 0; }
+    #landingPageSection .lp-recap-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: -8px 0 26px; }
+    #landingPageSection .lp-recap-row span {
+      display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 999px;
+      font-size: 13px; font-weight: 600; background: var(--lp-glass); box-shadow: var(--lp-shadow-soft); color: var(--lp-ink-2);
+    }
+    #landingPageSection .lp-recap-row svg { width: 14px; height: 14px; }
+    #landingPageSection .lp-pricing-card {
+      position: relative; overflow: hidden; isolation: isolate;
+      display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px;
+      padding: clamp(18px, 3vw, 34px); border-radius: 32px;
+      background: var(--lp-glass); box-shadow: var(--lp-shadow);
+      -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+    }
+    #landingPageSection .lp-pricing-glow {
+      position: absolute; z-index: -1; width: 520px; height: 520px; right: -160px; top: -200px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.95), transparent 65%);
+      animation: lpGlow 9s ease-in-out infinite;
+    }
+    html[data-theme="dark"] #landingPageSection .lp-pricing-glow { background: radial-gradient(circle, rgba(120, 126, 140, 0.35), transparent 65%); }
+    #landingPageSection .lp-lifetime-badge { display: inline-flex; padding: 5px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-pricing-name { margin-top: 14px; font-size: clamp(30px, 4vw, 40px); font-weight: 700; letter-spacing: -0.04em; }
+    #landingPageSection .lp-pricing-tagline { margin-top: 8px; font-size: 15px; line-height: 1.6; color: var(--lp-ink-2); }
+    #landingPageSection .lp-features-checklist { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 10px; }
+    #landingPageSection .lp-features-checklist li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; line-height: 1.5; color: var(--lp-ink-2); }
+    #landingPageSection .lp-features-checklist li svg { width: 24px; height: 24px; padding: 4px; border-radius: 50%; background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-features-checklist strong { color: var(--lp-ink); font-weight: 600; }
+    #landingPageSection .lp-price-box { height: 100%; padding: 22px; border-radius: 24px; background: var(--lp-solid); box-shadow: var(--lp-shadow-soft); display: flex; flex-direction: column; gap: 14px; }
+    #landingPageSection .lp-price-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--lp-ink-3); }
+    #landingPageSection .lp-price-value-row { display: flex; align-items: flex-start; gap: 4px; line-height: 1; }
+    #landingPageSection .lp-currency { font-size: 22px; font-weight: 600; margin-top: 12px; color: var(--lp-ink-2); }
+    #landingPageSection .lp-amount { font-size: clamp(64px, 9vw, 88px); font-weight: 800; letter-spacing: -0.06em; }
+    #landingPageSection .lp-cents { font-size: 22px; font-weight: 600; margin-top: 12px; color: var(--lp-ink-2); }
+    #landingPageSection .lp-price-installment-note { font-size: 13px; line-height: 1.5; color: var(--lp-ink-3); }
+    #landingPageSection .lp-price-installment-note strong { color: var(--lp-ink); }
+    #landingPageSection .lp-payment-methods-pills { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; }
+    #landingPageSection .lp-pay-method-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 0;
+      padding: 10px 8px; border: 0; border-radius: 12px; cursor: pointer;
+      font: 600 12.5px/1.2 "Inter", -apple-system, sans-serif; color: var(--lp-ink-2);
+      background: var(--lp-ink-5); transition: background 0.25s, color 0.25s;
+    }
+    #landingPageSection .lp-pay-method-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #landingPageSection .lp-pay-method-btn.active { background: var(--lp-invert); color: var(--lp-invert-ink); }
+    #landingPageSection .lp-stripe-buy-btn {
+      position: relative; overflow: hidden; width: 100%;
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      min-height: 54px; padding: 12px 18px; border: 0; border-radius: 16px; cursor: pointer;
+      font: 600 15px/1.3 "Inter", -apple-system, sans-serif; text-align: center;
+      background: var(--lp-invert); color: var(--lp-invert-ink);
+      box-shadow: 0 16px 36px -16px rgba(11, 12, 16, 0.6); transition: transform 0.25s var(--lp-ease);
+    }
+    #landingPageSection .lp-stripe-buy-btn::before {
+      content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%;
+      background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transform: skewX(-20deg); animation: lpSheen 4s ease-in-out infinite;
+    }
+    #landingPageSection .lp-stripe-buy-btn:hover { transform: translateY(-2px); }
+    #landingPageSection .lp-stripe-security-foot { display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 12px; color: var(--lp-ink-3); text-align: center; }
+
+    /* ---------- Rodapé ---------- */
+    #landingPageSection .lp-footer {
+      margin: clamp(56px, 8vw, 96px) 0 0; padding: 24px 0 calc(28px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--lp-line);
+      display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    #landingPageSection .lp-footer-left { display: grid; gap: 4px; min-width: 0; }
+    #landingPageSection .lp-footer-left span { font-size: 13px; color: var(--lp-ink-3); }
+    #landingPageSection .lp-footer-right { display: flex; flex-wrap: wrap; gap: 6px; }
+    #landingPageSection .lp-footer-link {
+      border: 0; cursor: pointer; padding: 8px 12px; border-radius: 999px;
+      font: 600 12.5px/1.2 "Inter", -apple-system, sans-serif; color: var(--lp-ink-2);
+      background: var(--lp-glass); box-shadow: 0 0 0 1px var(--lp-line);
+    }
+    #landingPageSection .lp-footer-link:hover { color: var(--lp-ink); background: var(--lp-glass-2); }
+
+    /* ---------- Reveal ao rolar ---------- */
+    html.lp-js #landingPageSection [data-reveal] {
+      opacity: 0; transform: translateY(22px);
+      transition: opacity 0.9s var(--lp-ease), transform 0.9s var(--lp-ease);
+      transition-delay: var(--d, 0ms);
+    }
+    html.lp-js #landingPageSection [data-reveal="scale"] { transform: translateY(16px) scale(0.97); }
+    html.lp-js #landingPageSection [data-reveal].is-in { opacity: 1; transform: none; }
+
+    /* ---------- Keyframes ---------- */
+    @keyframes lpOrbSpin { to { transform: rotate(360deg); } }
+    @keyframes lpPing { 0% { opacity: 0.7; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.6); } }
+    @keyframes lpShine { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+    @keyframes lpSheen { 0% { left: -60%; } 40%, 100% { left: 130%; } }
+    @keyframes lpNudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+    @keyframes lpFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @keyframes lpBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+    @keyframes lpCue { 0% { transform: scaleY(0); opacity: 1; } 60% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
+    @keyframes lpBreathRing { 0%, 100% { transform: scale(0.94); opacity: 0.55; } 50% { transform: scale(1.04); opacity: 1; } }
+    @keyframes lpGhostDrift {
+      0%, 100% { transform: translate(calc(-50% + var(--x) * var(--sx, 1)), calc(-50% + var(--y) * var(--sy, 1))) rotate(var(--r)); }
+      50% { transform: translate(calc(-50% + var(--x) * var(--sx, 1) + 8px), calc(-50% + var(--y) * var(--sy, 1) - 10px)) rotate(calc(var(--r) * -1)); }
+    }
+    @keyframes lpJitter { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+    @keyframes lpRail { from { width: 0%; } to { width: 100%; } }
+    @keyframes lpWipe { 0%, 12% { clip-path: inset(0 0 0 100%); } 45%, 70% { clip-path: inset(0 0 0 0%); } 92%, 100% { clip-path: inset(0 0 0 100%); } }
+    @keyframes lpWipeHandle { 0%, 12% { left: 100%; } 45%, 70% { left: 0%; } 92%, 100% { left: 100%; } }
+    @keyframes lpNoise { 0%, 12% { transform: scaleY(1); opacity: 1; } 45%, 70% { transform: scaleY(0.12); opacity: 0.4; } 92%, 100% { transform: scaleY(1); opacity: 1; } }
+    @keyframes lpWobble { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 25% { transform: translate(3px, -4px) rotate(1.5deg); } 50% { transform: translate(-2px, 3px) rotate(-1deg); } 75% { transform: translate(-4px, -2px) rotate(1deg); } }
+    @keyframes lpBreathe { 0%, 100% { transform: scale(0.72); } 40%, 50% { transform: scale(1.08); } }
+    @keyframes lpWordIn { 0%, 42% { opacity: 1; } 48%, 94% { opacity: 0; } 100% { opacity: 1; } }
+    @keyframes lpWordOut { 0%, 44% { opacity: 0; } 52%, 92% { opacity: 1; } 98%, 100% { opacity: 0; } }
+    @keyframes lpPulseRing { 0% { box-shadow: 0 0 0 0 var(--lp-ink-4); } 100% { box-shadow: 0 0 0 9px transparent; } }
+    @keyframes lpTokIn { 0% { opacity: 0; transform: translateY(5px); } 8%, 86% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; transform: translateY(-3px); } }
+    @keyframes lpPopWindow { 0% { transform: translate(30px, 0) scale(0.92); opacity: 0; } 12%, 88% { transform: none; opacity: 1; } 100% { transform: translate(30px, 0) scale(0.92); opacity: 0; } }
+    @keyframes lpNotif { 0% { transform: translateY(-30px); opacity: 0; } 12%, 80% { transform: none; opacity: 1; } 92%, 100% { transform: translateY(-30px); opacity: 0; } }
+    @keyframes lpGrow { 0% { transform: scale(0.3); opacity: 0; } 25%, 85% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.3); opacity: 0; } }
+    @keyframes lpFill { 0% { width: 8%; } 60%, 100% { width: 74%; } }
+    @keyframes lpGlow { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-60px, 40px); } }
+
+    /* ---------- Responsivo ---------- */
+    @media (max-width: 960px) {
+      #landingPageSection .lp-nav-links { display: none; }
+      #landingPageSection .lp-story-grid { grid-template-columns: minmax(0, 1fr); }
+      #landingPageSection .lp-story-grid.reverse > :first-child { order: 0; }
+      #landingPageSection .lp-story-copy .lp-section-header { text-align: center; margin: 0 auto; }
+      #landingPageSection .lp-pricing-card { grid-template-columns: minmax(0, 1fr); }
+    }
+    @media (max-width: 760px) {
+      #landingPageSection .lp-chaos-vs-light-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+      #landingPageSection .lp-transform-bridge { flex-direction: row; padding: 2px 0; }
+      #landingPageSection .lp-bridge-orb { width: 44px; height: 44px; }
+      #landingPageSection .lp-bridge-orb svg { transform: rotate(90deg); }
+      #landingPageSection .lp-motions-bento { grid-template-columns: minmax(0, 1fr); }
+    }
+    @media (max-width: 600px) {
+      #landingPageSection { --lp-gutter: 12px; font-size: 15px; }
+      #landingPageSection .lp-navbar { padding-top: 8px; }
+      #landingPageSection .lp-nav-inner { padding: 6px 6px 6px 10px; gap: 6px; }
+      #landingPageSection .lp-brand-name { font-size: 15px; }
+      #landingPageSection .lp-brand-orb { width: 22px; height: 22px; }
+      #landingPageSection .lp-hide-xs { display: none; }
+      #landingPageSection .lp-btn-glass-sm { width: 34px; height: 34px; padding: 0; }
+      #landingPageSection .lp-btn-enter { height: 34px; padding: 0 12px; }
+      #landingPageSection .lp-hero { padding-top: 40px; }
+      #landingPageSection .lp-hero-pill { font-size: 10.5px; letter-spacing: 0.1em; }
+      #landingPageSection .lp-hero-title { margin-top: 18px; }
+      #landingPageSection .lp-hero-visual { height: 270px; }
+      #landingPageSection .lp-hero-visual { --sx: 0.62; --sy: 0.9; }
+      #landingPageSection .lp-ghost { width: 180px; font-size: 12px; }
+      #landingPageSection .lp-hero-focus { width: min(300px, 100%); padding: 14px; }
+      #landingPageSection .lp-hf-title strong { font-size: 15px; }
+      #landingPageSection .lp-hf-timer { font-size: 22px; }
+      #landingPageSection .lp-section-header { margin-bottom: 24px; }
+      #landingPageSection .lp-compare-card,
+      #landingPageSection .lp-motion-card,
+      #landingPageSection .lp-stage { padding: 14px; border-radius: 22px; }
+      #landingPageSection .lp-compare-title { font-size: 18px; }
+      #landingPageSection .lp-chaos-row { padding: 8px 10px; font-size: 12px; }
+      #landingPageSection .lp-motion-focus-preview { padding: 12px; }
+      #landingPageSection .lp-mf-clock { font-size: 19px; }
+      #landingPageSection .lp-mf-status { display: none; }
+      #landingPageSection .lp-vh-device { height: 290px; }
+      #landingPageSection .lp-mind-stage { height: 300px; --sx: 0.72; --sy: 0.86; }
+      #landingPageSection .lp-mind-halo { width: 200px; height: 200px; margin: -100px 0 0 -100px; }
+      #landingPageSection .lp-mind-chip > span { font-size: 11px; padding: 6px 9px; }
+      #landingPageSection .lp-mind-stage.is-calm .lp-mind-chip.is-next { transform: translate(-50%, -50%) scale(1.2); }
+      #landingPageSection .lp-mind-stage.is-calm .lp-mind-chip:not(.is-next) { transform: translate(-50%, calc(-50% + 112px)) scale(0.6); }
+      #landingPageSection .lp-mind-compare { grid-template-columns: minmax(0, 1fr); }
+      #landingPageSection .lp-calm-stage { grid-template-columns: minmax(0, 1fr); }
+      #landingPageSection .lp-breath { min-height: 220px; }
+      #landingPageSection .lp-story-points li { padding: 10px 12px; }
+      #landingPageSection .lp-mc-stage { padding: 10px; min-height: 180px; }
+      #landingPageSection .lp-mc-header h3 { font-size: 18px; }
+      #landingPageSection .lp-nlp-typing-box { font-size: 13px; }
+      #landingPageSection .lp-tree-showcase-row { grid-template-columns: 88px minmax(0, 1fr); }
+      #landingPageSection .lp-tree-orb-anim { width: 88px; height: 88px; }
+      #landingPageSection .lp-tree-orb-anim svg { width: 72px; height: 72px; }
+      #landingPageSection .lp-pricing-card { border-radius: 24px; gap: 18px; }
+      #landingPageSection .lp-price-box { padding: 16px; border-radius: 18px; }
+      #landingPageSection .lp-pay-method-btn { font-size: 11.5px; padding: 10px 6px; }
+      #landingPageSection .lp-stripe-buy-btn { font-size: 14px; }
+      #landingPageSection .lp-footer { flex-direction: column; align-items: flex-start; }
+    }
+    @media (max-width: 420px) {
+      #landingPageSection .lp-payment-methods-pills { grid-template-columns: minmax(0, 1fr); }
+      #landingPageSection .lp-stage-label span + span { display: none; }
+    }
+
+    /* ---------- Acessibilidade: movimento reduzido ---------- */
+    @media (prefers-reduced-motion: reduce) {
+      #landingPageSection *,
+      #landingPageSection *::before,
+      #landingPageSection *::after { animation: none !important; transition-duration: 0.01ms !important; transition-delay: 0ms !important; }
+      html.lp-js #landingPageSection [data-reveal] { opacity: 1; transform: none; }
+      #landingPageSection .lp-vh-calm { clip-path: inset(0 0 0 50%); }
+      #landingPageSection .lp-vh-handle { left: 50%; }
+    }
+  </style>
+  <script>document.documentElement.classList.add('lp-js');</script>
 </head>
 <body>
   <div id="lfSplash" class="lf-splash" aria-hidden="true">
@@ -51,8 +954,8 @@
   <!-- ====================================================================
        0. LIGHTFOCUS OFFICIAL LANDING PAGE (Apple Liquid Glass + In-App Motions + R$ 99 Stripe)
        ==================================================================== -->
-  <section id="landingPageSection" class="lp-wrapper" aria-label="Lightfocus: Apresentação Oficial">
-    <!-- Sticky Liquid Glass Navbar -->
+  <section id="landingPageSection" class="lp-wrapper" aria-label="Lightfocus">
+    <!-- Navbar Liquid Glass fixa -->
     <header class="lp-navbar">
       <div class="lp-nav-inner">
         <a href="#top" class="lp-brand-lockup" id="lpBrandTopLink">
@@ -68,13 +971,13 @@
 
         <nav class="lp-nav-links" aria-label="Seções da página">
           <a href="#lpFilosofia" class="lp-nav-link">O Método</a>
+          <a href="#lpVisual" class="lp-nav-link">Por que funciona</a>
           <a href="#lpMotions" class="lp-nav-link">Por Dentro do App</a>
-          <a href="#lpWebApp" class="lp-nav-link">WebApp &amp; Janela</a>
-          <a href="#lpPricing" class="lp-nav-link">R$ 99 Vitalício</a>
+          <a href="#lpPricing" class="lp-nav-link">Acesso Vitalício</a>
         </nav>
 
         <div class="lp-nav-actions">
-          <button type="button" id="lpOpenMiniWindowBtn" class="lp-btn-glass-sm" title="Abrir Lightfocus em janela solta formato mobile">
+          <button type="button" id="lpOpenMiniWindowBtn" class="lp-btn-glass-sm" title="Abrir Lightfocus em janela solta formato mobile" aria-label="Abrir em janela">
             <svg class="icon-14" viewBox="0 0 24 24" fill="none">
               <rect x="4" y="3" width="16" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/>
               <path d="M9 7H15M10 17H14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -82,7 +985,7 @@
             <span class="lp-hide-xs">Abrir em Janela</span>
           </button>
 
-          <button type="button" id="lpInstallWebAppBtn" class="lp-btn-glass-sm" title="Instalar WebApp no Chrome">
+          <button type="button" id="lpInstallWebAppBtn" class="lp-btn-glass-sm" title="Instalar WebApp no Chrome" aria-label="Instalar app">
             <svg class="icon-14" viewBox="0 0 24 24" fill="none">
               <path d="M12 3V15M12 15L8 11M12 15L16 11M4 18H20" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -99,59 +1002,87 @@
       </div>
     </header>
 
-    <!-- HERO SECTION -->
     <div class="lp-container">
-      <section class="lp-hero">
-        <div class="lp-hero-pill">
+      <!-- ==================================================================
+           HERO: promessa, sem preço, um único botão
+           ================================================================== -->
+      <section class="lp-hero" id="top">
+        <div class="lp-hero-pill" data-reveal>
           <span class="lp-pulse-dot"></span>
-          <span>MÉTODO DE FOCO SINGULAR · WEBAPP CHROME &amp; MOBILE FIRST</span>
+          <span>UMA TAREFA POR VEZ</span>
         </div>
 
-        <h1 class="lp-hero-title">
+        <h1 class="lp-hero-title" data-reveal style="--d:80ms">
           Pare de olhar para tudo o que você tem para fazer.<br />
           <span class="lp-text-gradient">Foque apenas na próxima tarefa</span> e deixe o seu dia mais light.
         </h1>
 
-        <p class="lp-hero-subtitle">
-          Listas infinitas com 30 tarefas abertas ao mesmo tempo paralisam o seu cérebro antes mesmo de você começar. O <strong>Lightfocus</strong> esconde o ruído, isola somente o seu próximo passo em um único card sereno com cronômetro ativo e avisa quando o tempo está acabando.
+        <p class="lp-hero-subtitle" data-reveal style="--d:160ms">
+          Uma lista infinita cansa antes do trabalho começar. O <strong>Lightfocus</strong> esconde o ruído e mostra só o seu próximo passo, em um card sereno com cronômetro e um aviso discreto quando o tempo está acabando.
         </p>
 
-        <div class="lp-hero-cta-row">
+        <div class="lp-hero-cta-row" data-reveal style="--d:240ms">
           <a href="#lpFilosofia" id="lpHeroHowBtn" class="lp-cta-primary">
             <span>Como funciona</span>
             <svg class="icon-16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
         </div>
+
+        <!-- Lente: o ruído desfocado ao fundo, um único card nítido na frente -->
+        <div class="lp-hero-visual" aria-hidden="true" data-reveal="scale" style="--d:320ms">
+          <div class="lp-lens-rings">
+            <span style="--s:220px"></span>
+            <span style="--s:330px;--dl:-2s"></span>
+            <span style="--s:440px;--dl:-4s"></span>
+          </div>
+          <div class="lp-ghost" style="--x:-210px;--y:-92px;--r:-4deg;--dl:-1s"><i></i>Responder 14 mensagens</div>
+          <div class="lp-ghost" style="--x:205px;--y:-104px;--r:3deg;--dl:-3s"><i></i>Fechar relatório do mês</div>
+          <div class="lp-ghost" style="--x:-200px;--y:100px;--r:3deg;--dl:-5s"><i></i>Reunião às 14:00</div>
+          <div class="lp-ghost" style="--x:215px;--y:96px;--r:-3deg;--dl:-7s"><i></i>Aprovar orçamento</div>
+          <div class="lp-hero-focus">
+            <div class="lp-hf-top"><span class="lp-num">01 / 08</span><span>AGORA</span></div>
+            <div class="lp-hf-title">
+              <span class="lp-hf-check"></span>
+              <strong>Enviar a proposta para o cliente</strong>
+            </div>
+            <div class="lp-hf-bottom">
+              <span class="lp-hf-timer"><span class="lp-hf-dot"></span><span id="lpHeroTimer">25:00</span></span>
+              <span class="lp-hf-btn">Concluir</span>
+            </div>
+            <div class="lp-hf-rail"><i id="lpHeroRail"></i></div>
+          </div>
+        </div>
+        <div class="lp-scroll-cue" aria-hidden="true">Role devagar<span></span></div>
       </section>
 
       <!-- ==================================================================
-           LIVE INTERACTIVE MOTION SHOWCASE 1: DO CAOS AO FOCO ÚNICO
+           CAPÍTULO 1: DA DOR AO ALÍVIO
            ================================================================== -->
       <section id="lpFilosofia" class="lp-philosophy-section">
-        <div class="lp-section-header">
-          <span class="lp-eyebrow">POR QUE O SEU DIA PARECE PESADO DEMAIS?</span>
+        <div class="lp-section-header" data-reveal>
+          <span class="lp-eyebrow"><span class="lp-chapter-num">1</span>POR QUE O SEU DIA PARECE PESADO DEMAIS?</span>
           <h2 class="lp-section-title">Olhar para 25 pendências ao mesmo tempo drena a energia de executar a primeira.</h2>
           <p class="lp-section-desc">
-            Quando você abre um gerenciador tradicional, seu olho escaneia atrasos, subtarefas, reuniões de sexta-feira e projetos inteiros de uma só vez. O <strong>Lightfocus</strong> aplica o princípio da lente única: tudo o que não é para <em>agora</em> desaparece até você concluir a tarefa atual.
+            Abrir um gerenciador tradicional é encarar atrasos, etiquetas, reuniões e projetos inteiros de uma vez. O <strong>Lightfocus</strong> aplica o princípio da lente única: tudo o que não é para <em>agora</em> sai de cena até você concluir a tarefa atual.
           </p>
         </div>
 
-        <div class="lp-chaos-vs-light-grid">
-          <!-- Left: The Old Overwhelming List (Animated Chaos) -->
+        <div class="lp-chaos-vs-light-grid" id="lpChaosGrid" data-reveal>
+          <!-- Esquerda: a lista que pesa -->
           <div class="lp-compare-card lp-chaos-card">
             <div class="lp-compare-badge lp-badge-danger">VISÃO TRADICIONAL · ANSIEDADE VISUAL</div>
             <h3 class="lp-compare-title">Você olha para tudo e trava</h3>
-            <p class="lp-compare-sub">18 tarefas disputando sua atenção simultaneamente.</p>
+            <p class="lp-compare-sub">18 tarefas disputando sua atenção ao mesmo tempo.</p>
             <div class="lp-chaos-stack" aria-hidden="true">
               <div class="lp-chaos-row"><span class="c-dot red"></span><span>Responder 14 clientes pendentes no WhatsApp</span><span class="c-tag">Atrasada</span></div>
               <div class="lp-chaos-row"><span class="c-dot orange"></span><span>Revisar campanha de lançamento e criativos</span><span class="c-tag">Hoje</span></div>
-              <div class="lp-chaos-row"><span class="c-dot blue"></span><span>Alinhamento financeiro mensal + planilha</span><span class="c-tag">14:00</span></div>
+              <div class="lp-chaos-row"><span class="c-dot blue"></span><span>Alinhamento financeiro mensal e planilha</span><span class="c-tag">14:00</span></div>
               <div class="lp-chaos-row"><span class="c-dot red"></span><span>Gravar 3 vídeos novos e aprovar roteiro</span><span class="c-tag">Urgente</span></div>
-              <div class="lp-chaos-row"><span class="c-dot gray"></span><span>Atualizar automações e página de captura</span><span class="c-tag">+12 itens...</span></div>
+              <div class="lp-chaos-row"><span class="c-dot gray"></span><span>Atualizar automações e página de captura</span><span class="c-tag">+12 itens</span></div>
             </div>
           </div>
 
-          <!-- Center Animated Dissolve Arrow -->
+          <!-- Centro: o filtro -->
           <div class="lp-transform-bridge" aria-hidden="true">
             <div class="lp-bridge-orb">
               <svg viewBox="0 0 24 24" fill="none">
@@ -161,13 +1092,12 @@
             <span class="lp-bridge-label">Filtro Lightfocus</span>
           </div>
 
-          <!-- Right: The Serene Single-Task Lightfocus Motion -->
+          <!-- Direita: o alívio -->
           <div class="lp-compare-card lp-serene-card">
-            <div class="lp-compare-badge lp-badge-blue">EXPERIÊNCIA LIGHTFOCUS · 1 TAREFA POR VEZ</div>
+            <div class="lp-compare-badge lp-badge-blue">LIGHTFOCUS · 1 TAREFA POR VEZ</div>
             <h3 class="lp-compare-title">Apenas o próximo passo existe</h3>
-            <p class="lp-compare-sub">Todo o resto aguarda em silêncio na fila até você dar check.</p>
+            <p class="lp-compare-sub">O resto espera em silêncio na fila até você dar check.</p>
 
-            <!-- Animated Live Mini Focus Card -->
             <div class="lp-motion-focus-preview">
               <div class="lp-mf-top">
                 <span class="lp-mf-pill">01 / 08</span>
@@ -181,7 +1111,7 @@
                   </svg>
                 </div>
                 <div class="lp-mf-texts">
-                  <strong>Revisar campanha de lançamento e aprovar criativo principal</strong>
+                  <strong>Revisar campanha de lançamento e aprovar o criativo principal</strong>
                   <span>#marketing · Próxima atividade isolada</span>
                 </div>
               </div>
@@ -189,7 +1119,7 @@
                 <div class="lp-mf-timer-left">
                   <span class="lp-mf-live-dot"></span>
                   <span class="lp-mf-clock" id="lpMotionLiveClock">18:42</span>
-                  <span class="lp-mf-status">Em foco · Notificação ativa</span>
+                  <span class="lp-mf-status">Em foco · Aviso ativo</span>
                 </div>
                 <span class="lp-mf-btn-sim">Concluir</span>
               </div>
@@ -199,33 +1129,226 @@
             </div>
           </div>
         </div>
+
+        <p class="lp-relief-caption" aria-live="off">
+          <span class="lp-relief-state"><i></i><span id="lpReliefStateText">Tudo ao mesmo tempo</span></span>
+          <span>Veja a lista sair de cena e sobrar um único passo.</span>
+        </p>
+      </section>
+
+      <p class="lp-bridge-line" data-reveal>Quando a tela fica quieta, <b>algo muda em você também.</b></p>
+
+      <!-- ==================================================================
+           CAPÍTULO 2: SAÚDE VISUAL
+           ================================================================== -->
+      <section id="lpVisual" class="lp-story-section" aria-labelledby="lpVisualTitle">
+        <div class="lp-story-grid">
+          <div class="lp-story-copy">
+            <div class="lp-section-header" data-reveal>
+              <span class="lp-eyebrow"><span class="lp-chapter-num">2</span>SAÚDE VISUAL</span>
+              <h2 id="lpVisualTitle" class="lp-section-title">Menos ruído na tela. Olhos que descansam.</h2>
+              <p class="lp-section-desc">
+                Selos coloridos, contadores, alertas e etiquetas disputam o seu olhar o dia inteiro. O <strong>Lightfocus</strong> apaga o excesso e deixa na tela só o que importa agora: uma frase, um tempo e um botão.
+              </p>
+            </div>
+            <ul class="lp-story-points">
+              <li data-reveal style="--d:80ms">
+                <span class="lp-sp-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="6" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M8 12H16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                <div><strong>Uma coisa na tela</strong><span>Seu olho encontra o que fazer sem precisar procurar.</span></div>
+              </li>
+              <li data-reveal style="--d:160ms">
+                <span class="lp-sp-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8"/><path d="M12 4A8 8 0 0 1 12 20Z" fill="currentColor"/></svg></span>
+                <div><strong>Monocromático e translúcido</strong><span>Sem vermelho gritando atraso. Contraste suave, do começo ao fim.</span></div>
+              </li>
+              <li data-reveal style="--d:240ms">
+                <span class="lp-sp-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M8 3H5C3.9 3 3 3.9 3 5V8M21 8V5C21 3.9 20.1 3 19 3H16M16 21H19C20.1 21 21 20.1 21 19V16M3 16V19C3 20.1 3.9 21 5 21H8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                <div><strong>Modo Ultra Foco com a tecla U</strong><span>Some até o menu. Ficam a tarefa e o cronômetro.</span></div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="lp-stage lp-vh-stage" data-reveal="scale" data-live aria-hidden="true">
+            <div class="lp-stage-label"><span>A mesma manhã, duas telas</span><span>Antes e depois</span></div>
+            <div class="lp-vh-device">
+              <div class="lp-vh-layer lp-vh-noisy">
+                <div class="lp-vh-toolbar">
+                  <b class="blink">27 pendentes</b><b>Hoje 9</b><b class="blink">3 atrasadas</b><b>Semana 41</b><b>99+</b><b>Filtros 6</b><b class="blink">Novo</b>
+                </div>
+                <div class="lp-vh-stats"><div></div><div></div><div></div><div></div></div>
+                <div class="lp-vh-list">
+                  <div><i></i><span>Responder clientes no WhatsApp</span><em>ATR</em><u></u></div>
+                  <div><i></i><span>Revisar criativos da campanha</span><em>P1</em><u></u></div>
+                  <div><i></i><span>Planilha financeira do mês</span><em>14h</em><u></u></div>
+                  <div><i></i><span>Roteiro dos 3 vídeos</span><em>URG</em><u></u></div>
+                  <div><i></i><span>Página de captura</span><em>P2</em><u></u></div>
+                  <div><i></i><span>Ligar para o fornecedor</span><em>ATR</em><u></u></div>
+                  <div><i></i><span>Organizar arquivos do projeto</span><em>P3</em><u></u></div>
+                  <div><i></i><span>Atualizar automações</span><em>P2</em><u></u></div>
+                </div>
+              </div>
+              <div class="lp-vh-layer lp-vh-calm">
+                <div class="lp-vh-calm-card">
+                  <small>AGORA</small>
+                  <strong>Revisar criativos da campanha</strong>
+                  <span class="lp-vh-time">24:10</span>
+                  <span class="lp-vh-go">Concluir</span>
+                </div>
+              </div>
+              <span class="lp-vh-handle"></span>
+              <span class="lp-vh-tag before">ANTES</span>
+              <span class="lp-vh-tag after">LIGHTFOCUS</span>
+            </div>
+            <div class="lp-noise-meter">
+              <span>Estímulo na tela</span>
+              <div class="lp-noise-bars" id="lpNoiseBars"></div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- ==================================================================
-           4 IN-APP MOTION SHOWCASES ("POR DENTRO DO LIGHTFOCUS")
+           CAPÍTULO 3: SAÚDE MENTAL
+           ================================================================== -->
+      <section id="lpMente" class="lp-story-section" aria-labelledby="lpMenteTitle">
+        <div class="lp-story-grid reverse">
+          <div class="lp-story-copy">
+            <div class="lp-section-header" data-reveal>
+              <span class="lp-eyebrow"><span class="lp-chapter-num">3</span>SAÚDE MENTAL</span>
+              <h2 id="lpMenteTitle" class="lp-section-title">O peso não está nas tarefas. Está em carregar todas ao mesmo tempo.</h2>
+              <p class="lp-section-desc">
+                Cada pendência à vista vira um lembrete pedindo atenção. Quando todas aparecem juntas, a cabeça tenta segurar tudo e sobra pouco para começar a primeira. Ver só o próximo passo devolve um ponto de partida claro.
+              </p>
+            </div>
+            <div class="lp-mind-compare">
+              <div class="lp-mind-col" data-reveal style="--d:80ms">
+                <h3>Quando você vê tudo</h3>
+                <ul>
+                  <li>Você decide e redecide o que fazer primeiro.</li>
+                  <li>Começa várias coisas e termina poucas.</li>
+                  <li>O dia acaba com a sensação de que faltou algo.</li>
+                </ul>
+              </div>
+              <div class="lp-mind-col calm" data-reveal style="--d:160ms">
+                <h3>Quando você vê o próximo passo</h3>
+                <ul>
+                  <li>Uma decisão por vez, já tomada.</li>
+                  <li>Um começo claro e um fim visível.</li>
+                  <li>Cada check vira prova de que você avançou.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="lp-stage" data-reveal="scale">
+            <div class="lp-mind-toggle" role="group" aria-label="Alternar visualização">
+              <button type="button" data-mind="all" aria-pressed="true">Tudo de uma vez</button>
+              <button type="button" data-mind="next" aria-pressed="false">Só o próximo passo</button>
+            </div>
+            <div class="lp-mind-stage" id="lpMindStage" data-live aria-hidden="true">
+              <div class="lp-mind-weight">Peso<i></i></div>
+              <div class="lp-mind-halo"></div>
+              <span class="lp-mind-chip" style="--x:-70px;--y:-122px;--r:-6deg;--k:0"><span>E-mails</span></span>
+              <span class="lp-mind-chip" style="--x:70px;--y:-120px;--r:5deg;--k:1"><span>Reunião 14h</span></span>
+              <span class="lp-mind-chip" style="--x:-104px;--y:-36px;--r:4deg;--k:2"><span>Orçamento</span></span>
+              <span class="lp-mind-chip" style="--x:104px;--y:-36px;--r:-5deg;--k:3"><span>Relatório</span></span>
+              <span class="lp-mind-chip" style="--x:-112px;--y:36px;--r:-3deg;--k:4"><span>Fornecedor</span></span>
+              <span class="lp-mind-chip" style="--x:112px;--y:36px;--r:6deg;--k:5"><span>Contas</span></span>
+              <span class="lp-mind-chip" style="--x:-70px;--y:86px;--r:5deg;--k:6"><span>Vídeos</span></span>
+              <span class="lp-mind-chip" style="--x:80px;--y:88px;--r:-4deg;--k:7"><span>Feedback</span></span>
+              <span class="lp-mind-chip" style="--x:-44px;--y:128px;--r:-5deg;--k:8"><span>Mercado</span></span>
+              <span class="lp-mind-chip" style="--x:60px;--y:130px;--r:4deg;--k:9"><span>Planilha</span></span>
+              <span class="lp-mind-chip" style="--x:-4px;--y:-76px;--r:3deg;--k:10"><span>Agenda</span></span>
+              <span class="lp-mind-chip is-next" style="--x:0px;--y:0px;--r:-2deg;--k:11"><span>Enviar proposta</span></span>
+              <span class="lp-mind-queue">11 tarefas esperando em silêncio</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           CAPÍTULO 4: CALMA
+           ================================================================== -->
+      <section id="lpCalma" class="lp-story-section" aria-labelledby="lpCalmaTitle">
+        <div class="lp-story-grid">
+          <div class="lp-story-copy">
+            <div class="lp-section-header" data-reveal>
+              <span class="lp-eyebrow"><span class="lp-chapter-num">4</span>CALMA</span>
+              <h2 id="lpCalmaTitle" class="lp-section-title">Um dia que termina leve, uma coisa de cada vez.</h2>
+              <p class="lp-section-desc">
+                Sem correr atrás da lista. Você conclui, respira e o próximo passo aparece sozinho. O ritmo deixa de ser apressado e passa a ser constante, com uma previsão de término do dia para você saber quando parar.
+              </p>
+            </div>
+            <ul class="lp-story-points">
+              <li data-reveal style="--d:80ms">
+                <span class="lp-sp-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <div><strong>Terminar antes de começar outra</strong><span>A satisfação de fechar algo de verdade, várias vezes ao dia.</span></div>
+              </li>
+              <li data-reveal style="--d:160ms">
+                <span class="lp-sp-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8"/><path d="M12 8V12L14.5 13.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                <div><strong>Um tempo para cada coisa</strong><span>Cronômetro por tarefa e aviso gentil quando faltar pouco.</span></div>
+              </li>
+              <li data-reveal style="--d:240ms">
+                <span class="lp-sp-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 18V12C3 7 7 3 12 3C17 3 21 7 21 12V18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="2" y="14" width="4" height="6" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="18" y="14" width="4" height="6" rx="2" stroke="currentColor" stroke-width="1.8"/></svg></span>
+                <div><strong>Som ambiente, se você quiser</strong><span>Lo-Fi e chuva suave para acompanhar o ritmo. Ou silêncio total.</span></div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="lp-stage" data-reveal="scale">
+            <div class="lp-stage-label"><span>O ritmo de um dia leve</span><span>Respire</span></div>
+            <div class="lp-calm-stage">
+              <div class="lp-breath" data-live aria-hidden="true">
+                <span class="lp-breath-ring" style="--s:240px"></span>
+                <span class="lp-breath-ring" style="--s:180px"></span>
+                <span class="lp-breath-ring" style="--s:130px"></span>
+                <span class="lp-breath-core"></span>
+                <div class="lp-breath-words"><span>Inspire devagar</span><span>Solte o ar</span></div>
+              </div>
+              <div class="lp-day" id="lpDayRail" data-live>
+                <div class="lp-day-head">Hoje <b id="lpDayCount">0 de 5</b></div>
+                <div class="lp-day-body">
+                <span class="lp-day-progress" id="lpDayProgress" aria-hidden="true"></span>
+                <ol class="lp-day-list">
+                  <li class="lp-day-item"><span class="lp-day-check"><svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5L10.2 16.5L18 8.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Planejar a semana</span><time>09:00</time></li>
+                  <li class="lp-day-item"><span class="lp-day-check"><svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5L10.2 16.5L18 8.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Enviar a proposta</span><time>09:40</time></li>
+                  <li class="lp-day-item"><span class="lp-day-check"><svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5L10.2 16.5L18 8.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Reunião com o time</span><time>11:00</time></li>
+                  <li class="lp-day-item"><span class="lp-day-check"><svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5L10.2 16.5L18 8.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Revisar os criativos</span><time>14:30</time></li>
+                  <li class="lp-day-item"><span class="lp-day-check"><svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5L10.2 16.5L18 8.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Fechar o dia</span><time>17:30</time></li>
+                </ol>
+                </div>
+                <div class="lp-day-done">Dia concluído. Leve.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <p class="lp-bridge-line" data-reveal>Parece simples. <b>É exatamente esse o ponto.</b> Veja como funciona por dentro.</p>
+
+      <!-- ==================================================================
+           CAPÍTULO 5: A PROVA, POR DENTRO DO LIGHTFOCUS
            ================================================================== -->
       <section id="lpMotions" class="lp-motions-section">
-        <div class="lp-section-header">
-          <span class="lp-eyebrow">MOTIONS REAIS · VEJA O LIGHTFOCUS POR DENTRO</span>
+        <div class="lp-section-header" data-reveal>
+          <span class="lp-eyebrow"><span class="lp-chapter-num">5</span>POR DENTRO DO APP</span>
           <h2 class="lp-section-title">Construído para velocidade mental, silêncio visual e execução leve.</h2>
           <p class="lp-section-desc">
-            Cada detalhe do <strong>Lightfocus</strong> foi desenhado para eliminar cliques desnecessários: no computador, na janela compacta do Chrome ou no celular.
+            Cada detalhe do <strong>Lightfocus</strong> foi desenhado para eliminar cliques: no computador, na janela compacta do Chrome ou no celular. Sincroniza com Todoist e Google Agenda.
           </p>
         </div>
 
         <div class="lp-motions-bento">
-          <!-- MOTION CARD A: Tecla Q com Tags Inteligentes Demarcadas ao Vivo -->
-          <article class="lp-motion-card">
+          <article class="lp-motion-card" data-reveal>
             <div class="lp-mc-header">
-              <span class="lp-mc-tag">MOTION 01 · CAPTURA INSTANTÂNEA</span>
+              <span class="lp-mc-tag">01 · CAPTURA INSTANTÂNEA</span>
               <h3>Aperte <kbd>Q</kbd> e agende escrevendo como você pensa</h3>
-              <p>Digite o título junto com o dia, recorrência, horário, duração e prioridade. O Lightfocus destaca cada função em cores em tempo real.</p>
+              <p>Digite o título junto com o dia, a recorrência, o horário, a duração e a prioridade. O Lightfocus destaca cada parte enquanto você escreve.</p>
             </div>
-            <div class="lp-mc-stage lp-stage-nlp" aria-hidden="true">
+            <div class="lp-mc-stage lp-stage-nlp" data-live aria-hidden="true">
               <div class="lp-nlp-window">
                 <div class="lp-nlp-top">
                   <span class="lp-kbd-q">Q</span>
-                  <span>Nova Tarefa Inteligente</span>
+                  <span>Nova tarefa</span>
                 </div>
                 <div class="lp-nlp-typing-box">
                   <span class="lp-type-plain">Planejar sprint </span>
@@ -239,28 +1362,26 @@
                   <span class="lp-type-cursor"></span>
                 </div>
                 <div class="lp-nlp-pills-row">
-                  <span class="lp-mini-chip purple">Recorrência: Toda Segunda</span>
-                  <span class="lp-mini-chip blue">Horário: 14:30</span>
-                  <span class="lp-mini-chip green">Tempo: 35 min</span>
+                  <span class="lp-mini-chip purple">Toda segunda</span>
+                  <span class="lp-mini-chip blue">14:30</span>
+                  <span class="lp-mini-chip green">35 min</span>
                   <span class="lp-mini-chip orange">Prioridade P1</span>
                 </div>
               </div>
             </div>
           </article>
 
-          <!-- MOTION CARD B: Janela Solta Simplificada (Chrome App Window Mobile) + WebApp -->
-          <article id="lpWebApp" class="lp-motion-card">
+          <article id="lpWebApp" class="lp-motion-card" data-reveal style="--d:100ms">
             <div class="lp-mc-header">
-              <span class="lp-mc-tag">MOTION 02 · JANELA SOLTA &amp; WEBAPP CHROME</span>
-              <h3>Abra em uma janela mobile flutuante ou instale como App nativo</h3>
-              <p>Com 1 clique em <strong>Abrir em Janela</strong>, o Lightfocus descola do navegador em uma janela simplificada do Chrome em formato mobile ao lado do seu trabalho.</p>
+              <span class="lp-mc-tag">02 · JANELA SOLTA E WEBAPP</span>
+              <h3>Uma janela pequena ao lado do seu trabalho</h3>
+              <p>Com 1 clique em <strong>Abrir em Janela</strong>, o Lightfocus vira uma janela compacta em formato de celular. Ou instale como app no Chrome e no celular.</p>
             </div>
-            <div class="lp-mc-stage lp-stage-window" aria-hidden="true">
+            <div class="lp-mc-stage lp-stage-window" data-live aria-hidden="true">
               <div class="lp-desktop-mock">
                 <div class="lp-desktop-bg-lines">
                   <span></span><span></span><span></span>
                 </div>
-                <!-- Floating Mobile Chrome App Window -->
                 <div class="lp-floating-chrome-app">
                   <div class="lp-fca-titlebar">
                     <div class="lp-fca-dots"><i></i><i></i><i></i></div>
@@ -286,16 +1407,14 @@
             </div>
           </article>
 
-          <!-- MOTION CARD C: Notificação de Tempo Acabando (Configurável) -->
-          <article class="lp-motion-card">
+          <article class="lp-motion-card" data-reveal>
             <div class="lp-mc-header">
-              <span class="lp-mc-tag">MOTION 03 · AVISO DE FIM DE TEMPO</span>
-              <h3>Notificação inteligente quando o tempo da tarefa está acabando</h3>
-              <p>Receba um aviso visual e notificação do sistema quando faltar 1 ou 2 minutos para encerrar a tarefa. E desabilite com 1 clique sempre que quiser silêncio absoluto.</p>
+              <span class="lp-mc-tag">03 · AVISO DE FIM DE TEMPO</span>
+              <h3>Um aviso gentil quando o tempo está acabando</h3>
+              <p>Receba uma notificação quando faltar 1 ou 2 minutos para encerrar a tarefa. Quer silêncio absoluto? Desligue com 1 clique.</p>
             </div>
-            <div class="lp-mc-stage lp-stage-notify" aria-hidden="true">
+            <div class="lp-mc-stage lp-stage-notify" data-live aria-hidden="true">
               <div class="lp-notify-showcase">
-                <!-- Animated Notification Banner -->
                 <div class="lp-os-notification">
                   <div class="lp-os-notif-icon">
                     <svg viewBox="0 0 28 28" fill="none">
@@ -305,18 +1424,17 @@
                   </div>
                   <div class="lp-os-notif-text">
                     <div class="lp-os-notif-top">
-                      <strong>Lightfocus · Tempo acabando</strong>
+                      <strong>Lightfocus</strong>
                       <span>agora</span>
                     </div>
                     <p>Falta 1 minuto para concluir: Revisar métricas da semana</p>
                   </div>
                 </div>
 
-                <!-- Configurable Toggle Preview -->
                 <div class="lp-notify-toggle-preview">
                   <div class="lp-ntp-left">
                     <span class="lp-ntp-dot"></span>
-                    <span>Notificar quando o tempo estiver acabando</span>
+                    <span>Avisar quando o tempo estiver acabando</span>
                   </div>
                   <span class="lp-ntp-switch">Ativado</span>
                 </div>
@@ -324,14 +1442,13 @@
             </div>
           </article>
 
-          <!-- MOTION CARD D: Árvore Botânica de 6 Meses + Lo-Fi + Mobile First -->
-          <article class="lp-motion-card">
+          <article class="lp-motion-card" data-reveal style="--d:100ms">
             <div class="lp-mc-header">
-              <span class="lp-mc-tag">MOTION 04 · JORNADA DE 6 MESES &amp; LO-FI</span>
-              <h3>Sua consistência faz crescer uma árvore viva ao longo de 180 dias</h3>
-              <p>Cada tarefa concluída nutre sua semente até se tornar uma Árvore Ancestral Luminosa, acompanhada de Lo-Fi acústico sintético e previsão exata de término do dia (ETA).</p>
+              <span class="lp-mc-tag">04 · CONSTÂNCIA QUE CRESCE</span>
+              <h3>Sua constância faz crescer uma árvore ao longo de 6 meses</h3>
+              <p>Cada tarefa concluída alimenta uma semente que cresce devagar, no mesmo ritmo dos seus dias. Com previsão de término do dia e Lo-Fi opcional.</p>
             </div>
-            <div class="lp-mc-stage lp-stage-tree" aria-hidden="true">
+            <div class="lp-mc-stage lp-stage-tree" data-live aria-hidden="true">
               <div class="lp-tree-showcase-row">
                 <div class="lp-tree-orb-anim">
                   <svg viewBox="0 0 100 100" fill="none">
@@ -345,10 +1462,10 @@
                   </svg>
                 </div>
                 <div class="lp-tree-metrics">
-                  <span class="lp-tm-badge">EVOLUÇÃO CONTÍNUA · 180 DIAS</span>
-                  <strong>De Semente a Super Árvore</strong>
+                  <span class="lp-tm-badge">180 DIAS DE EVOLUÇÃO</span>
+                  <strong>De semente a árvore</strong>
                   <div class="lp-tm-bar"><div class="lp-tm-fill"></div></div>
-                  <span class="lp-tm-sub">+25 XP por tarefa · Lo-Fi Warm Rhodes integrado</span>
+                  <span class="lp-tm-sub">+25 XP por tarefa concluída</span>
                 </div>
               </div>
             </div>
@@ -357,47 +1474,53 @@
       </section>
 
       <!-- ==================================================================
-           PRICING & STRIPE LIFETIME CHECKOUT SECTION (R$ 99 VITALÍCIO)
+           CAPÍTULO 6: A OFERTA (R$ 99 VITALÍCIO, STRIPE)
            ================================================================== -->
       <section id="lpPricing" class="lp-pricing-section">
-        <div class="lp-section-header">
-          <span class="lp-eyebrow">ACESSO VITALÍCIO · SEM ASSINATURA MENSAL</span>
-          <h2 class="lp-section-title">Pague uma única vez. Deixe todos os seus dias mais leves para sempre.</h2>
+        <div class="lp-section-header" data-reveal>
+          <span class="lp-eyebrow"><span class="lp-chapter-num">6</span>ACESSO VITALÍCIO · SEM MENSALIDADE</span>
+          <h2 class="lp-section-title">Pague uma única vez. Deixe todos os seus dias mais leves.</h2>
           <p class="lp-section-desc">
-            Sem mensalidades recorrentes. Garanta o seu acesso vitalício ao <strong>Lightfocus</strong> via Stripe com PIX à vista ou parcelado no cartão.
+            Sem assinatura. Garanta o seu acesso vitalício ao <strong>Lightfocus</strong> via Stripe, com PIX à vista ou cartão parcelado.
           </p>
         </div>
 
-        <div class="lp-pricing-card">
+        <div class="lp-recap-row" data-reveal aria-label="O que você leva">
+          <span><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>Menos ruído</span>
+          <span><svg viewBox="0 0 24 24" fill="none"><path d="M5 12H19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8"/></svg>Mente leve</span>
+          <span><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Um passo de cada vez</span>
+        </div>
+
+        <div class="lp-pricing-card" data-reveal="scale">
           <div class="lp-pricing-glow" aria-hidden="true"></div>
 
           <div class="lp-pricing-left">
             <div class="lp-lifetime-badge">ACESSO VITALÍCIO · LICENÇA COMPLETA</div>
             <h3 class="lp-pricing-name">Lightfocus</h3>
             <p class="lp-pricing-tagline">
-              O sistema completo de foco singular para computador e celular, com sincronização em nuvem, WebApp instalável e todas as atualizações futuras inclusas.
+              O sistema completo de foco em uma tarefa por vez, no computador e no celular, com sincronização em nuvem, WebApp instalável e todas as atualizações futuras inclusas.
             </p>
 
             <ul class="lp-features-checklist">
               <li>
                 <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span><strong>Foco em 1 Tarefa por Vez</strong> + Modo Ultra Foco (<kbd>U</kbd>) sem distrações</span>
+                <span><strong>Foco em 1 tarefa por vez</strong> e Modo Ultra Foco (<kbd>U</kbd>) sem distrações</span>
               </li>
               <li>
                 <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span><strong>Captura Rápida (<kbd>Q</kbd>)</strong> com detecção ao vivo de data, horário, recorrência e tempo</span>
+                <span><strong>Captura rápida (<kbd>Q</kbd>)</strong> que entende data, horário, recorrência e tempo</span>
               </li>
               <li>
                 <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span><strong>WebApp Instalável no Chrome</strong> + Botão de <strong>Janela Solta Mobile</strong></span>
+                <span><strong>WebApp instalável no Chrome</strong> e <strong>janela solta em formato mobile</strong></span>
               </li>
               <li>
                 <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span><strong>Aviso de Tempo Acabando</strong> via notificação (pode ser desabilitado quando quiser)</span>
+                <span><strong>Aviso de tempo acabando</strong> por notificação, que você desliga quando quiser</span>
               </li>
               <li>
                 <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span><strong>Sincronização Bidirecional</strong> com Todoist + Google Agenda + Árvore de 6 Meses</span>
+                <span><strong>Sincronização nos dois sentidos</strong> com Todoist e Google Agenda, mais a árvore de 6 meses</span>
               </li>
             </ul>
           </div>
@@ -405,13 +1528,13 @@
           <div class="lp-pricing-right">
             <div class="lp-price-box">
               <span class="lp-price-label">PAGAMENTO ÚNICO · VITALÍCIO</span>
-              <div class="lp-price-value-row">
+              <div class="lp-price-value-row" aria-label="R$ 99,00">
                 <span class="lp-currency">R$</span>
                 <span class="lp-amount">99</span>
                 <span class="lp-cents">,00</span>
               </div>
               <span class="lp-price-installment-note">
-                À vista no <strong>PIX</strong> ou parcelado em até <strong>12x no cartão</strong> (juros/parcelamento por conta do comprador)
+                À vista no <strong>PIX</strong> ou em até <strong>12x no cartão</strong>. Juros do parcelamento por conta do comprador.
               </span>
 
               <div class="lp-payment-methods-pills">
@@ -432,7 +1555,7 @@
               </div>
 
               <button type="button" id="lpStripeCheckoutBtn" class="lp-stripe-buy-btn">
-                <span>Desbloquear Lightfocus Vitalício por R$ 99</span>
+                <span>Garantir meu acesso vitalício por R$ 99</span>
                 <svg class="icon-18" viewBox="0 0 24 24" fill="none">
                   <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -443,14 +1566,14 @@
                   <rect x="4" y="11" width="16" height="10" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
                   <path d="M8 11V7C8 4.79 9.79 3 12 3C14.21 3 16 4.79 16 7V11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                 </svg>
-                <span>Processado com segurança via <strong>Stripe</strong> · Liberação imediata</span>
+                <span>Pagamento seguro via <strong>Stripe</strong> · Liberação imediata</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Footer -->
+      <!-- Rodapé -->
       <footer class="lp-footer">
         <div class="lp-footer-left">
           <strong>Lightfocus</strong>
@@ -464,6 +1587,190 @@
       </footer>
     </div>
   </section>
+  <script>
+  /* Lightfocus landing: motions ao rolar (JS puro, sem bibliotecas). Não altera ids do app. */
+  (function () {
+    var root = document.getElementById('landingPageSection');
+    if (!root) return;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var hasIO = 'IntersectionObserver' in window;
+    var qs = function (s, c) { return (c || root).querySelector(s); };
+    var qsa = function (s, c) { return Array.prototype.slice.call((c || root).querySelectorAll(s)); };
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    var fmt = function (sec) { sec = Math.max(0, sec); return pad(Math.floor(sec / 60)) + ':' + pad(sec % 60); };
+
+    /* ---- Barras do medidor de estímulo (geradas, sem números inventados) ---- */
+    var bars = document.getElementById('lpNoiseBars');
+    if (bars && !bars.children.length) {
+      var hs = [72, 40, 90, 55, 100, 35, 80, 62, 95, 48, 70, 88, 42, 76, 58, 92, 38, 84, 66, 98, 52, 74, 44, 86];
+      hs.forEach(function (h, k) { var i = document.createElement('i'); i.style.setProperty('--h', h + '%'); i.style.setProperty('--k', k); bars.appendChild(i); });
+    }
+
+    /* ---- Reveal ao rolar ---- */
+    var reveals = qsa('[data-reveal]');
+    if (reduce || !hasIO) {
+      reveals.forEach(function (el) { el.classList.add('is-in'); });
+    } else {
+      var rio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); rio.unobserve(e.target); } });
+      }, { threshold: 0.14, rootMargin: '0px 0px -6% 0px' });
+      reveals.forEach(function (el) { rio.observe(el); });
+    }
+
+    /* ---- Palcos animados: só rodam quando visíveis ---- */
+    var liveHandlers = [];
+    function onLive(el, fn) { if (el) liveHandlers.push({ el: el, fn: fn, live: false }); }
+    function setLive(h, v) { if (h.live === v) return; h.live = v; h.el.classList.toggle('is-live', v); if (h.fn) h.fn(v); }
+
+    /* Capítulo 1: lista caótica se dissolvendo em um único card */
+    var grid = document.getElementById('lpChaosGrid');
+    var stateText = document.getElementById('lpReliefStateText');
+    var chaosTimers = [];
+    function clearChaos() { chaosTimers.forEach(clearTimeout); chaosTimers = []; }
+    function chaosCycle() {
+      clearChaos();
+      grid.classList.remove('is-filtering', 'is-focused');
+      if (stateText) stateText.textContent = 'Tudo ao mesmo tempo';
+      chaosTimers.push(setTimeout(function () { grid.classList.add('is-filtering'); if (stateText) stateText.textContent = 'Filtrando o ruído'; }, 2200));
+      chaosTimers.push(setTimeout(function () { grid.classList.add('is-focused'); if (stateText) stateText.textContent = 'Só o próximo passo'; }, 3300));
+      chaosTimers.push(setTimeout(chaosCycle, 9000));
+    }
+    if (grid) {
+      if (reduce) { grid.classList.add('is-focused'); }
+      else onLive(grid, function (v) { if (v) chaosCycle(); else { clearChaos(); grid.classList.remove('is-filtering', 'is-focused'); } });
+    }
+
+    /* Capítulo 2: antes e depois */
+    qsa('.lp-vh-stage').forEach(function (el) { onLive(el); });
+    /* Capítulo 5: cards por dentro do app */
+    qsa('.lp-mc-stage').forEach(function (el) { onLive(el); });
+    /* Capítulo 4: respiração */
+    qsa('.lp-breath').forEach(function (el) { onLive(el); });
+
+    /* Capítulo 3: mente cheia vs próximo passo */
+    var mind = document.getElementById('lpMindStage');
+    var mindBtns = qsa('[data-mind]');
+    var mindAuto = !reduce, mindTimer = null;
+    function setMind(calm) {
+      if (!mind) return;
+      mind.classList.toggle('is-calm', calm);
+      mindBtns.forEach(function (b) { b.setAttribute('aria-pressed', String((b.getAttribute('data-mind') === 'next') === calm)); });
+    }
+    function mindLoop() {
+      clearTimeout(mindTimer);
+      if (!mindAuto) return;
+      mindTimer = setTimeout(function () { setMind(!mind.classList.contains('is-calm')); mindLoop(); }, mind.classList.contains('is-calm') ? 5200 : 3400);
+    }
+    mindBtns.forEach(function (b) {
+      b.addEventListener('click', function () { mindAuto = false; clearTimeout(mindTimer); setMind(b.getAttribute('data-mind') === 'next'); });
+    });
+    if (mind) {
+      if (reduce) setMind(true);
+      else onLive(mind, function (v) { if (v) mindLoop(); else clearTimeout(mindTimer); });
+    }
+
+    /* Capítulo 4: tarefas concluídas uma de cada vez */
+    var day = document.getElementById('lpDayRail');
+    var dayItems = day ? qsa('.lp-day-item', day) : [];
+    var dayProg = document.getElementById('lpDayProgress');
+    var dayCount = document.getElementById('lpDayCount');
+    var dayStep = 0, dayTimer = null;
+    function renderDay() {
+      dayItems.forEach(function (it, i) { it.classList.toggle('is-done', i < dayStep); it.classList.toggle('is-current', i === dayStep); });
+      day.classList.toggle('is-complete', dayStep >= dayItems.length);
+      if (dayCount) dayCount.textContent = Math.min(dayStep, dayItems.length) + ' de ' + dayItems.length;
+      if (dayProg && dayItems.length) {
+        var last = dayItems[Math.min(dayStep, dayItems.length - 1)];
+        var h = dayStep === 0 ? 0 : (last.offsetTop + last.offsetHeight / 2 - 10);
+        dayProg.style.height = Math.max(0, h) + 'px';
+      }
+    }
+    function dayLoop() {
+      clearTimeout(dayTimer);
+      dayTimer = setTimeout(function () {
+        dayStep = dayStep > dayItems.length ? 0 : dayStep + 1;
+        renderDay(); dayLoop();
+      }, dayStep >= dayItems.length ? 3200 : 1500);
+    }
+    if (day && dayItems.length) {
+      if (reduce) { dayStep = dayItems.length; renderDay(); }
+      else { renderDay(); onLive(day, function (v) { if (v) dayLoop(); else clearTimeout(dayTimer); }); }
+    }
+
+    if (hasIO) {
+      var lio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          liveHandlers.forEach(function (h) { if (h.el === e.target) setLive(h, e.isIntersecting); });
+        });
+      }, { threshold: 0.25 });
+      liveHandlers.forEach(function (h) { lio.observe(h.el); });
+    } else if (!reduce) {
+      liveHandlers.forEach(function (h) { setLive(h, true); });
+    }
+
+    /* ---- Cronômetros de demonstração (hero e card do método) ---- */
+    var heroTimer = document.getElementById('lpHeroTimer');
+    var heroRail = document.getElementById('lpHeroRail');
+    var heroLeft = 25 * 60, heroTotal = 25 * 60;
+    var demoClock = document.getElementById('lpMotionLiveClock');
+    var demoLeft = 18 * 60 + 42, demoLast = demoClock ? demoClock.textContent : '', demoOwned = true;
+    function tick() {
+      if (document.hidden) return;
+      if (heroTimer) {
+        heroLeft = heroLeft <= 0 ? heroTotal : heroLeft - 1;
+        heroTimer.textContent = fmt(heroLeft);
+        if (heroRail) heroRail.style.width = ((heroTotal - heroLeft) / heroTotal * 100).toFixed(2) + '%';
+      }
+      if (demoClock && demoOwned) {
+        if (demoClock.textContent !== demoLast) { demoOwned = false; return; } /* outro script assumiu o relógio */
+        demoLeft = demoLeft <= 0 ? 25 * 60 : demoLeft - 1;
+        demoLast = fmt(demoLeft); demoClock.textContent = demoLast;
+      }
+    }
+    if (!reduce) setInterval(tick, 1000);
+
+    /* ---- Preço: contagem suave até 99 ---- */
+    var amount = qs('.lp-amount');
+    if (amount && !reduce && hasIO) {
+      var aio = new IntersectionObserver(function (entries) {
+        if (!entries[0].isIntersecting) return;
+        aio.disconnect();
+        var start = performance.now(), dur = 1100, target = 99;
+        (function step(t) {
+          var p = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - p, 3);
+          amount.textContent = String(Math.round(target * e));
+          if (p < 1) requestAnimationFrame(step); else amount.textContent = '99';
+        })(start);
+      }, { threshold: 0.6 });
+      aio.observe(amount);
+    }
+
+    /* ---- Navbar: estado ao rolar e link ativo ---- */
+    var navLinks = qsa('.lp-nav-link');
+    var onScroll = function () { root.classList.toggle('is-scrolled', window.scrollY > 12); };
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+    if (hasIO && navLinks.length) {
+      var sio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          navLinks.forEach(function (a) { a.classList.toggle('is-current', a.getAttribute('href') === '#' + e.target.id); });
+        });
+      }, { rootMargin: '-45% 0px -50% 0px' });
+      navLinks.forEach(function (a) { var t = document.getElementById(a.getAttribute('href').slice(1)); if (t) sio.observe(t); });
+    }
+
+    /* ---- Rolagem suave para âncoras internas da landing ---- */
+    qsa('a[href^="#"]').forEach(function (a) {
+      a.addEventListener('click', function (ev) {
+        var id = a.getAttribute('href').slice(1);
+        var t = id && document.getElementById(id);
+        if (!t || !root.contains(t)) return;
+        ev.preventDefault();
+        t.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      });
+    });
+  })();
+  </script>
 
   <!-- ====================================================================
        1. AUTH GATE (Apple Liquid Glass SaaS Login / Criar Conta)
@@ -1139,7 +2446,7 @@
   </div>
 
   <!-- ====================================================================
-       3. MODAL: SHORTCUT 'Q' — QUICK-ADD WITH INLINE HIGHLIGHTED TAGS
+       3. MODAL: SHORTCUT 'Q' · QUICK-ADD WITH INLINE HIGHLIGHTED TAGS
        ==================================================================== -->
   <div id="quickAddModal" class="glass-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="quickAddModalTitle">
     <div class="glass-modal-sheet quick-add-sheet">
@@ -1257,7 +2564,7 @@
   </div>
 
   <!-- ====================================================================
-       4. MODAL: SHORTCUT 'CMD+K / CTRL+K' — APPLE SPOTLIGHT SEARCH & COMMANDS
+       4. MODAL: SHORTCUT 'CMD+K / CTRL+K' · APPLE SPOTLIGHT SEARCH & COMMANDS
        ==================================================================== -->
   <div id="spotlightModal" class="glass-modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="Spotlight de Busca e Comandos">
     <div class="glass-modal-sheet spotlight-sheet">
@@ -1575,7 +2882,7 @@
 
 
   <!-- ====================================================================
-       8. MODAL: CHECKOUT STRIPE LIGHTFOCUS VITALÍCIO — R$ 99 (PIX OU CARTÃO 12X)
+       8. MODAL: CHECKOUT STRIPE LIGHTFOCUS VITALÍCIO · R$ 99 (PIX OU CARTÃO 12X)
        ==================================================================== -->
   <div id="stripeCheckoutModal" class="glass-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="stripeCheckoutModalTitle">
     <div class="glass-modal-sheet stripe-checkout-sheet">
@@ -1730,8 +3037,8 @@
     <span id="glassToastText" class="toast-text">Pronto</span>
   </div>
 
-  <script src="/tasks-seed.js?v=20261029v12"></script>
-  <script src="/lp.js?v=20261029v12"></script>
-  <script src="/app.js?v=20261029v12"></script>
+  <script src="/tasks-seed.js?v=20261029v13"></script>
+  <script src="/lp.js?v=20261029v13"></script>
+  <script src="/app.js?v=20261029v13"></script>
 </body>
 </html>
