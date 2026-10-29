@@ -180,3 +180,7 @@ body:not(.pwa-installable) .install-pwa-trigger.hide-when-unavailable { display:
 /* Janela App (popup 390x740) — always compact */
 .lf-mini .lp-wrapper { display: none !important; }
 .lf-mini .motivational-footer, .lf-mini .mini-window-trigger, .lf-mini .install-pwa-trigger { display: none !important; }
+/* v9 mobile safety */
+.lp-wrapper { overflow-x: clip; max-width: 100%; }
+.lp-wrapper *, .lp-wrapper *::before, .lp-wrapper *::after { box-sizing: border-box; min-width: 0; }
+@media (max-width: 480px) { .lp-wrapper [class*="type"] { flex-wrap: wrap; overflow-wrap: anywhere; white-space: normal; } .lp-pricing-glow { inset: 0 !important; width: auto !important; max-width: 100%; } }

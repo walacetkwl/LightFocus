@@ -3537,3 +3537,63 @@ body.ultra-focus-mode .liquid-focus-card {
   cursor: pointer;
   user-select: none;
 }
+
+/* ==== v9 — Mobile compact, no horizontal overflow (2026-10-29) ==== */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: hidden; }
+.spatial-stage { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1024px) { .spatial-stage { grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.95fr); } }
+.spatial-stage > *, .focus-column, .focus-column *, .top-glass-bar, .top-glass-bar > * { min-width: 0; }
+.focus-column, #focusTaskCard, .glass-card { max-width: 100%; }
+#focusTaskTitle, .task-desc, .task-description, .subtask-item, .subtask-item span, .lp-wrapper p, .lp-wrapper h1, .lp-wrapper h2 { overflow-wrap: anywhere; word-break: normal; }
+img, svg, video, canvas, textarea, input, select { max-width: 100%; }
+.card-meta-header, .meta-right-group, .task-tags, .pulse-mode-chips, .pulse-mode-segment, .alert-mode-chips, [class*="chips"] { flex-wrap: wrap; }
+.f-label-short { display: none; }
+
+@media (max-width: 768px) {
+  .plant-xp-capsule { display: none !important; }
+  .filter-segmented { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; gap: 2px; max-width: 100%; }
+  .filter-segmented::-webkit-scrollbar { display: none; }
+  .filter-segmented .filter-pill { flex: 0 0 auto; white-space: nowrap; padding: 7px 12px; font-size: 13px; }
+  .top-bar-right { flex-wrap: wrap; gap: 6px; }
+}
+@media (max-width: 480px) {
+  .app-shell, .app-main, main, .spatial-stage { padding-left: 12px !important; padding-right: 12px !important; }
+  .top-glass-bar { padding: 12px !important; margin-left: 0 !important; margin-right: 0 !important; border-radius: 22px; }
+  #focusTaskCard, .glass-card { padding: 16px 14px !important; border-radius: 22px; }
+  #focusTaskCard .glass-card, #focusTaskCard [class*="card"], .glass-card .glass-card { padding: 12px !important; border-radius: 16px; }
+  #focusTaskTitle { font-size: 22px !important; line-height: 1.2; }
+  .card-meta-header { gap: 6px; }
+  .meta-right-group { margin-left: 0 !important; }
+  .timer-actions, .timer-controls-row, [class*="timer-actions"] { flex-wrap: wrap; gap: 8px; }
+  .timer-actions > *, [class*="timer-actions"] > * { flex: 1 1 auto; }
+  .lofi-studio-popover { left: 8px !important; right: 8px !important; top: auto !important; bottom: 8px !important; width: auto !important; max-width: none !important; max-height: 70vh; overflow-y: auto; border-radius: 22px; }
+}
+/* touch: hide keyboard hints */
+@media (hover: none), (max-width: 768px) {
+  kbd, .btn-kbd-light, .pill-kbd, .spotlight-kbd, .ultra-focus-exit-pill kbd { display: none !important; }
+  .ultra-focus-exit-pill { display: none !important; }
+}
+
+/* ==== Splash screen (Liquid Glass mono) ==== */
+.lf-splash { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; background: radial-gradient(120% 80% at 50% 40%, #ffffff 0%, #eef0f4 55%, #e3e6ec 100%); transition: opacity .5s ease, visibility .5s; }
+[data-theme="dark"] .lf-splash { background: radial-gradient(120% 80% at 50% 40%, #1c1d21 0%, #0d0e10 70%); color: #fff; }
+.lf-splash.out { opacity: 0; visibility: hidden; pointer-events: none; }
+.lf-splash-inner { display: flex; flex-direction: column; align-items: center; gap: 18px; color: #111; }
+[data-theme="dark"] .lf-splash-inner { color: #f5f5f7; }
+.lf-splash-orb { position: relative; width: 112px; height: 112px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.45); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border: 1px solid rgba(255,255,255,.8); box-shadow: 0 20px 60px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.9); animation: lfOrbIn .7s cubic-bezier(.2,.9,.2,1) both; }
+[data-theme="dark"] .lf-splash-orb { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.16); }
+.lf-splash-orb::after { content: ""; position: absolute; inset: -30px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 60%); opacity: 0; animation: lfGlow 1.1s .35s ease-out both; pointer-events: none; mix-blend-mode: screen; }
+.lf-splash-orb svg { width: 64px; height: 64px; }
+.lf-splash-orb .r1, .lf-splash-orb .r2 { stroke-dasharray: 80; stroke-dashoffset: 80; animation: lfDraw .8s .15s ease-out forwards; }
+.lf-splash-orb .r2 { animation-delay: .3s; stroke-dasharray: 50; stroke-dashoffset: 50; }
+.lf-splash-orb .dot { transform-origin: 14px 14px; transform: scale(0); animation: lfDot .45s .6s cubic-bezier(.3,1.6,.5,1) forwards; }
+.lf-splash-word { font: 600 28px/1 -apple-system, "SF Pro Display", Inter, system-ui, sans-serif; letter-spacing: -.02em; opacity: 0; transform: translateY(8px); filter: blur(6px); animation: lfWord .6s .55s ease-out forwards; }
+.lf-splash-tag { font: 500 13px/1 -apple-system, Inter, system-ui, sans-serif; opacity: 0; letter-spacing: .02em; animation: lfTag .5s .85s ease-out forwards; }
+@keyframes lfOrbIn { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes lfGlow { 0% { opacity: 0; transform: scale(.6); } 45% { opacity: .9; } 100% { opacity: 0; transform: scale(1.4); } }
+@keyframes lfDraw { to { stroke-dashoffset: 0; } }
+@keyframes lfDot { to { transform: scale(1); } }
+@keyframes lfWord { to { opacity: 1; transform: none; filter: none; } }
+@keyframes lfTag { to { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .lf-splash, .lf-splash * { animation: none !important; transition: none !important; } .lf-splash-word, .lf-splash-tag { opacity: 1; transform: none; filter: none; } .lf-splash-orb .r1, .lf-splash-orb .r2 { stroke-dashoffset: 0; } .lf-splash-orb .dot { transform: none; } }

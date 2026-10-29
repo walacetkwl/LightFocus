@@ -2,24 +2,34 @@
 <html lang="pt-BR" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>Lightfocus</title>
   <meta name="description" content="Pare de olhar para tudo o que você tem para fazer. Foque apenas na próxima tarefa e deixe o seu dia mais light." />
-  <meta name="theme-color" content="#0A0B0E" />
+  <meta name="theme-color" content="#EEF0F4" />
+  <link rel="apple-touch-startup-image" href="/icon-512.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Lightfocus" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261028v8" />
-  <link rel="alternate icon" href="/favicon.ico?v=20261028v8" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261028v8" />
-  <link rel="manifest" href="/manifest.webmanifest?v=20261028v8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261029v9" />
+  <link rel="alternate icon" href="/favicon.ico?v=20261029v9" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261029v9" />
+  <link rel="manifest" href="/manifest.webmanifest?v=20261029v9" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=20261028v8" />
-  <link rel="stylesheet" href="/lp.css?v=20261028v8" />
+  <link rel="stylesheet" href="/styles.css?v=20261029v9" />
+  <link rel="stylesheet" href="/lp.css?v=20261029v9" />
 </head>
 <body>
+  <div id="lfSplash" class="lf-splash" aria-hidden="true">
+    <script>try{if(sessionStorage.getItem('lf_splash_seen')){document.getElementById('lfSplash').remove();}}catch(e){}</script>
+    <div class="lf-splash-inner">
+      <div class="lf-splash-orb"><svg viewBox="0 0 28 28" fill="none"><circle class="r1" cx="14" cy="14" r="11" stroke="currentColor" stroke-width="1.4" stroke-opacity=".4"/><circle class="r2" cx="14" cy="14" r="7" stroke="currentColor" stroke-width="1.6" stroke-opacity=".75"/><circle class="dot" cx="14" cy="14" r="3" fill="currentColor"/></svg></div>
+      <div class="lf-splash-word">Lightfocus</div>
+      <div class="lf-splash-tag">Uma tarefa por vez.</div>
+    </div>
+  </div>
+  <script>(function(){var s=document.getElementById('lfSplash');if(!s)return;try{sessionStorage.setItem('lf_splash_seen','1')}catch(e){}var rm=matchMedia('(prefers-reduced-motion: reduce)').matches;setTimeout(function(){s.classList.add('out');setTimeout(function(){s.remove()},600)},rm?300:1450);})();</script>
   <!-- Ambient Optical Canvas & Refractive Light Pulse Overlay -->
   <div class="ambient-canvas" aria-hidden="true">
     <div class="ambient-orb orb-1"></div>
@@ -1742,8 +1752,8 @@
     <span id="glassToastText" class="toast-text">Pronto</span>
   </div>
 
-  <script src="/tasks-seed.js?v=20261028v8"></script>
-  <script src="/lp.js?v=20261028v8"></script>
-  <script src="/app.js?v=20261028v8"></script>
+  <script src="/tasks-seed.js?v=20261029v9"></script>
+  <script src="/lp.js?v=20261029v9"></script>
+  <script src="/app.js?v=20261029v9"></script>
 </body>
 </html>

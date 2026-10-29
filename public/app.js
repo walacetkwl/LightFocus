@@ -3057,13 +3057,16 @@
       }
       const positionLofiPopover = () => {
         const rect = lofiPill.getBoundingClientRect();
-        const popW = 310;
+        const popW = Math.min(310, window.innerWidth - 16);
         const topPx = Math.max(64, Math.round(rect.bottom + 10));
-        const leftPx = Math.max(12, Math.min(window.innerWidth - popW - 16, Math.round(rect.right - popW)));
+        const leftPx = Math.max(8, Math.min(window.innerWidth - popW - 8, Math.round(rect.right - popW)));
         lofiPop.style.position = "fixed";
         lofiPop.style.top = topPx + "px";
         lofiPop.style.left = leftPx + "px";
         lofiPop.style.right = "auto";
+        lofiPop.style.width = popW + "px";
+        lofiPop.style.transform = "none";
+        lofiPop.style.margin = "0";
         lofiPop.style.zIndex = "9950";
       };
       lofiPill.addEventListener("click", (e) => {
