@@ -4,7 +4,7 @@
   "agent": "Miss Minutos · Adm do Tempo",
   "agentId": "48d857a0-88cd-4c58-887e-43fd9aa850bb",
   "timezone": "America/Sao_Paulo",
-  "updatedAt": "2026-10-28T12:03:29-03:00",
+  "updatedAt": "2026-10-29T00:17:11-03:00",
   "sessions": [
     {
       "sessionId": "lf_1793199750065_egc51",
@@ -130,7 +130,7 @@
     },
     "69hPQpf8Cmm5R4RG": {
       "taskId": "69hPQpf8Cmm5R4RG",
-      "content": " Aquecer Leads",
+      "content": "Aquecer Leads",
       "projectId": "6CrgFRpqRPQVfgjG",
       "totalSessions": 1,
       "timedSessions": 0,
@@ -160,7 +160,7 @@
     },
     "68QGrWJwP2GMp2PG": {
       "taskId": "68QGrWJwP2GMp2PG",
-      "content": " Café leitura",
+      "content": "Café leitura",
       "projectId": "6CrgFRpqRPQVfgjG",
       "totalSessions": 1,
       "timedSessions": 0,
@@ -233,14 +233,16 @@
           "content": "Liberar conversas",
           "durationSeconds": 0,
           "durationMinutes": 0,
+          "estimatedMinutes": 30,
           "completedWithoutTimer": true,
           "endedAt": "2026-10-28T15:02:30.056Z"
         },
         {
           "taskId": "69hPQpf8Cmm5R4RG",
-          "content": " Aquecer Leads",
+          "content": "Aquecer Leads",
           "durationSeconds": 0,
           "durationMinutes": 0,
+          "estimatedMinutes": 15,
           "completedWithoutTimer": true,
           "endedAt": "2026-10-28T15:02:39.537Z"
         },
@@ -249,14 +251,16 @@
           "content": "Remedio",
           "durationSeconds": 0,
           "durationMinutes": 0,
+          "estimatedMinutes": null,
           "completedWithoutTimer": true,
           "endedAt": "2026-10-28T15:02:41.822Z"
         },
         {
           "taskId": "68QGrWJwP2GMp2PG",
-          "content": " Café leitura",
+          "content": "Café leitura",
           "durationSeconds": 0,
           "durationMinutes": 0,
+          "estimatedMinutes": null,
           "completedWithoutTimer": true,
           "endedAt": "2026-10-28T15:03:12.511Z"
         },
@@ -265,6 +269,7 @@
           "content": "Status de Tarefas",
           "durationSeconds": 0,
           "durationMinutes": 0,
+          "estimatedMinutes": null,
           "completedWithoutTimer": true,
           "endedAt": "2026-10-28T15:03:21.257Z"
         },
@@ -273,6 +278,7 @@
           "content": "Enviar propostas PalcoPRO",
           "durationSeconds": 0,
           "durationMinutes": 0,
+          "estimatedMinutes": null,
           "completedWithoutTimer": true,
           "endedAt": "2026-10-28T15:03:27.109Z"
         },
@@ -281,10 +287,12 @@
           "content": "liberar projeto vagner",
           "durationSeconds": 0,
           "durationMinutes": 0,
+          "estimatedMinutes": null,
           "completedWithoutTimer": true,
           "endedAt": "2026-10-28T15:03:29.925Z"
         }
       ]
     }
-  }
+  },
+  "taskEstimates": {}
 }

@@ -1,5 +1,5 @@
 /* ============================================================================
-   LightFocus v3.5 — Apple Liquid Glass Commercial SaaS Edition (app.js)
+   Lightfocus v3.5 — Apple Liquid Glass Commercial SaaS Edition (app.js)
    - Clean Sans-Serif Tabular Numerals (zero monospace fonts)
    - Live Inline Highlighted Function Tags in Quick-Add ('Q') + Clear Explanation
    - Custom Time Estimates Everywhere (Quick-Add & Focus Card)

@@ -2,12 +2,22 @@
 <html lang="pt-BR" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>LightFocus — Apple Liquid Glass Focus & Agenda</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>Lightfocus</title>
+  <meta name="description" content="Pare de olhar para tudo o que você tem para fazer. Foque apenas na próxima tarefa e deixe o seu dia mais light." />
+  <meta name="theme-color" content="#0A0B0E" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Lightfocus" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261028v8" />
+  <link rel="alternate icon" href="/favicon.ico?v=20261028v8" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261028v8" />
+  <link rel="manifest" href="/manifest.webmanifest?v=20261028v8" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=20261028v7" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=20261028v8" />
+  <link rel="stylesheet" href="/lp.css?v=20261028v8" />
 </head>
 <body>
   <!-- Ambient Optical Canvas & Refractive Light Pulse Overlay -->
@@ -27,10 +37,450 @@
     <kbd>Esc</kbd>
   </button>
 
+
+  <!-- ====================================================================
+       0. LIGHTFOCUS OFFICIAL LANDING PAGE (Apple Liquid Glass + In-App Motions + R$ 99 Stripe)
+       ==================================================================== -->
+  <section id="landingPageSection" class="lp-wrapper" aria-label="Lightfocus — Apresentação Oficial">
+    <!-- Sticky Liquid Glass Navbar -->
+    <header class="lp-navbar">
+      <div class="lp-nav-inner">
+        <a href="#top" class="lp-brand-lockup" id="lpBrandTopLink">
+          <span class="lp-brand-orb" aria-hidden="true">
+            <svg viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="14" stroke="currentColor" stroke-width="1.6" stroke-opacity="0.38"/>
+              <circle cx="18" cy="18" r="9" stroke="currentColor" stroke-width="1.8" stroke-opacity="0.8"/>
+              <circle cx="18" cy="18" r="4" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="lp-brand-name">Lightfocus</span>
+        </a>
+
+        <nav class="lp-nav-links" aria-label="Seções da página">
+          <a href="#lpFilosofia" class="lp-nav-link">O Método</a>
+          <a href="#lpMotions" class="lp-nav-link">Por Dentro do App</a>
+          <a href="#lpWebApp" class="lp-nav-link">WebApp &amp; Janela</a>
+          <a href="#lpPricing" class="lp-nav-link">R$ 99 Vitalício</a>
+        </nav>
+
+        <div class="lp-nav-actions">
+          <button type="button" id="lpOpenMiniWindowBtn" class="lp-btn-glass-sm" title="Abrir Lightfocus em janela solta formato mobile">
+            <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+              <rect x="4" y="3" width="16" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M9 7H15M10 17H14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <span class="lp-hide-xs">Abrir em Janela</span>
+          </button>
+
+          <button type="button" id="lpInstallWebAppBtn" class="lp-btn-glass-sm" title="Instalar WebApp no Chrome">
+            <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3V15M12 15L8 11M12 15L16 11M4 18H20" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="lp-hide-xs">Instalar App</span>
+          </button>
+
+          <button type="button" id="lpEnterAppBtn" class="lp-btn-enter">
+            <span id="lpEnterAppLabel">Entrar</span>
+            <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <div class="lp-container">
+      <section class="lp-hero">
+        <div class="lp-hero-pill">
+          <span class="lp-pulse-dot"></span>
+          <span>MÉTODO DE FOCO SINGULAR · WEBAPP CHROME &amp; MOBILE FIRST</span>
+        </div>
+
+        <h1 class="lp-hero-title">
+          Pare de olhar para tudo o que você tem para fazer.<br />
+          <span class="lp-text-gradient">Foque apenas na próxima tarefa</span> — e deixe o seu dia mais light.
+        </h1>
+
+        <p class="lp-hero-subtitle">
+          Listas infinitas com 30 tarefas abertas ao mesmo tempo paralisam o seu cérebro antes mesmo de você começar. O <strong>Lightfocus</strong> esconde o ruído, isola somente o seu próximo passo em um único card sereno com cronômetro ativo e avisa quando o tempo está acabando.
+        </p>
+
+        <div class="lp-hero-cta-row">
+          <button type="button" id="lpHeroBuyBtn" class="lp-cta-primary">
+            <span>Garantir Acesso Vitalício — R$ 99</span>
+            <span class="lp-cta-sub-pill">PIX ou 12x no Cartão</span>
+          </button>
+
+          <button type="button" id="lpHeroInstallBtn" class="lp-cta-secondary">
+            <svg class="icon-16" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M12 8V15M12 15L9 12M12 15L15 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Instalar WebApp no Chrome</span>
+          </button>
+
+          <button type="button" id="lpHeroWindowBtn" class="lp-cta-secondary">
+            <svg class="icon-16" viewBox="0 0 24 24" fill="none">
+              <rect x="6" y="2" width="12" height="20" rx="3" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M10 18H14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <span>Abrir em Janela Mobile</span>
+          </button>
+        </div>
+
+        <div class="lp-hero-trust-row">
+          <span><svg class="icon-14" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Pagamento único · Sem mensalidade</span>
+          <span><svg class="icon-14" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Sincroniza Todoist &amp; Google Agenda</span>
+          <span><svg class="icon-14" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Mobile-First + Janela Flutuante</span>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           LIVE INTERACTIVE MOTION SHOWCASE 1: DO CAOS AO FOCO ÚNICO
+           ================================================================== -->
+      <section id="lpFilosofia" class="lp-philosophy-section">
+        <div class="lp-section-header">
+          <span class="lp-eyebrow">POR QUE O SEU DIA PARECE PESADO DEMAIS?</span>
+          <h2 class="lp-section-title">Olhar para 25 pendências ao mesmo tempo drena a energia de executar a primeira.</h2>
+          <p class="lp-section-desc">
+            Quando você abre um gerenciador tradicional, seu olho escaneia atrasos, subtarefas, reuniões de sexta-feira e projetos inteiros de uma só vez. O <strong>Lightfocus</strong> aplica o princípio da lente única: tudo o que não é para <em>agora</em> desaparece até você concluir a tarefa atual.
+          </p>
+        </div>
+
+        <div class="lp-chaos-vs-light-grid">
+          <!-- Left: The Old Overwhelming List (Animated Chaos) -->
+          <div class="lp-compare-card lp-chaos-card">
+            <div class="lp-compare-badge lp-badge-danger">VISÃO TRADICIONAL · ANSIEDADE VISUAL</div>
+            <h3 class="lp-compare-title">Você olha para tudo e trava</h3>
+            <p class="lp-compare-sub">18 tarefas disputando sua atenção simultaneamente.</p>
+            <div class="lp-chaos-stack" aria-hidden="true">
+              <div class="lp-chaos-row"><span class="c-dot red"></span><span>Responder 14 clientes pendentes no WhatsApp</span><span class="c-tag">Atrasada</span></div>
+              <div class="lp-chaos-row"><span class="c-dot orange"></span><span>Revisar campanha de lançamento e criativos</span><span class="c-tag">Hoje</span></div>
+              <div class="lp-chaos-row"><span class="c-dot blue"></span><span>Alinhamento financeiro mensal + planilha</span><span class="c-tag">14:00</span></div>
+              <div class="lp-chaos-row"><span class="c-dot red"></span><span>Gravar 3 vídeos novos e aprovar roteiro</span><span class="c-tag">Urgente</span></div>
+              <div class="lp-chaos-row"><span class="c-dot gray"></span><span>Atualizar automações e página de captura</span><span class="c-tag">+12 itens...</span></div>
+            </div>
+          </div>
+
+          <!-- Center Animated Dissolve Arrow -->
+          <div class="lp-transform-bridge" aria-hidden="true">
+            <div class="lp-bridge-orb">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span class="lp-bridge-label">Filtro Lightfocus</span>
+          </div>
+
+          <!-- Right: The Serene Single-Task Lightfocus Motion -->
+          <div class="lp-compare-card lp-serene-card">
+            <div class="lp-compare-badge lp-badge-blue">EXPERIÊNCIA LIGHTFOCUS · 1 TAREFA POR VEZ</div>
+            <h3 class="lp-compare-title">Apenas o próximo passo existe</h3>
+            <p class="lp-compare-sub">Todo o resto aguarda em silêncio na fila até você dar check.</p>
+
+            <!-- Animated Live Mini Focus Card -->
+            <div class="lp-motion-focus-preview">
+              <div class="lp-mf-top">
+                <span class="lp-mf-pill">01 / 08</span>
+                <span class="lp-mf-pill blue">P1 · Agora</span>
+                <span class="lp-mf-pill">25 min</span>
+              </div>
+              <div class="lp-mf-hero">
+                <div class="lp-mf-check-anim">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M6 12.5L10.2 16.5L18 8.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="lp-mf-texts">
+                  <strong>Revisar campanha de lançamento e aprovar criativo principal</strong>
+                  <span>#marketing · Próxima atividade isolada</span>
+                </div>
+              </div>
+              <div class="lp-mf-timer-bar">
+                <div class="lp-mf-timer-left">
+                  <span class="lp-mf-live-dot"></span>
+                  <span class="lp-mf-clock" id="lpMotionLiveClock">18:42</span>
+                  <span class="lp-mf-status">Em foco · Notificação ativa</span>
+                </div>
+                <span class="lp-mf-btn-sim">Concluir</span>
+              </div>
+              <div class="lp-mf-progress-rail">
+                <div class="lp-mf-progress-fill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           4 IN-APP MOTION SHOWCASES ("POR DENTRO DO LIGHTFOCUS")
+           ================================================================== -->
+      <section id="lpMotions" class="lp-motions-section">
+        <div class="lp-section-header">
+          <span class="lp-eyebrow">MOTIONS REAIS · VEJA O LIGHTFOCUS POR DENTRO</span>
+          <h2 class="lp-section-title">Construído para velocidade mental, silêncio visual e execução leve.</h2>
+          <p class="lp-section-desc">
+            Cada detalhe do <strong>Lightfocus</strong> foi desenhado para eliminar cliques desnecessários — no computador, na janela compacta do Chrome ou no celular.
+          </p>
+        </div>
+
+        <div class="lp-motions-bento">
+          <!-- MOTION CARD A: Tecla Q com Tags Inteligentes Demarcadas ao Vivo -->
+          <article class="lp-motion-card">
+            <div class="lp-mc-header">
+              <span class="lp-mc-tag">MOTION 01 · CAPTURA INSTANTÂNEA</span>
+              <h3>Aperte <kbd>Q</kbd> e agende escrevendo como você pensa</h3>
+              <p>Digite o título junto com o dia, recorrência, horário, duração e prioridade. O Lightfocus destaca cada função em cores em tempo real.</p>
+            </div>
+            <div class="lp-mc-stage lp-stage-nlp" aria-hidden="true">
+              <div class="lp-nlp-window">
+                <div class="lp-nlp-top">
+                  <span class="lp-kbd-q">Q</span>
+                  <span>Nova Tarefa Inteligente</span>
+                </div>
+                <div class="lp-nlp-typing-box">
+                  <span class="lp-type-plain">Planejar sprint </span>
+                  <span class="lp-type-token purple">toda segunda</span>
+                  <span class="lp-type-plain"> </span>
+                  <span class="lp-type-token blue">14:30</span>
+                  <span class="lp-type-plain"> </span>
+                  <span class="lp-type-token green">35m</span>
+                  <span class="lp-type-plain"> </span>
+                  <span class="lp-type-token orange">p1</span>
+                  <span class="lp-type-cursor"></span>
+                </div>
+                <div class="lp-nlp-pills-row">
+                  <span class="lp-mini-chip purple">Recorrência: Toda Segunda</span>
+                  <span class="lp-mini-chip blue">Horário: 14:30</span>
+                  <span class="lp-mini-chip green">Tempo: 35 min</span>
+                  <span class="lp-mini-chip orange">Prioridade P1</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- MOTION CARD B: Janela Solta Simplificada (Chrome App Window Mobile) + WebApp -->
+          <article id="lpWebApp" class="lp-motion-card">
+            <div class="lp-mc-header">
+              <span class="lp-mc-tag">MOTION 02 · JANELA SOLTA &amp; WEBAPP CHROME</span>
+              <h3>Abra em uma janela mobile flutuante ou instale como App nativo</h3>
+              <p>Com 1 clique em <strong>Abrir em Janela</strong>, o Lightfocus descola do navegador em uma janela simplificada do Chrome em formato mobile ao lado do seu trabalho.</p>
+            </div>
+            <div class="lp-mc-stage lp-stage-window" aria-hidden="true">
+              <div class="lp-desktop-mock">
+                <div class="lp-desktop-bg-lines">
+                  <span></span><span></span><span></span>
+                </div>
+                <!-- Floating Mobile Chrome App Window -->
+                <div class="lp-floating-chrome-app">
+                  <div class="lp-fca-titlebar">
+                    <div class="lp-fca-dots"><i></i><i></i><i></i></div>
+                    <span>Lightfocus</span>
+                    <span class="lp-fca-badge">App</span>
+                  </div>
+                  <div class="lp-fca-body">
+                    <div class="lp-fca-row1">
+                      <span class="lp-fca-step">01 / 05</span>
+                      <span class="lp-fca-est">20 min</span>
+                    </div>
+                    <div class="lp-fca-task">
+                      <span class="lp-fca-circle"></span>
+                      <strong>Finalizar proposta comercial</strong>
+                    </div>
+                    <div class="lp-fca-timer">
+                      <span>19:08</span>
+                      <span class="lp-fca-play">Focando</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- MOTION CARD C: Notificação de Tempo Acabando (Configurável) -->
+          <article class="lp-motion-card">
+            <div class="lp-mc-header">
+              <span class="lp-mc-tag">MOTION 03 · AVISO DE FIM DE TEMPO</span>
+              <h3>Notificação inteligente quando o tempo da tarefa está acabando</h3>
+              <p>Receba um aviso visual e notificação do sistema quando faltar 1 ou 2 minutos para encerrar a tarefa — e desabilite com 1 clique sempre que quiser silêncio absoluto.</p>
+            </div>
+            <div class="lp-mc-stage lp-stage-notify" aria-hidden="true">
+              <div class="lp-notify-showcase">
+                <!-- Animated Notification Banner -->
+                <div class="lp-os-notification">
+                  <div class="lp-os-notif-icon">
+                    <svg viewBox="0 0 28 28" fill="none">
+                      <circle cx="14" cy="14" r="10" stroke="currentColor" stroke-width="1.8" stroke-opacity="0.5"/>
+                      <circle cx="14" cy="14" r="4" fill="currentColor"/>
+                    </svg>
+                  </div>
+                  <div class="lp-os-notif-text">
+                    <div class="lp-os-notif-top">
+                      <strong>Lightfocus · Tempo acabando</strong>
+                      <span>agora</span>
+                    </div>
+                    <p>Falta 1 minuto para concluir: Revisar métricas da semana</p>
+                  </div>
+                </div>
+
+                <!-- Configurable Toggle Preview -->
+                <div class="lp-notify-toggle-preview">
+                  <div class="lp-ntp-left">
+                    <span class="lp-ntp-dot"></span>
+                    <span>Notificar quando o tempo estiver acabando</span>
+                  </div>
+                  <span class="lp-ntp-switch">Ativado</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- MOTION CARD D: Árvore Botânica de 6 Meses + Lo-Fi + Mobile First -->
+          <article class="lp-motion-card">
+            <div class="lp-mc-header">
+              <span class="lp-mc-tag">MOTION 04 · JORNADA DE 6 MESES &amp; LO-FI</span>
+              <h3>Sua consistência faz crescer uma árvore viva ao longo de 180 dias</h3>
+              <p>Cada tarefa concluída nutre sua semente até se tornar uma Árvore Ancestral Luminosa, acompanhada de Lo-Fi acústico sintético e previsão exata de término do dia (ETA).</p>
+            </div>
+            <div class="lp-mc-stage lp-stage-tree" aria-hidden="true">
+              <div class="lp-tree-showcase-row">
+                <div class="lp-tree-orb-anim">
+                  <svg viewBox="0 0 100 100" fill="none">
+                    <circle cx="50" cy="44" r="28" fill="rgba(52, 199, 89, 0.16)"/>
+                    <circle cx="38" cy="46" r="16" fill="rgba(52, 199, 89, 0.28)"/>
+                    <circle cx="62" cy="46" r="16" fill="rgba(52, 199, 89, 0.28)"/>
+                    <circle cx="50" cy="34" r="20" fill="rgba(48, 209, 88, 0.42)"/>
+                    <path d="M50 78V46" stroke="#8B5A2B" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M50 58L40 48M50 54L60 45" stroke="#8B5A2B" stroke-width="3.2" stroke-linecap="round"/>
+                    <path d="M32 78H68" stroke="rgba(52, 199, 89, 0.5)" stroke-width="3" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="lp-tree-metrics">
+                  <span class="lp-tm-badge">EVOLUÇÃO CONTÍNUA · 180 DIAS</span>
+                  <strong>De Semente a Super Árvore</strong>
+                  <div class="lp-tm-bar"><div class="lp-tm-fill"></div></div>
+                  <span class="lp-tm-sub">+25 XP por tarefa · Lo-Fi Warm Rhodes integrado</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           PRICING & STRIPE LIFETIME CHECKOUT SECTION (R$ 99 VITALÍCIO)
+           ================================================================== -->
+      <section id="lpPricing" class="lp-pricing-section">
+        <div class="lp-section-header">
+          <span class="lp-eyebrow">ACESSO VITALÍCIO · SEM ASSINATURA MENSAL</span>
+          <h2 class="lp-section-title">Pague uma única vez. Deixe todos os seus dias mais leves para sempre.</h2>
+          <p class="lp-section-desc">
+            Sem mensalidades recorrentes. Garanta o seu acesso vitalício ao <strong>Lightfocus</strong> via Stripe com PIX à vista ou parcelado no cartão.
+          </p>
+        </div>
+
+        <div class="lp-pricing-card">
+          <div class="lp-pricing-glow" aria-hidden="true"></div>
+
+          <div class="lp-pricing-left">
+            <div class="lp-lifetime-badge">ACESSO VITALÍCIO · LICENÇA COMPLETA</div>
+            <h3 class="lp-pricing-name">Lightfocus</h3>
+            <p class="lp-pricing-tagline">
+              O sistema completo de foco singular para computador e celular, com sincronização em nuvem, WebApp instalável e todas as atualizações futuras inclusas.
+            </p>
+
+            <ul class="lp-features-checklist">
+              <li>
+                <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span><strong>Foco em 1 Tarefa por Vez</strong> + Modo Ultra Foco (<kbd>U</kbd>) sem distrações</span>
+              </li>
+              <li>
+                <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span><strong>Captura Rápida (<kbd>Q</kbd>)</strong> com detecção ao vivo de data, horário, recorrência e tempo</span>
+              </li>
+              <li>
+                <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span><strong>WebApp Instalável no Chrome</strong> + Botão de <strong>Janela Solta Mobile</strong></span>
+              </li>
+              <li>
+                <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span><strong>Aviso de Tempo Acabando</strong> via notificação (pode ser desabilitado quando quiser)</span>
+              </li>
+              <li>
+                <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span><strong>Sincronização Bidirecional</strong> com Todoist + Google Agenda + Árvore de 6 Meses</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="lp-pricing-right">
+            <div class="lp-price-box">
+              <span class="lp-price-label">PAGAMENTO ÚNICO · VITALÍCIO</span>
+              <div class="lp-price-value-row">
+                <span class="lp-currency">R$</span>
+                <span class="lp-amount">99</span>
+                <span class="lp-cents">,00</span>
+              </div>
+              <span class="lp-price-installment-note">
+                À vista no <strong>PIX</strong> ou parcelado em até <strong>12x no cartão</strong> (juros/parcelamento por conta do comprador)
+              </span>
+
+              <div class="lp-payment-methods-pills">
+                <button type="button" class="lp-pay-method-btn active" data-lp-pay="pix" id="lpSelectPixBtn">
+                  <svg class="icon-16" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3L21 12L12 21L3 12L12 3Z" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M9 12L12 9L15 12L12 15L9 12Z" fill="currentColor"/>
+                  </svg>
+                  <span>PIX · R$ 99 à vista</span>
+                </button>
+                <button type="button" class="lp-pay-method-btn" data-lp-pay="card" id="lpSelectCardBtn">
+                  <svg class="icon-16" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M2 10H22" stroke="currentColor" stroke-width="1.8"/>
+                  </svg>
+                  <span>Cartão · até 12x</span>
+                </button>
+              </div>
+
+              <button type="button" id="lpStripeCheckoutBtn" class="lp-stripe-buy-btn">
+                <span>Desbloquear Lightfocus Vitalício — R$ 99</span>
+                <svg class="icon-18" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+
+              <div class="lp-stripe-security-foot">
+                <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+                  <rect x="4" y="11" width="16" height="10" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M8 11V7C8 4.79 9.79 3 12 3C14.21 3 16 4.79 16 7V11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <span>Processado com segurança via <strong>Stripe</strong> · Liberação imediata</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="lp-footer">
+        <div class="lp-footer-left">
+          <strong>Lightfocus</strong>
+          <span>Foque apenas na próxima tarefa e deixe o seu dia mais light.</span>
+        </div>
+        <div class="lp-footer-right">
+          <button type="button" id="lpFooterInstallBtn" class="lp-footer-link">Instalar WebApp</button>
+          <button type="button" id="lpFooterWindowBtn" class="lp-footer-link">Abrir em Janela</button>
+          <button type="button" id="lpFooterLoginBtn" class="lp-footer-link">Entrar na minha conta</button>
+        </div>
+      </footer>
+    </div>
+  </section>
+
   <!-- ====================================================================
        1. AUTH GATE (Apple Liquid Glass SaaS Login / Criar Conta)
        ==================================================================== -->
-  <section id="authGateOverlay" class="auth-gate-overlay" aria-label="Acesso LightFocus">
+  <section id="authGateOverlay" class="auth-gate-overlay" aria-label="Acesso Lightfocus">
     <div class="auth-glass-card">
       <div class="auth-brand-header">
         <div class="aperture-logo" aria-hidden="true">
@@ -42,9 +492,9 @@
           </svg>
         </div>
         <div class="auth-brand-titles">
-          <span class="auth-eyebrow">APPLE LIQUID GLASS EDITION</span>
-          <h1 class="auth-title">LightFocus</h1>
-          <p class="auth-subtitle">Foco singular, tags de agendamento inteligente, Ultra Foco e sincronizacao Google Agenda + Todoist.</p>
+          <span class="auth-eyebrow">FOCO NA PRÓXIMA TAREFA</span>
+          <h1 class="auth-title">Lightfocus</h1>
+          <p class="auth-subtitle">Pare de olhar para tudo o que você tem para fazer. Foque apenas na próxima tarefa.</p>
         </div>
       </div>
 
@@ -103,6 +553,11 @@
         </button>
       </form>
 
+      <div class="auth-lp-switch-row">
+        <button type="button" id="authBackToLpBtn" class="glass-btn-ghost auth-back-lp-btn">
+          ← Ver página do Lightfocus &amp; Acesso Vitalício (R$ 99)
+        </button>
+      </div>
       <div class="auth-footer-specs">
         <span class="spec-pill"><kbd>Q</kbd> Nova Tarefa NLP</span>
         <span class="spec-pill"><kbd>⌘K</kbd> Spotlight</span>
@@ -128,7 +583,7 @@
             </svg>
           </div>
           <div class="brand-text-col">
-            <span class="brand-name">LightFocus</span>
+            <span class="brand-name">Lightfocus</span>
             <span id="syncStatusLabel" class="sync-status-sub">Sincronizado</span>
           </div>
         </div>
@@ -136,15 +591,15 @@
         <!-- View Filter Segmented Control (Foco | Agenda do Dia | Agenda Geral | Concluidas) -->
         <nav class="filter-segmented" aria-label="Visoes da agenda">
           <button type="button" class="filter-pill active" data-filter="pending">Foco</button>
-          <button type="button" class="filter-pill" data-filter="all">Agenda do Dia</button>
+          <button type="button" class="filter-pill" data-filter="all"><span class="f-label-full">Agenda do Dia</span><span class="f-label-short">Dia</span></button>
           <button type="button" class="filter-pill" data-filter="calendar">
             <svg class="icon-13" viewBox="0 0 24 24" fill="none" style="margin-right:4px;vertical-align:-2px;">
               <rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" stroke-width="1.8"/>
               <path d="M8 2V6M16 2V6M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
-            Agenda Geral
+            <span class="f-label-full">Agenda Geral</span><span class="f-label-short">Agenda</span>
           </button>
-          <button type="button" class="filter-pill" data-filter="completed">Concluidas</button>
+          <button type="button" class="filter-pill" data-filter="completed">Concluídas</button>
         </nav>
       </div>
 
@@ -170,13 +625,27 @@
           <kbd class="pill-kbd">Q</kbd>
         </button>
 
-        <button type="button" id="ultraFocusToggleBtn" class="glass-pill-btn ultra-focus-trigger" title="Ativar Modo Ultra Foco (esconde tudo, deixa so a tarefa e o cronometro)">
+        <button type="button" id="ultraFocusToggleBtn" class="glass-pill-btn ultra-focus-trigger" title="Ativar Modo Ultra Foco (esconde tudo, deixa só a tarefa e o cronômetro)">
           <svg class="icon-16" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/>
             <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.75"/>
             <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
           </svg>
-          <span>Ultra Foco</span>
+          <span class="btn-text-desktop">Ultra Foco</span>
+        </button>
+        <button type="button" id="openMiniWindowBtn" class="glass-pill-btn mini-window-trigger" title="Abrir Lightfocus em janela solta simplificada em formato mobile">
+          <svg class="icon-16" viewBox="0 0 24 24" fill="none">
+            <rect x="5" y="2" width="14" height="20" rx="3" stroke="currentColor" stroke-width="1.75"/>
+            <path d="M9 6H15M10 18H14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+          </svg>
+          <span class="btn-text-desktop">Abrir em Janela</span>
+        </button>
+
+        <button type="button" id="installPwaTopBtn" class="glass-pill-btn install-pwa-trigger" title="Instalar WebApp do Lightfocus no Chrome / Computador / Celular">
+          <svg class="icon-16" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3V15M12 15L8 11M12 15L16 11M4 19H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="btn-text-desktop">Instalar App</span>
         </button>
 
         <!-- Optional Lo-Fi & Ambient Soundscapes Dropdown Trigger -->
@@ -259,7 +728,7 @@
           <span id="topXpValue" class="xp-points-badge">0 XP</span>
         </button>
 
-        <button type="button" id="openTutorialBtn" class="glass-icon-btn" title="Guia Rapido & Tutorial do LightFocus">
+        <button type="button" id="openTutorialBtn" class="glass-icon-btn" title="Guia Rapido & Tutorial do Lightfocus">
           <svg class="icon-18" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/>
             <path d="M9.5 9.5C9.5 8.12 10.62 7 12 7C13.38 7 14.5 8.12 14.5 9.5C14.5 10.88 12 11.5 12 13.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
@@ -508,6 +977,31 @@
                   </div>
                   <button type="button" id="testAttentionNowBtn" class="att-test-btn" title="Testar pulso luminoso/sonoro agora">Testar</button>
                 </div>
+              </div>
+            </div>
+            <!-- Aviso de Tempo Acabando da Tarefa (Notificação Configurável · Pode Desabilitar) -->
+            <div class="time-ending-notify-bar" aria-label="Notificação de tempo acabando da tarefa">
+              <label class="notify-switch-wrap" title="Ativar ou desativar notificação quando o tempo da tarefa estiver acabando">
+                <input type="checkbox" id="notifyTimeEndingToggle" checked />
+                <span class="notify-switch-slider"></span>
+                <span class="notify-switch-label">
+                  <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 8A6 6 0 0 0 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M13.73 21A2 2 0 0 1 10.27 21" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                  </svg>
+                  <span>Notificar tempo acabando</span>
+                </span>
+              </label>
+
+              <div class="notify-options-right">
+                <span class="notify-when-label">Avisar:</span>
+                <select id="notifyThresholdSelect" class="glass-mini-select" aria-label="Quando avisar que o tempo está acabando">
+                  <option value="1">Faltando 1 min + ao acabar</option>
+                  <option value="2">Faltando 2 min + ao acabar</option>
+                  <option value="5">Faltando 5 min + ao acabar</option>
+                  <option value="0">Apenas quando zerar (100%)</option>
+                </select>
+                <button type="button" id="testTimeEndingNotifyBtn" class="att-test-btn" title="Testar notificação de tempo acabando agora">Testar aviso</button>
               </div>
             </div>
           </div>
@@ -917,7 +1411,7 @@
           <div class="account-info-col">
             <strong id="settingsUserName" class="account-name">Walace Messias</strong>
             <span id="settingsUserEmail" class="account-email">walacetkwl@gmail.com</span>
-            <span id="settingsPlanBadge" class="account-plan-pill">LightFocus Pro · Liquid Glass</span>
+            <span id="settingsPlanBadge" class="account-plan-pill">Lightfocus</span>
           </div>
           <button type="button" id="logoutBtn" class="glass-btn-danger-outline">Sair da Conta</button>
         </div>
@@ -967,6 +1461,60 @@
           </div>
           <p id="todoistStatusNote" class="settings-status-note"></p>
         </form>
+        <!-- Notificações de Tempo Acabando & Janela WebApp -->
+        <div class="todoist-config-box">
+          <div class="integration-title-row">
+            <label class="auth-label">Notificações de Tempo &amp; Modo App</label>
+            <span id="notifPermissionBadge" class="account-plan-pill">Ativo</span>
+          </div>
+          <label class="gcal-switch-label" style="margin-bottom: 6px;">
+            <input type="checkbox" id="settingsNotifyTimeEndingToggle" checked />
+            <span class="gcal-switch-slider"></span>
+            <span class="gcal-switch-text">Avisar via notificação quando o tempo da tarefa estiver acabando</span>
+          </label>
+          <div class="token-input-row" style="margin-top: 6px;">
+            <button type="button" id="settingsOpenMiniWindowBtn" class="glass-btn-secondary">
+              <span>Abrir em Janela Mobile</span>
+            </button>
+            <button type="button" id="settingsInstallWebAppBtn" class="glass-btn-secondary">
+              <span>Instalar WebApp no Chrome</span>
+            </button>
+            <button type="button" id="settingsViewLandingBtn" class="glass-btn-ghost">
+              <span>Ver Landing Page</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Stripe Checkout Configuration (R$ 99 Vitalício · PIX e Cartão Parcelado) -->
+        <form id="stripeConfigForm" class="todoist-config-box">
+          <div class="integration-title-row">
+            <label class="auth-label">Checkout Stripe · Lightfocus Vitalício (R$ 99)</label>
+            <span id="stripeModalStatusBadge" class="account-plan-pill">R$ 99 · PIX &amp; Cartão 12x</span>
+          </div>
+          <p class="settings-help-text">
+            Configure o link de pagamento do Stripe (Payment Link) ou sua chave secreta (<code>sk_live_...</code>) para processar o Acesso Vitalício de R$ 99 via PIX ou Cartão parcelado por conta do comprador.
+          </p>
+          <div class="token-input-row">
+            <input
+              type="url"
+              id="stripePaymentLinkInput"
+              class="glass-input"
+              placeholder="Stripe Payment Link (ex: https://buy.stripe.com/...)"
+              autocomplete="off"
+            />
+          </div>
+          <div class="token-input-row">
+            <input
+              type="password"
+              id="stripeSecretKeyInput"
+              class="glass-input"
+              placeholder="Ou Stripe Secret Key (sk_live_... / sk_test_...)"
+              autocomplete="off"
+            />
+            <button type="submit" class="glass-btn-obsidian">Salvar Stripe</button>
+          </div>
+          <p id="stripeStatusNote" class="settings-status-note"></p>
+        </form>
       </div>
     </div>
   </div>
@@ -979,7 +1527,7 @@
       <div class="modal-sheet-header">
         <div class="modal-title-group">
           <span class="modal-kbd-badge">Guia</span>
-          <h3 id="tutorialModalTitle" class="modal-title">Bem-vindo ao LightFocus · Como Funciona</h3>
+          <h3 id="tutorialModalTitle" class="modal-title">Bem-vindo ao Lightfocus · Como Funciona</h3>
         </div>
         <button type="button" data-close-modal="tutorialModal" class="glass-close-btn" aria-label="Fechar">
           <svg class="icon-18" viewBox="0 0 24 24" fill="none">
@@ -1037,13 +1585,165 @@
     </div>
   </div>
 
+
+  <!-- ====================================================================
+       8. MODAL: CHECKOUT STRIPE LIGHTFOCUS VITALÍCIO — R$ 99 (PIX OU CARTÃO 12X)
+       ==================================================================== -->
+  <div id="stripeCheckoutModal" class="glass-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="stripeCheckoutModalTitle">
+    <div class="glass-modal-sheet stripe-checkout-sheet">
+      <div class="modal-sheet-header">
+        <div class="modal-title-group">
+          <span class="modal-kbd-badge">R$ 99</span>
+          <h3 id="stripeCheckoutModalTitle" class="modal-title">Lightfocus · Acesso Vitalício</h3>
+        </div>
+        <button type="button" data-close-modal="stripeCheckoutModal" class="glass-close-btn" aria-label="Fechar">
+          <svg class="icon-18" viewBox="0 0 24 24" fill="none">
+            <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="stripe-modal-body">
+        <div class="stripe-summary-banner">
+          <div>
+            <span class="xp-eyebrow">PAGAMENTO ÚNICO · SEM MENSALIDADES</span>
+            <h4 class="stripe-banner-title">Licença Vitalícia Lightfocus</h4>
+            <p class="stripe-banner-sub">Foque apenas na próxima tarefa. Inclui WebApp Chrome, Janela Flutuante e sincronização completa.</p>
+          </div>
+          <div class="stripe-banner-price">
+            <strong>R$ 99,00</strong>
+            <span>Vitalício</span>
+          </div>
+        </div>
+
+        <!-- Tabs: PIX Instantâneo vs Cartão Parcelado (por conta do comprador) -->
+        <div class="glass-segmented" role="tablist">
+          <button type="button" id="checkoutTabPix" class="seg-btn active" data-checkout-tab="pix">
+            PIX à Vista (R$ 99,00)
+          </button>
+          <button type="button" id="checkoutTabCard" class="seg-btn" data-checkout-tab="card">
+            Cartão em até 12x (Stripe)
+          </button>
+        </div>
+
+        <!-- PIX Panel -->
+        <div id="checkoutPanelPix" class="checkout-method-panel">
+          <div class="pix-box-card">
+            <div class="pix-qr-visual" aria-hidden="true">
+              <svg viewBox="0 0 120 120" fill="none">
+                <rect x="8" y="8" width="104" height="104" rx="14" stroke="currentColor" stroke-width="2" stroke-opacity="0.25"/>
+                <rect x="18" y="18" width="26" height="26" rx="4" stroke="currentColor" stroke-width="4"/>
+                <rect x="26" y="26" width="10" height="10" fill="currentColor"/>
+                <rect x="76" y="18" width="26" height="26" rx="4" stroke="currentColor" stroke-width="4"/>
+                <rect x="84" y="26" width="10" height="10" fill="currentColor"/>
+                <rect x="18" y="76" width="26" height="26" rx="4" stroke="currentColor" stroke-width="4"/>
+                <rect x="26" y="84" width="10" height="10" fill="currentColor"/>
+                <path d="M54 22H66M54 34H62M54 50H100M22 58H66M54 70H86M74 82H100M54 94H78" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="pix-instructions">
+              <strong>Pagamento via PIX · R$ 99,00 à vista</strong>
+              <p>Liberação imediata do seu Acesso Vitalício sem taxas adicionais.</p>
+              <div class="pix-copy-row">
+                <input type="text" id="checkoutPixKeyInput" class="glass-input" value="walacetkwl@gmail.com" readonly />
+                <button type="button" id="copyPixKeyBtn" class="glass-btn-secondary">Copiar Chave PIX</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Installments Panel (Buyer-funded installments via Stripe) -->
+        <div id="checkoutPanelCard" class="checkout-method-panel hidden">
+          <div class="card-installments-box">
+            <label for="installmentSelector" class="auth-label">Escolha o parcelamento no cartão (acréscimo da operadora por conta do comprador):</label>
+            <select id="installmentSelector" class="glass-input" style="padding-left:14px;">
+              <option value="1">1x de R$ 99,00 sem acréscimo (Total: R$ 99,00)</option>
+              <option value="2">2x de R$ 51,48 no cartão (Total: R$ 102,96)</option>
+              <option value="3">3x de R$ 34,82 no cartão (Total: R$ 104,46)</option>
+              <option value="6">6x de R$ 18,15 no cartão (Total: R$ 108,90)</option>
+              <option value="10">10x de R$ 11,48 no cartão (Total: R$ 114,80)</option>
+              <option value="12" selected>12x de R$ 9,89 no cartão (Total: R$ 118,68)</option>
+            </select>
+            <p class="settings-help-text" style="margin-top:6px;">
+              Você recebe acesso vitalício imediato e o valor de R$ 99 é liquidado via Stripe Checkout com suporte a cartão de crédito e PIX.
+            </p>
+          </div>
+        </div>
+
+        <div class="checkout-actions-footer">
+          <button type="button" id="proceedStripeRedirectBtn" class="glass-btn-obsidian" style="width:100%;justify-content:center;padding:13px 20px;">
+            <span id="proceedStripeRedirectLabel">Pagar R$ 99 no Stripe Checkout Seguro</span>
+            <svg class="icon-18" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button type="button" id="checkoutCreateAccountNowBtn" class="glass-btn-ghost" style="width:100%;text-align:center;">
+            Já realizei o pagamento · Criar minha conta / Entrar agora
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       9. MODAL: INSTALAR WEBAPP NO CHROME & ABRIR EM JANELA MOBILE
+       ==================================================================== -->
+  <div id="pwaInstallModal" class="glass-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="pwaInstallModalTitle">
+    <div class="glass-modal-sheet pwa-install-sheet">
+      <div class="modal-sheet-header">
+        <div class="modal-title-group">
+          <span class="modal-kbd-badge">App</span>
+          <h3 id="pwaInstallModalTitle" class="modal-title">Lightfocus como App no Chrome &amp; Janela Mobile</h3>
+        </div>
+        <button type="button" data-close-modal="pwaInstallModal" class="glass-close-btn" aria-label="Fechar">
+          <svg class="icon-18" viewBox="0 0 24 24" fill="none">
+            <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="tutorial-body">
+        <p class="tutorial-lead">
+          Use o <strong>Lightfocus</strong> fora das abas comuns do navegador para focar sem distrações:
+        </p>
+
+        <div class="tutorial-steps-grid">
+          <div class="tutorial-step-card">
+            <div class="tut-step-badge">1</div>
+            <div class="tut-step-content">
+              <strong>Modo Janela Mobile Solta (Chrome Simplificado)</strong>
+              <p>Clique no botão abaixo para abrir o Lightfocus imediatamente em uma janela compacta (formato mobile <code>390×740</code>) sem barra de abas ou favoritos, perfeita para deixar ao lado do seu trabalho.</p>
+              <button type="button" id="modalLaunchMiniWindowBtn" class="glass-btn-obsidian" style="margin-top:8px;">
+                <span>Abrir Janela Mobile Agora</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="tutorial-step-card">
+            <div class="tut-step-badge">2</div>
+            <div class="tut-step-content">
+              <strong>Instalar WebApp Oficial no Chrome / Celular</strong>
+              <p id="pwaInstallStatusInstruction">
+                No Google Chrome (computador), clique no ícone de <strong>Instalar Lightfocus</strong> no canto direito da barra de endereços (ou no menu <code>⋮</code> &rarr; <strong>Salvar e compartilhar</strong> &rarr; <strong>Instalar página como app</strong>). No iPhone/Android, toque em <strong>Adicionar à Tela de Início</strong>.
+              </p>
+              <button type="button" id="modalTriggerNativePwaBtn" class="glass-btn-secondary" style="margin-top:8px;">
+                <span>Instalar WebApp com 1 Clique</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Minimalist Floating Toast Notification -->
   <div id="glassToast" class="glass-toast hidden" role="status" aria-live="polite">
     <span id="glassToastDot" class="toast-dot"></span>
     <span id="glassToastText" class="toast-text">Pronto</span>
   </div>
 
-  <script src="/tasks-seed.js?v=20261028v7"></script>
-  <script src="/app.js?v=20261028v7"></script>
+  <script src="/tasks-seed.js?v=20261028v8"></script>
+  <script src="/lp.js?v=20261028v8"></script>
+  <script src="/app.js?v=20261028v8"></script>
 </body>
 </html>
