@@ -653,6 +653,15 @@
   function updateAuthUI() {
     const gate = document.getElementById('authGateOverlay');
     const shell = document.getElementById('appShell');
+    const lp = document.getElementById('landingPageSection');
+    const wantsLanding = !!(window.LF_LANDING && window.LF_LANDING.shouldShow && window.LF_LANDING.shouldShow(state.authenticated));
+    if (lp) lp.classList.toggle('hidden', !wantsLanding);
+    document.body.classList.toggle('lp-mode', wantsLanding);
+    if (wantsLanding) {
+      if (gate) gate.classList.add('hidden');
+      if (shell) shell.classList.add('hidden');
+      return;
+    }
     if (state.authenticated) {
       if (gate) gate.classList.add('hidden');
       if (shell) shell.classList.remove('hidden');
@@ -3133,6 +3142,7 @@
     syncLofiUI();
   }
 
+  window.LF = { state, getCurrentTask: () => { try { return getCurrentTask(); } catch (_) { return null; } }, updateAuthUI, showToast, closeAllModals };
   document.addEventListener('DOMContentLoaded', () => {
     applyTheme(state.theme);
     syncAttentionUI();
