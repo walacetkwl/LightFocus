@@ -462,7 +462,7 @@
         const targetDate = addDaysDateStr(totalDays);
         detected.dueDate = targetDate;
         detected.dueDateLabel = `Daqui a ${totalDays} dias (${formatDateShortBR(targetDate)})`;
-        detected.humanScheduleSummary = `Vai aparecer daqui a ${totalDays} dias (${formatDateBR(targetDate)} — ${formatDateShortBR(targetDate)})`;
+        detected.humanScheduleSummary = `Vai aparecer daqui a ${totalDays} dias (${formatDateBR(targetDate)}, ${formatDateShortBR(targetDate)})`;
         return true;
       }
     );
@@ -503,14 +503,14 @@
             const dStr = addDaysDateStr(1);
             detected.dueDate = dStr;
             detected.dueDateLabel = `Amanhã (${formatDateShortBR(dStr)})`;
-            detected.humanScheduleSummary = `Vai aparecer Amanhã (${formatDateBR(dStr)} — ${formatDateShortBR(dStr)}) na sua Agenda`;
+            detected.humanScheduleSummary = `Vai aparecer Amanhã (${formatDateBR(dStr)}, ${formatDateShortBR(dStr)}) na sua Agenda`;
           } else if (DOW_MAP[w] !== undefined) {
             const dow = DOW_MAP[w];
             const dStr = nextWeekdayDateStr(dow, false);
             const dayName = WEEKDAY_NAMES_PT[dow];
             detected.dueDate = dStr;
             detected.dueDateLabel = `${dayName.charAt(0).toUpperCase() + dayName.slice(1)} (${formatDateShortBR(dStr)})`;
-            detected.humanScheduleSummary = `Vai aparecer na próxima ${dayName} (${formatDateBR(dStr)}) — ou digite "toda ${w}" para repetir toda semana`;
+            detected.humanScheduleSummary = `Vai aparecer na próxima ${dayName} (${formatDateBR(dStr)}). Ou digite "toda ${w}" para repetir toda semana`;
           }
           return true;
         }
@@ -1614,7 +1614,7 @@
     }
 
     if (list.length === 0) {
-      showToast("Nenhuma atividade na fila — pressione Q para criar uma nova tarefa.");
+      showToast("Nenhuma atividade na fila. Pressione Q para criar uma nova tarefa.");
       return;
     }
 
@@ -2599,8 +2599,8 @@
   // 8-STAGE SLOW-GROWING BOTANICAL TREE (6 MONTHS / 180 DAYS OF CONSISTENCY)
   // ==========================================================================
   const BOTANICAL_STAGES = [
-    { level: 1, title: 'Semente Despertando', short: 'Semente', period: 'Dias 1–7', minXp: 0, nextXp: 450, desc: 'A semente germina na terra fertil com os primeiros minutos de foco.' },
-    { level: 2, title: 'Broto Inicial', short: 'Broto', period: 'Semanas 2–3', minXp: 450, nextXp: 1500, desc: 'As duas primeiras folhinhas se abrem buscando luz.' },
+    { level: 1, title: 'Semente Despertando', short: 'Semente', period: 'Dias 1 a 7', minXp: 0, nextXp: 450, desc: 'A semente germina na terra fertil com os primeiros minutos de foco.' },
+    { level: 2, title: 'Broto Inicial', short: 'Broto', period: 'Semanas 2 e 3', minXp: 450, nextXp: 1500, desc: 'As duas primeiras folhinhas se abrem buscando luz.' },
     { level: 3, title: 'Muda Jovem', short: 'Muda', period: 'Mes 1', minXp: 1500, nextXp: 3500, desc: 'Caule firme e quatro folhas vibrantes apos o primeiro mes.' },
     { level: 4, title: 'Arbusto Ramificado', short: 'Arbusto', period: 'Mes 2', minXp: 3500, nextXp: 6500, desc: 'Primeiros galhos laterais e raizes profundas no segundo mes.' },
     { level: 5, title: 'Arvore Jovem', short: 'Arvore Jovem', period: 'Mes 3', minXp: 6500, nextXp: 10000, desc: 'Tronco de madeira estruturado e copa ganhando volume.' },
@@ -2819,7 +2819,7 @@
     if (modalSvg) modalSvg.innerHTML = getBotanicalStageSvg(shownStage.level);
     if (repTitle) repTitle.textContent = `Estagio ${shownStage.level} · ${shownStage.title} (${shownStage.period})`;
     if (repSub) {
-      repSub.textContent = `${shownStage.desc} — Voce acumula XP diariamente ate atingir a Super Arvore Ancestral em 6 meses (18.000 XP).`;
+      repSub.textContent = `${shownStage.desc}. Voce acumula XP diariamente ate atingir a Super Arvore Ancestral em 6 meses (18.000 XP).`;
     }
     if (repFill) repFill.style.width = `${info.stagePct}%`;
     if (previewHint) {

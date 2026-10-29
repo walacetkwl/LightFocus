@@ -423,7 +423,7 @@ function buildOnboardingTasks() {
     {
       id: 'lf_sample_1',
       content: 'Pressione Q para criar uma tarefa rapida com atalhos de agenda',
-      description: 'Experimente digitar no modal Q: "Revisar apresentacao comercial amanha 14:30 25m p1 #produto" — o parser transforma data, horario, duracao e prioridade em chips automaticamente.',
+      description: 'Experimente digitar no modal Q: "Revisar apresentacao comercial amanha 14:30 25m p1 #produto". O parser transforma data, horario, duracao e prioridade em chips automaticamente.',
       dueDate: dateStr,
       dueTime: '14:00',
       recurring: false,
@@ -481,8 +481,8 @@ function computeLevelInfo(xpInput) {
   const xp = Math.max(0, Math.round(Number(xpInput || 0)));
   // 6-Month (180 Days) Continuous Botanical Growth Curve (~100 XP/day = 18,000 XP for Super Tree)
   const levels = [
-    { level: 1, title: 'Semente Despertando', period: 'Dias 1–7', minXp: 0 },
-    { level: 2, title: 'Broto Inicial', period: 'Semanas 2–3', minXp: 450 },
+    { level: 1, title: 'Semente Despertando', period: 'Dias 1 a 7', minXp: 0 },
+    { level: 2, title: 'Broto Inicial', period: 'Semanas 2 e 3', minXp: 450 },
     { level: 3, title: 'Muda Jovem', period: 'Mes 1', minXp: 1500 },
     { level: 4, title: 'Arbusto Ramificado', period: 'Mes 2', minXp: 3500 },
     { level: 5, title: 'Arvore Jovem', period: 'Mes 3', minXp: 6500 },
@@ -1313,7 +1313,7 @@ function createStripeCheckoutSessionHttps(secretKey, opts = {}) {
     cancel_url: origin + '/?lp=1&checkout=canceled',
     'line_items[0][price_data][currency]': 'brl',
     'line_items[0][price_data][unit_amount]': '9900',
-    'line_items[0][price_data][product_data][name]': 'Lightfocus — Acesso Vitalício',
+    'line_items[0][price_data][product_data][name]': 'Lightfocus: Acesso Vitalício',
     'line_items[0][price_data][product_data][description]': 'Licença vitalícia Lightfocus (pagamento único R$ 99 · PIX ou Cartão em até 12x)',
     'line_items[0][quantity]': '1',
     'allow_promotion_codes': 'true'

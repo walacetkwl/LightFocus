@@ -128,7 +128,7 @@
     try { const C = new (window.AudioContext || window.webkitAudioContext)(); const o = C.createOscillator(), g = C.createGain(); o.frequency.value = 880; g.gain.setValueAtTime(0.12, C.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, C.currentTime + 0.6); o.connect(g).connect(C.destination); o.start(); o.stop(C.currentTime + 0.6); } catch (_) {}
   }
   async function notify(title, body) {
-    beep(); toast(`${title} — ${body}`);
+    beep(); toast(`${title}: ${body}`);
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
     try {
       const reg = navigator.serviceWorker && (await navigator.serviceWorker.getRegistration());
