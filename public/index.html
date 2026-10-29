@@ -6,8 +6,8 @@
   <title>LightFocus — Apple Liquid Glass Focus & Agenda</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=20261028v4" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v=20261028v5" />
 </head>
 <body>
   <!-- Ambient Optical Canvas & Refractive Light Pulse Overlay -->
@@ -17,6 +17,15 @@
     <div class="ambient-orb orb-3"></div>
   </div>
   <div id="lightPulseOverlay" class="light-pulse-overlay" aria-hidden="true"></div>
+
+  <!-- Floating Exit Pill when Ultra Focus Mode is Active -->
+  <button type="button" id="exitUltraFocusBtn" class="ultra-focus-exit-pill hidden" title="Sair do Modo Ultra Foco (Esc)">
+    <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+      <path d="M9 3H5C3.89543 3 3 3.89543 3 5V9M15 3H19C20.1046 3 21 3.89543 21 5V9M9 21H5C3.89543 21 3 20.1046 3 19V15M15 21H19C20.1046 21 21 20.1046 21 19V15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <span>Sair do Ultra Foco</span>
+    <kbd>Esc</kbd>
+  </button>
 
   <!-- ====================================================================
        1. AUTH GATE (Apple Liquid Glass SaaS Login / Criar Conta)
@@ -35,7 +44,7 @@
         <div class="auth-brand-titles">
           <span class="auth-eyebrow">APPLE LIQUID GLASS EDITION</span>
           <h1 class="auth-title">LightFocus</h1>
-          <p class="auth-subtitle">Foco singular, atalhos naturais de agenda e sincronizacao em tempo real.</p>
+          <p class="auth-subtitle">Foco singular, tags de agendamento inteligente, Ultra Foco e sincronizacao Google Agenda + Todoist.</p>
         </div>
       </div>
 
@@ -95,15 +104,10 @@
       </form>
 
       <div class="auth-footer-specs">
-        <span class="spec-pill">
-          <kbd>Q</kbd> Nova Tarefa NLP
-        </span>
-        <span class="spec-pill">
-          <kbd>⌘K</kbd> Spotlight
-        </span>
-        <span class="spec-pill">
-          Todoist Sync
-        </span>
+        <span class="spec-pill"><kbd>Q</kbd> Nova Tarefa NLP</span>
+        <span class="spec-pill"><kbd>⌘K</kbd> Spotlight</span>
+        <span class="spec-pill">Ultra Foco</span>
+        <span class="spec-pill">Google Agenda + Todoist</span>
       </div>
     </div>
   </section>
@@ -129,10 +133,17 @@
           </div>
         </div>
 
-        <!-- View Filter Segmented Control -->
-        <nav class="filter-segmented" aria-label="Filtro de tarefas">
+        <!-- View Filter Segmented Control (Foco | Agenda do Dia | Agenda Geral | Concluidas) -->
+        <nav class="filter-segmented" aria-label="Visoes da agenda">
           <button type="button" class="filter-pill active" data-filter="pending">Foco</button>
           <button type="button" class="filter-pill" data-filter="all">Agenda do Dia</button>
+          <button type="button" class="filter-pill" data-filter="calendar">
+            <svg class="icon-13" viewBox="0 0 24 24" fill="none" style="margin-right:4px;vertical-align:-2px;">
+              <rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M8 2V6M16 2V6M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            Agenda Geral
+          </button>
           <button type="button" class="filter-pill" data-filter="completed">Concluidas</button>
         </nav>
       </div>
@@ -149,14 +160,23 @@
         </button>
       </div>
 
-      <!-- Right Controls: Quick Add (Q), XP Capsule, 5m Pulse, Sync, Theme, User -->
+      <!-- Right Controls: Quick Add (Q), Ultra Foco, XP Capsule, Sync, Theme, User -->
       <div class="top-bar-right">
-        <button type="button" id="openQuickAddBtn" class="glass-pill-btn quick-add-trigger" title="Criar nova tarefa com atalhos de agenda (Tecla Q)">
+        <button type="button" id="openQuickAddBtn" class="glass-pill-btn quick-add-trigger" title="Criar nova tarefa com tags de agenda (Tecla Q)">
           <svg class="icon-16" viewBox="0 0 24 24" fill="none">
             <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
           </svg>
           <span>Nova Tarefa</span>
           <kbd class="pill-kbd">Q</kbd>
+        </button>
+
+        <button type="button" id="ultraFocusToggleBtn" class="glass-pill-btn ultra-focus-trigger" title="Ativar Modo Ultra Foco (esconde tudo, deixa so a tarefa e o cronometro)">
+          <svg class="icon-16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/>
+            <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.75"/>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+          </svg>
+          <span>Ultra Foco</span>
         </button>
 
         <button type="button" id="openReportsBtn" class="glass-pill-btn xp-capsule" title="Ver Relatorios de Foco e Progresso de XP">
@@ -168,14 +188,7 @@
           <span id="topXpValue" class="xp-points-badge">0 XP</span>
         </button>
 
-        <button type="button" id="pulseToggleBtn" class="glass-icon-btn active" title="Pulso luminoso a cada 5 minutos de foco">
-          <svg class="icon-18" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.75"/>
-            <path d="M12 2V5M12 19V22M2 12H5M19 12H22M4.93 4.93L7.05 7.05M16.95 16.95L19.07 19.07M19.07 4.93L16.95 7.05M7.05 16.95L4.93 19.07" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>
-        </button>
-
-        <button type="button" id="syncNowBtn" class="glass-icon-btn" title="Sincronizar com Todoist agora">
+        <button type="button" id="syncNowBtn" class="glass-icon-btn" title="Sincronizar Todoist e Google Agenda">
           <svg id="syncIconSvg" class="icon-18" viewBox="0 0 24 24" fill="none">
             <path d="M20 11A8.1 8.1 0 0 0 4.5 9M4 5V9H8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M4 13A8.1 8.1 0 0 0 19.5 15M20 19V15H16" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
@@ -188,22 +201,85 @@
           </svg>
         </button>
 
-        <button type="button" id="openSettingsBtn" class="glass-user-pill" title="Conta, Integracao Todoist e Sair">
+        <button type="button" id="openSettingsBtn" class="glass-user-pill" title="Conta, Google Agenda, Todoist e Sair">
           <span id="userInitialsAvatar" class="user-avatar-circle">WM</span>
           <span id="userNameShort" class="user-name-label">Walace</span>
         </button>
       </div>
     </header>
 
-    <!-- Main Spatial Bento Stage -->
-    <main class="spatial-stage">
+    <!-- ==================================================================
+         2A. AGENDA GERAL (FULL INTERACTIVE MONTHLY/WEEKLY CALENDAR VIEW)
+         ================================================================== -->
+    <section id="generalCalendarSection" class="general-calendar-section hidden" aria-label="Agenda Geral — Calendario Completo">
+      <div class="calendar-glass-card">
+        <div class="calendar-header-bar">
+          <div class="calendar-header-left">
+            <h2 id="calendarMonthTitle" class="calendar-month-title">Outubro 2026</h2>
+            <span id="calendarStatsSub" class="calendar-stats-sub">Visualize tarefas agendadas, recorrencias e eventos do Google Agenda</span>
+          </div>
+          <div class="calendar-header-actions">
+            <label class="gcal-toggle-pill" title="Mostrar eventos do Google Agenda no calendario e na fila">
+              <input type="checkbox" id="calViewGcalToggle" checked />
+              <span class="gcal-dot"></span>
+              <span>Google Agenda</span>
+            </label>
+            <button type="button" id="calPrevMonthBtn" class="glass-icon-btn-sm" title="Mes anterior">
+              <svg class="icon-16" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button type="button" id="calTodayBtn" class="glass-pill-btn-sm">Hoje</button>
+            <button type="button" id="calNextMonthBtn" class="glass-icon-btn-sm" title="Proximo mes">
+              <svg class="icon-16" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button type="button" id="calNewTaskDateBtn" class="glass-btn-obsidian-sm">
+              <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span>Agendar neste dia</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="calendar-split-layout">
+          <div class="calendar-grid-wrap">
+            <div class="calendar-weekdays-row">
+              <span>Seg</span>
+              <span>Ter</span>
+              <span>Qua</span>
+              <span>Qui</span>
+              <span>Sex</span>
+              <span>Sab</span>
+              <span>Dom</span>
+            </div>
+            <div id="calendarDaysGrid" class="calendar-days-grid"></div>
+          </div>
+
+          <aside class="calendar-day-inspector">
+            <div class="inspector-header">
+              <span class="inspector-eyebrow">DIA SELECIONADO</span>
+              <h3 id="inspectorDateTitle" class="inspector-date-title">Hoje · 28 de Outubro</h3>
+            </div>
+            <div id="inspectorTasksList" class="inspector-tasks-list"></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         2B. MAIN SPATIAL BENTO STAGE (FOCUS CARD + AGENDA DO DIA)
+         ================================================================== -->
+    <main id="spatialStage" class="spatial-stage">
       <!-- LEFT / CENTER: Single-Task Liquid Glass Focus Card -->
       <section class="focus-column" aria-label="Tarefa em foco">
         <article id="focusTaskCard" class="liquid-focus-card">
           <!-- Card Top Meta Header -->
           <div class="card-meta-header">
             <div class="meta-left-group">
-              <span id="taskCounterPill" class="glass-badge-mono">01 / 01</span>
+              <span id="taskCounterPill" class="glass-badge-num">01 / 01</span>
               <span id="taskScheduleBadge" class="glass-badge-schedule">
                 <svg class="icon-13" viewBox="0 0 24 24" fill="none">
                   <rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" stroke-width="1.75"/>
@@ -215,19 +291,26 @@
             </div>
 
             <div class="meta-right-group">
-              <button type="button" id="taskEstimateBtn" class="glass-estimate-pill" title="Definir estimativa de tempo para esta tarefa">
+              <button type="button" id="taskEstimateBtn" class="glass-estimate-pill" title="Clique para definir tempo personalizado ou rapido">
                 <svg class="icon-14" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/>
                   <path d="M12 7V12L15 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
                 </svg>
                 <span id="taskEstimateLabel">15 min</span>
               </button>
+
+              <button type="button" id="cardUltraFocusBtn" class="glass-estimate-pill ultra-mini-btn" title="Entrar ou sair do Modo Ultra Foco">
+                <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+                  <path d="M8 3H5C3.89543 3 3 3.89543 3 5V8M21 8V5C21 3.89543 20.1046 3 19 3H16M16 21H19C20.1046 21 21 20.1046 21 19V16M3 16V19C3 20.1046 3.89543 21 5 21H8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                </svg>
+                <span id="cardUltraFocusLabel">Ultra Foco</span>
+              </button>
             </div>
           </div>
 
-          <!-- Inline Estimate Popover Bar (Hidden by default) -->
+          <!-- Inline Estimate Popover Bar (Quick Chips + Custom Minutes Input) -->
           <div id="inlineEstimateBar" class="inline-estimate-bar hidden">
-            <span class="estimate-bar-label">Estimativa:</span>
+            <span class="estimate-bar-label">Tempo da tarefa:</span>
             <div class="estimate-preset-chips">
               <button type="button" class="est-chip" data-min="5">5m</button>
               <button type="button" class="est-chip" data-min="10">10m</button>
@@ -236,8 +319,10 @@
               <button type="button" class="est-chip" data-min="30">30m</button>
               <button type="button" class="est-chip" data-min="45">45m</button>
               <button type="button" class="est-chip" data-min="60">60m</button>
-              <input type="number" id="customEstimateInput" class="est-custom-input" min="1" max="480" placeholder="min" />
-              <button type="button" id="saveCustomEstimateBtn" class="est-save-btn">OK</button>
+              <div class="custom-est-inline-group">
+                <input type="number" id="customEstimateInput" class="est-custom-input" min="1" max="480" placeholder="Outro (min)" />
+                <button type="button" id="saveCustomEstimateBtn" class="est-save-btn">Definir</button>
+              </div>
             </div>
           </div>
 
@@ -274,7 +359,7 @@
             <ul id="focusSubtasksList" class="subtasks-list"></ul>
           </div>
 
-          <!-- Apple Liquid Glass Focus Timer Console -->
+          <!-- Apple Liquid Glass Focus Timer Console + Attention Call Config -->
           <div class="glass-timer-console">
             <div class="timer-progress-track" aria-hidden="true">
               <div id="timerProgressBar" class="timer-progress-fill" style="width: 0%"></div>
@@ -294,7 +379,7 @@
                   <svg id="timerPlayIcon" class="icon-18" viewBox="0 0 24 24" fill="none">
                     <path d="M7 5.5V18.5L18 12L7 5.5Z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
                   </svg>
-                  <span id="timerPlayLabel">Iniciar Foco</span>
+                  <span id="timerPlayLabel">Ativar Tempo</span>
                   <kbd class="btn-kbd-light">Espaco</kbd>
                 </button>
 
@@ -313,6 +398,39 @@
                 </button>
               </div>
             </div>
+
+            <!-- Chamada de Atenção (Luminoso / Sonoro / Ambos + Intervalo Configurável) -->
+            <div class="attention-config-bar" aria-label="Configuracao de chamada de atencao">
+              <div class="attention-mode-group">
+                <span class="attention-label">
+                  <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.75"/>
+                    <path d="M12 2V5M12 19V22M2 12H5M19 12H22" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                  </svg>
+                  Chamada de Atencao:
+                </span>
+                <div class="attention-pills" role="group">
+                  <button type="button" class="att-mode-btn" data-att-mode="light">Luminoso</button>
+                  <button type="button" class="att-mode-btn" data-att-mode="sound">Sonoro</button>
+                  <button type="button" class="att-mode-btn active" data-att-mode="both">Ambos</button>
+                  <button type="button" class="att-mode-btn" data-att-mode="off">Off</button>
+                </div>
+              </div>
+
+              <div class="attention-interval-group">
+                <span class="attention-label">A cada:</span>
+                <div class="attention-pills">
+                  <button type="button" class="att-int-btn active" data-att-min="5">5m</button>
+                  <button type="button" class="att-int-btn" data-att-min="10">10m</button>
+                  <button type="button" class="att-int-btn" data-att-min="15">15m</button>
+                  <div class="att-custom-wrap">
+                    <input type="number" id="customAttentionMinInput" class="att-custom-input" min="1" max="180" placeholder="min" title="Definir minutos personalizados para chamada de atencao" />
+                    <span class="att-unit">min</span>
+                  </div>
+                  <button type="button" id="testAttentionNowBtn" class="att-test-btn" title="Testar pulso luminoso/sonoro agora">Testar</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Card Footer Navigation & Keyboard Shortcuts -->
@@ -329,6 +447,8 @@
               <span class="dot-sep">·</span>
               <span><kbd>⌘K</kbd> Busca</span>
               <span class="dot-sep">·</span>
+              <span><kbd>U</kbd> Ultra Foco</span>
+              <span class="dot-sep">·</span>
               <span><kbd>←</kbd><kbd>→</kbd> Navegar</span>
             </div>
 
@@ -342,7 +462,7 @@
         </article>
       </section>
 
-      <!-- RIGHT: Minimalist Apple Activity Bento & Agenda Queue -->
+      <!-- RIGHT: Minimalist Apple Activity Bento & Agenda do Dia Queue -->
       <aside class="agenda-sidebar" aria-label="Resumo do dia e fila de agenda">
         <!-- Day Progress & ETA Glass Card -->
         <div class="liquid-bento-card day-overview-card">
@@ -375,36 +495,74 @@
           </div>
         </div>
 
-        <!-- Agenda Queue List Card -->
+        <!-- Agenda do Dia Queue List Card + Google Agenda Inclusion Toggle -->
         <div class="liquid-bento-card agenda-queue-card">
           <div class="queue-card-header">
             <div class="queue-header-left">
-              <h3 class="queue-title">Fila da Agenda</h3>
+              <h3 class="queue-title">Agenda do Dia</h3>
               <span id="queueTotalBadge" class="queue-count-pill">0</span>
             </div>
-            <button type="button" id="queueQuickAddBtn" class="queue-add-mini" title="Adicionar tarefa (Q)">
-              <svg class="icon-14" viewBox="0 0 24 24" fill="none">
-                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              <span>Adicionar</span>
-            </button>
+            <div class="queue-header-actions">
+              <button type="button" id="openCalendarFromQueueBtn" class="queue-cal-mini" title="Abrir Agenda Geral (Calendario)">
+                <svg class="icon-13" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M8 2V6M16 2V6M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <span>Calendario</span>
+              </button>
+              <button type="button" id="queueQuickAddBtn" class="queue-add-mini" title="Adicionar tarefa (Q)">
+                <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Nova</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Google Agenda Quick Toggle inside Agenda do Dia -->
+          <div class="gcal-inline-bar">
+            <label class="gcal-switch-label">
+              <input type="checkbox" id="includeGcalToggle" checked />
+              <span class="gcal-switch-slider"></span>
+              <span class="gcal-switch-text">Incluir eventos do Google Agenda no dia</span>
+            </label>
+            <span id="gcalCountBadge" class="gcal-mini-badge">Sincronizado</span>
           </div>
 
           <div id="agendaQueueList" class="agenda-queue-list" role="list"></div>
         </div>
       </aside>
     </main>
+
+    <!-- ==================================================================
+         2C. MOTIVATIONAL QUOTES FOOTER
+         ================================================================== -->
+    <footer id="motivationalFooter" class="motivational-footer" aria-label="Frase motivacional de foco">
+      <div class="quote-glass-pill">
+        <svg class="quote-spark-icon" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3L14.2 9.8L21 12L14.2 14.2L12 21L9.8 14.2L3 12L9.8 9.8L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+        <p id="motivationalQuoteText" class="motivational-quote-text">
+          "Clareza precede velocidade: faça uma única tarefa com presença absoluta até terminá-la."
+        </p>
+        <button type="button" id="nextQuoteBtn" class="quote-next-btn" title="Proxima frase motivacional">
+          <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+            <path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </footer>
   </div>
 
   <!-- ====================================================================
-       3. MODAL: SHORTCUT 'Q' — QUICK-ADD TASK WITH NLP SCHEDULE PARSER
+       3. MODAL: SHORTCUT 'Q' — QUICK-ADD WITH INLINE HIGHLIGHTED TAGS
        ==================================================================== -->
   <div id="quickAddModal" class="glass-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="quickAddModalTitle">
     <div class="glass-modal-sheet quick-add-sheet">
       <div class="modal-sheet-header">
         <div class="modal-title-group">
           <span class="modal-kbd-badge">Q</span>
-          <h3 id="quickAddModalTitle" class="modal-title">Nova Tarefa com Atalhos de Agenda</h3>
+          <h3 id="quickAddModalTitle" class="modal-title">Nova Tarefa com Tags Inteligentes de Agenda</h3>
         </div>
         <button type="button" data-close-modal="quickAddModal" class="glass-close-btn" aria-label="Fechar">
           <svg class="icon-18" viewBox="0 0 24 24" fill="none">
@@ -414,22 +572,44 @@
       </div>
 
       <form id="quickAddForm" class="quick-add-form">
+        <!-- Live Highlighted Input Container (Demarcates tags inside text as user types!) -->
         <div class="nlp-input-container">
-          <input
-            type="text"
-            id="quickAddInput"
-            class="nlp-main-input"
-            placeholder="Ex: Revisar campanha NuvemShop amanha 15:00 30m p1 #marketing"
-            autocomplete="off"
-          />
+          <div class="nlp-editor-stack">
+            <div id="nlpHighlightBackdrop" class="nlp-highlight-backdrop" aria-hidden="true"></div>
+            <input
+              type="text"
+              id="quickAddInput"
+              class="nlp-main-input"
+              placeholder="Ex: Revisar metricas toda segunda 14:30 35m p1 #shark"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
           <div class="nlp-syntax-hint">
-            Atalhos ao digitar: <code>hoje</code> <code>amanha</code> <code>seg..dom</code> <code>14:30</code> <code>15m</code> <code>25m</code> <code>p1..p4</code> <code>todo dia</code> <code>#tag</code>
+            Tags reconhecidas e demarcadas no texto:
+            <code>hoje</code> <code>amanha</code> <code>segunda..domingo</code>
+            <code>toda segunda</code> <code>toda terca</code> <code>daqui 15 dias</code>
+            <code>dia 20/11</code> <code>14:30</code> <code>35m</code> <code>p1..p4</code> <code>#tag</code>
           </div>
         </div>
 
-        <!-- Live Detected NLP Tokens Preview -->
+        <!-- Clear Human-Readable Schedule Explanation Banner -->
+        <div id="nlpHumanExplanationBox" class="nlp-explanation-banner">
+          <div class="nlp-exp-icon">
+            <svg class="icon-18" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M8 2V6M16 2V6M3 10H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="nlp-exp-text-col">
+            <strong id="nlpHumanTitle" class="nlp-exp-title">Agendada para Hoje na sua Agenda do Dia</strong>
+            <span id="nlpHumanSub" class="nlp-exp-sub">Duração estimada: 15 min · Prioridade P4</span>
+          </div>
+        </div>
+
+        <!-- Live Detected Function Tag Pills -->
         <div id="nlpDetectedBar" class="nlp-detected-bar">
-          <span class="nlp-bar-label">Detectado:</span>
+          <span class="nlp-bar-label">Tags ativas:</span>
           <div id="nlpTokensList" class="nlp-tokens-list"></div>
         </div>
 
@@ -439,28 +619,34 @@
             id="quickAddDesc"
             class="glass-textarea"
             rows="2"
-            placeholder="Notas ou passos adicionais (opcional)..."
+            placeholder="Notas, links ou passos adicionais (opcional)..."
           ></textarea>
         </div>
 
-        <!-- Quick Clickable Schedule Pickers -->
+        <!-- Quick Clickable Schedule Pickers + Custom Time Input -->
         <div class="quick-pickers-row">
           <div class="picker-group">
-            <span class="picker-label">Data</span>
+            <span class="picker-label">Quando / Recorrencia</span>
             <div class="picker-chips">
               <button type="button" class="qa-chip active" data-qa-date="today">Hoje</button>
               <button type="button" class="qa-chip" data-qa-date="tomorrow">Amanha</button>
-              <button type="button" class="qa-chip" data-qa-date="nextweek">Prox Sem</button>
+              <button type="button" class="qa-chip" data-qa-token="toda segunda">Toda Seg</button>
+              <button type="button" class="qa-chip" data-qa-token="toda terca">Toda Ter</button>
+              <button type="button" class="qa-chip" data-qa-token="daqui 15 dias">+15 Dias</button>
             </div>
           </div>
 
           <div class="picker-group">
-            <span class="picker-label">Tempo</span>
+            <span class="picker-label">Tempo Estimado (ou Personalizado)</span>
             <div class="picker-chips">
               <button type="button" class="qa-chip" data-qa-est="10">10m</button>
               <button type="button" class="qa-chip active" data-qa-est="15">15m</button>
               <button type="button" class="qa-chip" data-qa-est="25">25m</button>
               <button type="button" class="qa-chip" data-qa-est="45">45m</button>
+              <div class="qa-custom-time-box">
+                <input type="number" id="qaCustomEstInput" class="qa-custom-est-input" min="1" max="480" placeholder="Outro" title="Digite qualquer tempo em minutos" />
+                <span>min</span>
+              </div>
             </div>
           </div>
 
@@ -500,7 +686,7 @@
           type="text"
           id="spotlightInput"
           class="spotlight-input"
-          placeholder="Buscar tarefa, #tag, horario ou comando..."
+          placeholder="Buscar tarefa, #tag, horario, Agenda Geral ou comando..."
           autocomplete="off"
         />
         <kbd class="spotlight-esc-kbd">ESC</kbd>
@@ -594,7 +780,7 @@
   </div>
 
   <!-- ====================================================================
-       6. MODAL: CONTA SAAS & INTEGRAÇÃO TODOIST
+       6. MODAL: CONTA SAAS, GOOGLE AGENDA & INTEGRAÇÃO TODOIST
        ==================================================================== -->
   <div id="settingsModal" class="glass-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
     <div class="glass-modal-sheet settings-sheet">
@@ -604,7 +790,7 @@
             <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.75"/>
             <path d="M5 20C5 16.6863 8.13401 14 12 14C15.866 14 19 16.6863 19 20" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
           </svg>
-          <h3 id="settingsModalTitle" class="modal-title">Conta & Integracao Todoist</h3>
+          <h3 id="settingsModalTitle" class="modal-title">Conta, Google Agenda & Todoist</h3>
         </div>
         <button type="button" data-close-modal="settingsModal" class="glass-close-btn" aria-label="Fechar">
           <svg class="icon-18" viewBox="0 0 24 24" fill="none">
@@ -624,6 +810,34 @@
           <button type="button" id="logoutBtn" class="glass-btn-danger-outline">Sair da Conta</button>
         </div>
 
+        <!-- Google Calendar Integration Section -->
+        <form id="gcalConfigForm" class="todoist-config-box">
+          <div class="integration-title-row">
+            <label class="auth-label">Sincronizacao com Google Agenda</label>
+            <span id="gcalModalStatusBadge" class="account-plan-pill">Conectado</span>
+          </div>
+          <p class="settings-help-text">
+            Escolha se deseja incluir os compromissos do seu Google Agenda diretamente na lista de atividades do dia (Foco) ou apenas visualiza-los na Agenda Geral.
+          </p>
+          <label class="gcal-switch-label" style="margin-bottom: 10px;">
+            <input type="checkbox" id="settingsIncludeGcalToggle" checked />
+            <span class="gcal-switch-slider"></span>
+            <span class="gcal-switch-text">Incluir eventos do Google Agenda na lista de atividades do dia</span>
+          </label>
+          <div class="token-input-row">
+            <input
+              type="url"
+              id="gcalIcsUrlInput"
+              class="glass-input"
+              placeholder="Opcional: URL secreta iCal (.ics) do Google Agenda para outra conta..."
+              autocomplete="off"
+            />
+            <button type="submit" class="glass-btn-obsidian">Salvar Google Agenda</button>
+          </div>
+          <p id="gcalStatusNote" class="settings-status-note"></p>
+        </form>
+
+        <!-- Todoist Integration Section -->
         <form id="todoistConfigForm" class="todoist-config-box">
           <label for="todoistTokenInput" class="auth-label">Token da API do Todoist (Sincronizacao Bidirecional)</label>
           <p class="settings-help-text">
@@ -651,7 +865,7 @@
     <span id="glassToastText" class="toast-text">Pronto</span>
   </div>
 
-  <script src="/tasks-seed.js?v=20261028v4"></script>
-  <script src="/app.js?v=20261028v4"></script>
+  <script src="/tasks-seed.js?v=20261028v5"></script>
+  <script src="/app.js?v=20261028v5"></script>
 </body>
 </html>

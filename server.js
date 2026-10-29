@@ -18,6 +18,7 @@ const PORT = Number(process.env.PORT || 3847);
 const ROOT_DIR = __dirname;
 const DATA_DIR = path.join(ROOT_DIR, 'data');
 const SNAPSHOT_FILE = path.join(DATA_DIR, 'todoist-snapshot.json');
+const GCAL_SNAPSHOT_FILE = path.join(DATA_DIR, 'gcal-snapshot.json');
 const LOCAL_TIMES_FILE = path.join(DATA_DIR, 'lightfocus-times.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const TOKEN_FILE = path.join(DATA_DIR, '.todoist-token');
@@ -1101,6 +1102,84 @@ function parseBody(req) {
   });
 }
 
+
+function readGcalSnapshot(user, isFounder) {
+  if (user && Array.isArray(user.gcalEvents) && user.gcalEvents.length > 0) {
+    return {
+      connected: true,
+      calendarName: user.gcalName || user.email || "Google Agenda",
+      includeInToday: user.settings && user.settings.includeGcalInToday !== undefined ? Boolean(user.settings.includeGcalInToday) : true,
+      icsUrl: user.gcalIcsUrl || "",
+      events: user.gcalEvents
+    };
+  }
+  if (isFounder && fs.existsSync(GCAL_SNAPSHOT_FILE)) {
+    try {
+      const snap = JSON.parse(fs.readFileSync(GCAL_SNAPSHOT_FILE, "utf8"));
+      return {
+        connected: true,
+        calendarName: snap.calendarName || "walace@sharkcommerce.com.br",
+        includeInToday: user && user.settings && user.settings.includeGcalInToday !== undefined ? Boolean(user.settings.includeGcalInToday) : true,
+        icsUrl: (user && user.gcalIcsUrl) || "",
+        events: Array.isArray(snap.events) ? snap.events : []
+      };
+    } catch (_) {}
+  }
+  return {
+    connected: false,
+    calendarName: "",
+    includeInToday: false,
+    icsUrl: "",
+    events: []
+  };
+}
+
+function parseIcsContent(icsText) {
+  const events = [];
+  const blocks = String(icsText || "").split("BEGIN:VEVENT").slice(1);
+  for (const blk of blocks) {
+    const endIdx = blk.indexOf("END:VEVENT");
+    const body = endIdx >= 0 ? blk.slice(0, endIdx) : blk;
+    const unfolded = body.replace(/\r?\n[ \t]/g, "");
+    const lines = unfolded.split(/\r?\n/);
+    let uid = "";
+    let summary = "Evento Google Agenda";
+    let description = "";
+    let dtStart = "";
+    let dtEnd = "";
+    for (const line of lines) {
+      if (line.startsWith("UID:")) uid = line.slice(4).trim();
+      else if (line.startsWith("SUMMARY")) summary = line.replace(/^SUMMARY[^:]*:/, "").trim();
+      else if (line.startsWith("DESCRIPTION")) description = line.replace(/^DESCRIPTION[^:]*:/, "").replace(/\\n/g, "\n").trim();
+      else if (line.startsWith("DTSTART")) dtStart = line.replace(/^DTSTART[^:]*:/, "").trim();
+      else if (line.startsWith("DTEND")) dtEnd = line.replace(/^DTEND[^:]*:/, "").trim();
+    }
+    if (dtStart.length >= 8) {
+      const y = dtStart.slice(0, 4);
+      const m = dtStart.slice(4, 6);
+      const d = dtStart.slice(6, 8);
+      const dueDate = `${y}-${m}-${d}`;
+      let dueTime = null;
+      if (dtStart.includes("T") && dtStart.length >= 13) {
+        dueTime = `${dtStart.slice(9, 11)}:${dtStart.slice(11, 13)}`;
+      }
+      events.push({
+        id: "gcal_" + (uid || Math.random().toString(36).slice(2, 10)).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 24),
+        content: stripEmojisServer(summary),
+        description: stripEmojisServer(description),
+        dueDate,
+        dueTime,
+        estimatedMinutes: 45,
+        priority: "p2",
+        projectName: "Google Agenda",
+        source: "gcal",
+        checked: false
+      });
+    }
+  }
+  return events;
+}
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -1371,6 +1450,7 @@ const server = http.createServer(async (req, res) => {
       const dueDate = body.dueDate ? String(body.dueDate).slice(0, 10) : dateStr;
       const dueTime = body.dueTime ? String(body.dueTime).slice(0, 5) : null;
       const recurring = body.recurring ? String(body.recurring) : false;
+      const recurrenceRule = body.recurrenceRule && typeof body.recurrenceRule === 'object' ? body.recurrenceRule : null;
       const projectName = stripEmojisServer(body.projectName || 'Hoje · Principal');
       const labels = Array.isArray(body.labels) ? body.labels.map((l) => stripEmojisServer(l)) : [];
       const rawDesc = String(body.description || '').trim();
@@ -1416,6 +1496,7 @@ const server = http.createServer(async (req, res) => {
         dueDate,
         dueTime,
         recurring,
+        recurrenceRule,
         priority,
         projectId: 'inbox',
         projectName,
@@ -1795,6 +1876,59 @@ const server = http.createServer(async (req, res) => {
         }
       }
       return sendJson(res, 200, { ok: true, snapshot });
+    }
+
+    
+    // 16b. Google Calendar Integration (GET /api/gcal/events & POST /api/gcal/settings)
+    if (pathname === "/api/gcal/events" && req.method === "GET") {
+      const gcal = readGcalSnapshot(currentUser, isFounder);
+      return sendJson(res, 200, {
+        ok: true,
+        ...gcal
+      });
+    }
+
+    if (pathname === "/api/gcal/settings" && req.method === "POST") {
+      const body = await parseBody(req);
+      let fetchedEvents = null;
+      let icsUrl = body.icsUrl !== undefined ? String(body.icsUrl || "").trim() : undefined;
+
+      if (icsUrl && (icsUrl.startsWith("http://") || icsUrl.startsWith("https://"))) {
+        try {
+          const resp = await fetch(icsUrl);
+          if (resp.ok) {
+            const icsText = await resp.text();
+            fetchedEvents = parseIcsContent(icsText);
+          }
+        } catch (_) {}
+      }
+
+      const updatedUser = updateUserRecord(currentUser.id, (u) => {
+        const nextSettings = { ...(u.settings || {}) };
+        if (body.includeInToday !== undefined) {
+          nextSettings.includeGcalInToday = Boolean(body.includeInToday);
+        }
+        if (body.attentionMode !== undefined) {
+          nextSettings.attentionMode = String(body.attentionMode);
+        }
+        if (body.attentionIntervalMinutes !== undefined) {
+          nextSettings.attentionIntervalMinutes = Math.max(1, Number(body.attentionIntervalMinutes || 5));
+        }
+        const next = { ...u, settings: nextSettings };
+        if (icsUrl !== undefined) next.gcalIcsUrl = icsUrl;
+        if (Array.isArray(fetchedEvents) && fetchedEvents.length > 0) {
+          next.gcalEvents = fetchedEvents;
+          next.gcalName = "Google Agenda (iCal)";
+        }
+        return next;
+      });
+
+      const gcal = readGcalSnapshot(updatedUser || currentUser, isFounder);
+      return sendJson(res, 200, {
+        ok: true,
+        user: sanitizeUserForClient(updatedUser || currentUser),
+        ...gcal
+      });
     }
 
     // 17. GET & POST /api/times
