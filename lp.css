@@ -184,3 +184,10 @@ body:not(.pwa-installable) .install-pwa-trigger.hide-when-unavailable { display:
 .lp-wrapper { overflow-x: clip; max-width: 100%; }
 .lp-wrapper *, .lp-wrapper *::before, .lp-wrapper *::after { box-sizing: border-box; min-width: 0; }
 @media (max-width: 480px) { .lp-wrapper [class*="type"] { flex-wrap: wrap; overflow-wrap: anywhere; white-space: normal; } .lp-pricing-glow { inset: 0 !important; width: auto !important; max-width: 100%; } }
+/* v12 hero CTA */
+html { scroll-behavior: smooth; }
+#lpFilosofia { scroll-margin-top: 84px; }
+a.lp-cta-primary { text-decoration: none; display: inline-flex; align-items: center; gap: 10px; }
+#lpHeroHowBtn svg { transition: transform .25s ease; }
+#lpHeroHowBtn:hover svg { transform: translateY(2px); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
