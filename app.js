@@ -1000,6 +1000,12 @@
     }
   }
 
+  function srcLogo(t) {
+    if (!window.LFLogos || !t) return '';
+    if (t.source !== 'gcal' && !state.hasTodoistToken) return '';
+    return window.LFLogos.src(t);
+  }
+
   function renderFocusCard() {
     const list = getFilteredTasks();
     const task = getCurrentTask();
@@ -1069,6 +1075,7 @@
 
     if (titleEl) {
       titleEl.textContent = task.content;
+      if (srcLogo(task)) titleEl.insertAdjacentHTML('afterbegin', srcLogo(task));
     }
 
     if (tagsRow) {
@@ -1200,8 +1207,8 @@
                 <path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
-            <span class="queue-item-text">${escapeHtml(t.content)}</span>
-            <span class="queue-item-est">${escapeHtml(sourceTag + timeTag)}${t.estimatedMinutes || 15}m</span>
+            <span class="queue-item-text">${srcLogo(t)}${escapeHtml(t.content)}</span>
+            <span class="queue-item-est">${escapeHtml(timeTag)}${t.estimatedMinutes || 15}m</span>
           </div>
         `;
       })

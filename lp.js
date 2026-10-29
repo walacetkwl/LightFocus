@@ -176,7 +176,7 @@
     const sel = $('notifyThresholdSelect'); if (sel) sel.addEventListener('change', () => { localStorage.setItem(TKEY, sel.value); toast('Aviso ajustado'); });
     on('testTimeEndingNotifyBtn', async () => { if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission(); syncNotifyUI(); notify('Lightfocus · teste', 'É assim que vou te avisar quando o tempo da tarefa estiver acabando.'); });
     document.querySelectorAll('#landingPageSection a[href^="#lp"]').forEach((a) => a.addEventListener('click', (e) => { const t = document.querySelector(a.getAttribute('href')); if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth' }); } }));
-    if (qs.get('checkout') === 'success') { toast('Pagamento confirmado! Bem-vindo ao Lightfocus vitalício ✨'); localStorage.setItem('lf_lifetime', '1'); }
+    if (qs.get('checkout') === 'success') { toast('Pagamento confirmado! Pagamento recebido. Seu acesso será liberado em instantes.'); localStorage.setItem('lf_lifetime', '1'); }
     setPay('pix'); syncNotifyUI(); initMotions(); loadStripeCfg();
     refresh();
   });

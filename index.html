@@ -10,15 +10,16 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Lightfocus" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261029v13" />
-  <link rel="alternate icon" href="/favicon.ico?v=20261029v13" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261029v13" />
-  <link rel="manifest" href="/manifest.webmanifest?v=20261029v13" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261029v14" />
+  <link rel="alternate icon" href="/favicon.ico?v=20261029v14" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261029v14" />
+  <link rel="manifest" href="/manifest.webmanifest?v=20261029v14" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=20261029v13" />
-  <link rel="stylesheet" href="/lp.css?v=20261029v13" />
+  <link rel="stylesheet" href="/styles.css?v=20261029v14" />
+  <link rel="stylesheet" href="/lp.css?v=20261029v14" />
+  <link rel="stylesheet" href="/billing.css?v=20261029v14" />
   <style id="lpStoryStyles">
     /* ===================================================================
        LIGHTFOCUS LANDING · STORYTELLING + MOTIONS (escopo: #landingPageSection)
@@ -973,7 +974,7 @@
           <a href="#lpFilosofia" class="lp-nav-link">O Método</a>
           <a href="#lpVisual" class="lp-nav-link">Por que funciona</a>
           <a href="#lpMotions" class="lp-nav-link">Por Dentro do App</a>
-          <a href="#lpPricing" class="lp-nav-link">Acesso Vitalício</a>
+          <a href="#lpPricing" class="lp-nav-link">Planos</a>
         </nav>
 
         <div class="lp-nav-actions">
@@ -1340,7 +1341,7 @@
         <div class="lp-motions-bento">
           <article class="lp-motion-card" data-reveal>
             <div class="lp-mc-header">
-              <span class="lp-mc-tag">01 · CAPTURA INSTANTÂNEA</span>
+              <span class="lp-mc-tag"><span class="lp-mc-num">1</span>CAPTURA INSTANTÂNEA</span>
               <h3>Aperte <kbd>Q</kbd> e agende escrevendo como você pensa</h3>
               <p>Digite o título junto com o dia, a recorrência, o horário, a duração e a prioridade. O Lightfocus destaca cada parte enquanto você escreve.</p>
             </div>
@@ -1373,7 +1374,7 @@
 
           <article id="lpWebApp" class="lp-motion-card" data-reveal style="--d:100ms">
             <div class="lp-mc-header">
-              <span class="lp-mc-tag">02 · JANELA SOLTA E WEBAPP</span>
+              <span class="lp-mc-tag"><span class="lp-mc-num">2</span>JANELA SOLTA E WEBAPP</span>
               <h3>Uma janela pequena ao lado do seu trabalho</h3>
               <p>Com 1 clique em <strong>Abrir em Janela</strong>, o Lightfocus vira uma janela compacta em formato de celular. Ou instale como app no Chrome e no celular.</p>
             </div>
@@ -1409,7 +1410,7 @@
 
           <article class="lp-motion-card" data-reveal>
             <div class="lp-mc-header">
-              <span class="lp-mc-tag">03 · AVISO DE FIM DE TEMPO</span>
+              <span class="lp-mc-tag"><span class="lp-mc-num">3</span>AVISO DE FIM DE TEMPO</span>
               <h3>Um aviso gentil quando o tempo está acabando</h3>
               <p>Receba uma notificação quando faltar 1 ou 2 minutos para encerrar a tarefa. Quer silêncio absoluto? Desligue com 1 clique.</p>
             </div>
@@ -1444,7 +1445,7 @@
 
           <article class="lp-motion-card" data-reveal style="--d:100ms">
             <div class="lp-mc-header">
-              <span class="lp-mc-tag">04 · CONSTÂNCIA QUE CRESCE</span>
+              <span class="lp-mc-tag"><span class="lp-mc-num">4</span>CONSTÂNCIA QUE CRESCE</span>
               <h3>Sua constância faz crescer uma árvore ao longo de 6 meses</h3>
               <p>Cada tarefa concluída alimenta uma semente que cresce devagar, no mesmo ritmo dos seus dias. Com previsão de término do dia e Lo-Fi opcional.</p>
             </div>
@@ -1473,15 +1474,40 @@
         </div>
       </section>
 
+      <section id="lpIntegracoes" class="lp-story-section lp-integrations-section" aria-labelledby="lpIntegTitle">
+        <div class="lp-section-header" data-reveal>
+          <span class="lp-eyebrow">INTEGRAÇÕES</span>
+          <h2 id="lpIntegTitle" class="lp-section-title">Suas tarefas e sua agenda, no mesmo lugar calmo.</h2>
+          <p class="lp-section-desc">Conecte o Todoist e o Google Agenda em poucos minutos. O Lightfocus traz tudo para a fila do dia e devolve cada conclusão para onde ela nasceu.</p>
+        </div>
+        <div class="lp-integ-grid">
+          <article class="lp-integ-card" data-reveal>
+            <div class="lp-integ-logo"><svg class="lf-logo-todoist" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#E44332"/><path d="M7 11.2l9 5.1 9-5.1M7 16l9 5.1 9-5.1M7 20.8l9 5.1 9-5.1" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3>Todoist</h3>
+            <p>Sincronização nos dois sentidos. Concluiu aqui, concluiu lá. A ordem do seu Hoje é respeitada.</p>
+            <ul class="lp-plan-list"><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Tarefas, horários e prioridades</span></li><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Conclusões voltam para o Todoist</span></li></ul>
+          </article>
+          <article class="lp-integ-card" data-reveal style="--d:100ms">
+            <div class="lp-integ-logo"><svg class="lf-logo-gcal" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="4" fill="#fff"/><path d="M3 9V7a4 4 0 014-4h18a4 4 0 014 4v2z" fill="#4285F4"/><path d="M29 23v2a4 4 0 01-4 4h-2v-6z" fill="#EA4335"/><path d="M3 23h20v6H7a4 4 0 01-4-4z" fill="#34A853"/><path d="M23 9h6v14h-6z" fill="#FBBC04"/><rect x="3" y="3" width="26" height="26" rx="4" fill="none" stroke="rgba(0,0,0,.08)"/><text x="13" y="20.5" font-family="-apple-system,Helvetica,Arial,sans-serif" font-size="10" font-weight="700" fill="#1a73e8" text-anchor="middle">31</text></svg></div>
+            <h3>Google Agenda</h3>
+            <p>Seus compromissos aparecem na Agenda Geral. Você escolhe se eles entram ou não na fila do dia.</p>
+            <ul class="lp-plan-list"><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Eventos do dia e do mês</span></li><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Liga e desliga com 1 clique</span></li></ul>
+          </article>
+        </div>
+        <div class="lp-trial-row" data-reveal>
+          <button type="button" class="lp-trial-btn" data-lf-trial>Testar grátis por 2 dias</button>
+        </div>
+      </section>
+
       <!-- ==================================================================
            CAPÍTULO 6: A OFERTA (R$ 99 VITALÍCIO, STRIPE)
            ================================================================== -->
       <section id="lpPricing" class="lp-pricing-section">
         <div class="lp-section-header" data-reveal>
-          <span class="lp-eyebrow"><span class="lp-chapter-num">6</span>ACESSO VITALÍCIO · SEM MENSALIDADE</span>
-          <h2 class="lp-section-title">Pague uma única vez. Deixe todos os seus dias mais leves.</h2>
+          <span class="lp-eyebrow"><span class="lp-chapter-num">6</span>PLANOS</span>
+          <h2 class="lp-section-title">Escolha como quer deixar seus dias mais leves.</h2>
           <p class="lp-section-desc">
-            Sem assinatura. Garanta o seu acesso vitalício ao <strong>Lightfocus</strong> via Stripe, com PIX à vista ou cartão parcelado.
+            Comece com 2 dias grátis. Depois, assine por mês ou garanta o <strong>Lightfocus</strong> para sempre. Cartão, Apple Pay, Google Pay e Pix via Stripe.
           </p>
         </div>
 
@@ -1491,85 +1517,28 @@
           <span><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Um passo de cada vez</span>
         </div>
 
-        <div class="lp-pricing-card" data-reveal="scale">
-          <div class="lp-pricing-glow" aria-hidden="true"></div>
-
-          <div class="lp-pricing-left">
-            <div class="lp-lifetime-badge">ACESSO VITALÍCIO · LICENÇA COMPLETA</div>
-            <h3 class="lp-pricing-name">Lightfocus</h3>
-            <p class="lp-pricing-tagline">
-              O sistema completo de foco em uma tarefa por vez, no computador e no celular, com sincronização em nuvem, WebApp instalável e todas as atualizações futuras inclusas.
-            </p>
-
-            <ul class="lp-features-checklist">
-              <li>
-                <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span><strong>Foco em 1 tarefa por vez</strong> e Modo Ultra Foco (<kbd>U</kbd>) sem distrações</span>
-              </li>
-              <li>
-                <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span><strong>Captura rápida (<kbd>Q</kbd>)</strong> que entende data, horário, recorrência e tempo</span>
-              </li>
-              <li>
-                <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span><strong>WebApp instalável no Chrome</strong> e <strong>janela solta em formato mobile</strong></span>
-              </li>
-              <li>
-                <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span><strong>Aviso de tempo acabando</strong> por notificação, que você desliga quando quiser</span>
-              </li>
-              <li>
-                <svg class="icon-16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span><strong>Sincronização nos dois sentidos</strong> com Todoist e Google Agenda, mais a árvore de 6 meses</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="lp-pricing-right">
-            <div class="lp-price-box">
-              <span class="lp-price-label">PAGAMENTO ÚNICO · VITALÍCIO</span>
-              <div class="lp-price-value-row" aria-label="R$ 99,00">
-                <span class="lp-currency">R$</span>
-                <span class="lp-amount">99</span>
-                <span class="lp-cents">,00</span>
-              </div>
-              <span class="lp-price-installment-note">
-                À vista no <strong>PIX</strong> ou em até <strong>12x no cartão</strong>. Juros do parcelamento por conta do comprador.
-              </span>
-
-              <div class="lp-payment-methods-pills">
-                <button type="button" class="lp-pay-method-btn active" data-lp-pay="pix" id="lpSelectPixBtn">
-                  <svg class="icon-16" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 3L21 12L12 21L3 12L12 3Z" stroke="currentColor" stroke-width="1.8"/>
-                    <path d="M9 12L12 9L15 12L12 15L9 12Z" fill="currentColor"/>
-                  </svg>
-                  <span>PIX · R$ 99 à vista</span>
-                </button>
-                <button type="button" class="lp-pay-method-btn" data-lp-pay="card" id="lpSelectCardBtn">
-                  <svg class="icon-16" viewBox="0 0 24 24" fill="none">
-                    <rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
-                    <path d="M2 10H22" stroke="currentColor" stroke-width="1.8"/>
-                  </svg>
-                  <span>Cartão · até 12x</span>
-                </button>
-              </div>
-
-              <button type="button" id="lpStripeCheckoutBtn" class="lp-stripe-buy-btn">
-                <span>Garantir meu acesso vitalício por R$ 99</span>
-                <svg class="icon-18" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-
-              <div class="lp-stripe-security-foot">
-                <svg class="icon-14" viewBox="0 0 24 24" fill="none">
-                  <rect x="4" y="11" width="16" height="10" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
-                  <path d="M8 11V7C8 4.79 9.79 3 12 3C14.21 3 16 4.79 16 7V11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                </svg>
-                <span>Pagamento seguro via <strong>Stripe</strong> · Liberação imediata</span>
-              </div>
-            </div>
-          </div>
+        <div class="lp-plans-grid" data-reveal="scale">
+          <article class="lp-plan lp-plan-monthly">
+            <span class="lp-plan-kicker">MENSAL</span>
+            <div class="lp-plan-price"><span class="lp-plan-cur">R$</span><span class="lp-plan-amt">29</span><span class="lp-per">/mês</span></div>
+            <p class="lp-plan-desc">Assinatura flexível. Cancele quando quiser, direto no portal.</p>
+            <ul class="lp-plan-list"><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Foco em 1 tarefa por vez</strong> e Modo Ultra Foco sem distrações</span></li><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Captura rápida (Q)</strong> que entende data, horário, recorrência e tempo</span></li><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>WebApp instalável</strong> e janela solta em formato mobile</span></li><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Aviso de tempo acabando</strong> por notificação, quando você quiser</span></li><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Sincronização nos dois sentidos</strong> com Todoist e Google Agenda</span></li></ul>
+            <div class="lp-plan-methods" aria-label="Formas de pagamento"><span>Cartão</span><span>Apple Pay</span><span>Google Pay</span></div>
+            <button type="button" class="lp-plan-btn lp-plan-btn-ghost" data-lf-plan="monthly">Assinar por R$ 29/mês</button>
+          </article>
+          <article class="lp-plan lp-plan-lifetime">
+            <span class="lp-plan-badge">94% escolhem este plano</span>
+            <span class="lp-plan-kicker">VITALÍCIO</span>
+            <div class="lp-plan-price"><span class="lp-plan-cur">R$</span><span class="lp-plan-amt">99</span><span class="lp-per">uma vez</span></div>
+            <p class="lp-plan-desc">Pague uma única vez e use para sempre, com todas as atualizações futuras.</p>
+            <ul class="lp-plan-list"><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Foco em 1 tarefa por vez</strong> e Modo Ultra Foco sem distrações</span></li><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Captura rápida (Q)</strong> que entende data, horário, recorrência e tempo</span></li><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>WebApp instalável</strong> e janela solta em formato mobile</span></li><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Aviso de tempo acabando</strong> por notificação, quando você quiser</span></li><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Sincronização nos dois sentidos</strong> com Todoist e Google Agenda</span></li><li><span class="lp-plan-check"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Árvore de 6 meses</strong>, relatórios e Lo-Fi opcional</span></li></ul>
+            <div class="lp-plan-methods" aria-label="Formas de pagamento"><span>Cartão</span><span>Apple Pay</span><span>Google Pay</span><span>Pix</span></div>
+            <button type="button" class="lp-plan-btn" data-lf-plan="lifetime">Garantir acesso vitalício</button>
+          </article>
+        </div>
+        <div class="lp-trial-row" data-reveal>
+          <button type="button" class="lp-trial-btn" data-lf-trial>Testar grátis por 2 dias</button>
+          <span>Sem cartão para testar. Pagamento seguro via Stripe.</span>
         </div>
       </section>
 
@@ -3037,8 +3006,9 @@
     <span id="glassToastText" class="toast-text">Pronto</span>
   </div>
 
-  <script src="/tasks-seed.js?v=20261029v13"></script>
-  <script src="/lp.js?v=20261029v13"></script>
-  <script src="/app.js?v=20261029v13"></script>
+  <script src="/tasks-seed.js?v=20261029v14"></script>
+  <script src="/lp.js?v=20261029v14"></script>
+  <script src="/app.js?v=20261029v14"></script>
+  <script src="/billing.js?v=20261029v14"></script>
 </body>
 </html>

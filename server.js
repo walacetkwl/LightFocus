@@ -17,7 +17,19 @@ const crypto = require('crypto');
 
 const PORT = Number(process.env.PORT || 3847);
 const ROOT_DIR = __dirname;
-const DATA_DIR = path.join(ROOT_DIR, 'data');
+// Load .env (KEY=VALUE) without dependencies; real env vars win
+(function loadDotEnv() {
+  [path.join(ROOT_DIR, '.env'), path.join(ROOT_DIR, 'data', '.env')].forEach((f) => {
+    try {
+      if (!fs.existsSync(f)) return;
+      fs.readFileSync(f, 'utf8').split(/\r?\n/).forEach((line) => {
+        const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+        if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
+      });
+    } catch (_) {}
+  });
+})();
+const DATA_DIR = process.env.LF_DATA_DIR || path.join(ROOT_DIR, 'data');
 const SNAPSHOT_FILE = path.join(DATA_DIR, 'todoist-snapshot.json');
 const GCAL_SNAPSHOT_FILE = path.join(DATA_DIR, 'gcal-snapshot.json');
 const LOCAL_TIMES_FILE = path.join(DATA_DIR, 'lightfocus-times.json');
@@ -26,7 +38,7 @@ const TOKEN_FILE = path.join(DATA_DIR, '.todoist-token');
 const AUTH_HASH_FILE = path.join(DATA_DIR, '.auth-sha256');
 const SYNC_QUEUE_FILE = path.join(DATA_DIR, 'todoist-sync-queue.json');
 
-const PERSISTENT_STORE_DIR = '/cursor/stores/store-299e4d2b-b1b8-4b9f-b8a2-8d06b3bf0b20';
+const PERSISTENT_STORE_DIR = process.env.LF_STORE_DIR || '/cursor/stores/store-299e4d2b-b1b8-4b9f-b8a2-8d06b3bf0b20';
 const PERSISTENT_USERS_FILE = path.join(PERSISTENT_STORE_DIR, 'lightfocus-users.json');
 const STRIPE_CONFIG_FILE = path.join(DATA_DIR, 'stripe-config.json');
 const PERSISTENT_STRIPE_FILE = path.join(PERSISTENT_STORE_DIR, 'lightfocus-stripe.json');
@@ -599,7 +611,9 @@ function sanitizeUserForClient(user) {
     levelProgressPct: lvl.levelProgressPct,
     streak: Number(user.streak || 1),
     hasTodoistToken: hasToken,
-    settings: user.settings || { theme: 'light', pulseIntervalMinutes: 5, soundEnabled: true }
+    settings: user.settings || { theme: 'light', pulseIntervalMinutes: 5, soundEnabled: true },
+    isAdmin: isAdminUser(user),
+    billing: computeAccess(user)
   };
 }
 
@@ -1352,6 +1366,305 @@ function createStripeCheckoutSessionHttps(secretKey, opts = {}) {
   });
 }
 
+
+// ============================================================================
+// Billing: trial (48h), plans (monthly R$ 29, lifetime R$ 99), Stripe keyless
+// ============================================================================
+const TRIAL_MS = 48 * 60 * 60 * 1000;
+const TRIAL_LAUNCH_ISO = '2026-10-29T16:00:00-03:00';
+const STRIPE_EVENTS_FILE = path.join(DATA_DIR, 'stripe-events.json');
+const PRICE_MONTHLY_BRL = 29;
+const PRICE_LIFETIME_BRL = 99;
+
+function isAdminUser(user) {
+  if (!user) return false;
+  return user.id === 'usr_walace' || String(user.email || '').toLowerCase() === 'walacetkwl@gmail.com' || user.role === 'admin';
+}
+
+function trialEndsAtOf(user) {
+  if (user.trialEndsAt) return new Date(user.trialEndsAt).getTime();
+  // Legacy accounts (created before trials existed) get 48h counted from launch
+  const created = Date.parse(user.createdAt || '') || Date.now();
+  return Math.max(created, Date.parse(TRIAL_LAUNCH_ISO)) + TRIAL_MS;
+}
+
+function computeAccess(user) {
+  if (!user) return null;
+  const now = Date.now();
+  const trialEnds = trialEndsAtOf(user);
+  const base = {
+    plan: user.plan || 'trial',
+    status: user.planStatus || null,
+    trialEndsAt: new Date(trialEnds).toISOString(),
+    trialMsLeft: Math.max(0, trialEnds - now),
+    currentPeriodEnd: user.currentPeriodEnd || null,
+    cancelAtPeriodEnd: Boolean(user.cancelAtPeriodEnd),
+    hasStripeCustomer: Boolean(user.stripeCustomerId),
+    disabled: Boolean(user.disabled)
+  };
+  if (user.disabled) return { ...base, entitled: false, reason: 'disabled' };
+  if (isAdminUser(user)) return { ...base, plan: 'admin', entitled: true, reason: 'admin' };
+  if (user.plan === 'lifetime') return { ...base, entitled: true, reason: 'lifetime' };
+  if (user.plan === 'monthly') {
+    const okStatus = ['active', 'trialing', 'past_due'].includes(user.planStatus || 'active');
+    const periodOk = !user.currentPeriodEnd || Date.parse(user.currentPeriodEnd) + 3 * 86400000 > now;
+    if (okStatus && periodOk) return { ...base, entitled: true, reason: 'monthly' };
+  }
+  if (trialEnds > now) return { ...base, plan: user.plan === 'monthly' ? 'monthly' : 'trial', entitled: true, reason: 'trial' };
+  return { ...base, entitled: false, reason: 'expired' };
+}
+
+function billingConfig() {
+  return {
+    secretKey: String(process.env.STRIPE_SECRET_KEY || readStripeConfig().secretKey || '').trim(),
+    webhookSecret: String(process.env.STRIPE_WEBHOOK_SECRET || '').trim(),
+    priceMonthly: String(process.env.STRIPE_PRICE_MONTHLY || '').trim(),
+    priceLifetime: String(process.env.STRIPE_PRICE_LIFETIME || '').trim(),
+    linkMonthly: String(process.env.STRIPE_PAYMENT_LINK_MONTHLY || '').trim(),
+    linkLifetime: String(process.env.STRIPE_PAYMENT_LINK_LIFETIME || readStripeConfig().paymentLink || '').trim(),
+    portalLoginUrl: String(process.env.STRIPE_PORTAL_LOGIN_URL || '').trim()
+  };
+}
+
+function publicBillingInfo() {
+  const c = billingConfig();
+  const sessionOk = c.secretKey.startsWith('sk_');
+  return {
+    monthly: { priceBrl: PRICE_MONTHLY_BRL, available: Boolean(c.linkMonthly || (sessionOk && c.priceMonthly)) },
+    lifetime: { priceBrl: PRICE_LIFETIME_BRL, available: Boolean(c.linkLifetime || (sessionOk && c.priceLifetime)) },
+    portalAvailable: Boolean(c.portalLoginUrl || sessionOk),
+    methods: ['card', 'apple_pay', 'google_pay', 'pix']
+  };
+}
+
+function stripeApi(secretKey, apiPath, params) {
+  return new Promise((resolve, reject) => {
+    const formBody = new URLSearchParams(params).toString();
+    const r = https.request(
+      {
+        hostname: 'api.stripe.com', port: 443, path: apiPath, method: 'POST',
+        headers: { Authorization: 'Bearer ' + secretKey, 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(formBody) }
+      },
+      (resp) => {
+        let raw = '';
+        resp.on('data', (c) => (raw += c));
+        resp.on('end', () => { try { resolve({ status: resp.statusCode, data: JSON.parse(raw) }); } catch (e) { reject(e); } });
+      }
+    );
+    r.on('error', reject);
+    r.write(formBody);
+    r.end();
+  });
+}
+
+async function createPlanCheckout(user, plan, origin) {
+  const c = billingConfig();
+  const isMonthly = plan === 'monthly';
+  const price = isMonthly ? c.priceMonthly : c.priceLifetime;
+  if (c.secretKey.startsWith('sk_') && price) {
+    const params = {
+      mode: isMonthly ? 'subscription' : 'payment',
+      'line_items[0][price]': price,
+      'line_items[0][quantity]': '1',
+      success_url: origin + '/?app=1&checkout=success&plan=' + plan,
+      cancel_url: origin + '/?lp=1&checkout=canceled',
+      client_reference_id: user.id,
+      allow_promotion_codes: 'true',
+      'metadata[app]': 'lightfocus',
+      'metadata[plan]': plan,
+      'payment_method_types[0]': 'card'
+    };
+    if (!isMonthly) params['payment_method_types[1]'] = 'pix';
+    if (user.stripeCustomerId) params.customer = user.stripeCustomerId;
+    else if (user.email) params.customer_email = user.email;
+    let r = await stripeApi(c.secretKey, '/v1/checkout/sessions', params);
+    if (!(r.status < 300 && r.data.url) && !isMonthly) {
+      delete params['payment_method_types[1]'];
+      r = await stripeApi(c.secretKey, '/v1/checkout/sessions', params);
+    }
+    if (r.status < 300 && r.data.url) return r.data.url;
+  }
+  const link = isMonthly ? c.linkMonthly : c.linkLifetime;
+  if (!link) return null;
+  const u = new URL(link);
+  u.searchParams.set('client_reference_id', user.id);
+  if (user.email) u.searchParams.set('prefilled_email', user.email);
+  u.searchParams.set('locale', 'pt-BR');
+  return u.toString();
+}
+
+async function createPortalUrl(user, origin) {
+  const c = billingConfig();
+  if (c.secretKey.startsWith('sk_') && user.stripeCustomerId) {
+    try {
+      const r = await stripeApi(c.secretKey, '/v1/billing_portal/sessions', { customer: user.stripeCustomerId, return_url: origin + '/?app=1' });
+      if (r.status < 300 && r.data.url) return r.data.url;
+    } catch (_) {}
+  }
+  if (!c.portalLoginUrl) return null;
+  const u = new URL(c.portalLoginUrl);
+  if (user.email) u.searchParams.set('prefilled_email', user.email);
+  return u.toString();
+}
+
+function readRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', (c) => { size += c.length; if (size > 1024 * 1024) reject(new Error('Payload too large')); else chunks.push(c); });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+function verifyStripeSignature(rawBuf, header, secret, toleranceSec = 300) {
+  if (!header || !secret) return false;
+  const parts = {};
+  String(header).split(',').forEach((kv) => {
+    const i = kv.indexOf('=');
+    if (i > 0) {
+      const k = kv.slice(0, i).trim();
+      (parts[k] = parts[k] || []).push(kv.slice(i + 1).trim());
+    }
+  });
+  const t = parts.t && parts.t[0];
+  if (!t || !parts.v1) return false;
+  if (Math.abs(Date.now() / 1000 - Number(t)) > toleranceSec) return false;
+  const expected = crypto.createHmac('sha256', secret).update(t + '.' + rawBuf.toString('utf8')).digest('hex');
+  return parts.v1.some((sig) => {
+    try { return sig.length === expected.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected)); } catch (_) { return false; }
+  });
+}
+
+function readStripeEvents() {
+  try { const j = JSON.parse(fs.readFileSync(STRIPE_EVENTS_FILE, 'utf8')); if (Array.isArray(j.events)) return j; } catch (_) {}
+  return { events: [], payments: [] };
+}
+function writeStripeEvents(j) {
+  j.events = j.events.slice(-300);
+  try { fs.writeFileSync(STRIPE_EVENTS_FILE, JSON.stringify(j, null, 2), { encoding: 'utf8', mode: 0o600 }); } catch (_) {}
+}
+
+function findUserForStripe(store, { userId, customerId, subscriptionId, email }) {
+  return (
+    (userId && store.users.find((u) => u.id === userId)) ||
+    (subscriptionId && store.users.find((u) => u.stripeSubscriptionId === subscriptionId)) ||
+    (customerId && store.users.find((u) => u.stripeCustomerId === customerId)) ||
+    (email && store.users.find((u) => String(u.email || '').toLowerCase() === String(email).toLowerCase())) ||
+    null
+  );
+}
+
+function handleStripeEvent(evt) {
+  const log = readStripeEvents();
+  if (log.events.some((e) => e.id === evt.id)) return { duplicate: true };
+  const obj = (evt.data && evt.data.object) || {};
+  const store = readUsersStore();
+  let user = null;
+  let note = '';
+  const toIso = (sec) => (sec ? new Date(sec * 1000).toISOString() : null);
+
+  if (evt.type === 'checkout.session.completed' || evt.type === 'checkout.session.async_payment_succeeded') {
+    user = findUserForStripe(store, {
+      userId: obj.client_reference_id,
+      customerId: obj.customer,
+      email: (obj.customer_details && obj.customer_details.email) || obj.customer_email
+    });
+    const paid = obj.payment_status === 'paid' || obj.payment_status === 'no_payment_required';
+    if (user && obj.mode === 'subscription') {
+      user.plan = user.plan === 'lifetime' ? 'lifetime' : 'monthly';
+      user.planStatus = 'active';
+      user.stripeSubscriptionId = obj.subscription || user.stripeSubscriptionId;
+      note = 'assinatura mensal ativada';
+    } else if (user && obj.mode === 'payment' && paid) {
+      user.plan = 'lifetime';
+      user.planStatus = 'active';
+      user.lifetimeSince = new Date().toISOString();
+      note = 'vitalício liberado';
+    } else if (user) {
+      note = 'aguardando pagamento (' + obj.payment_status + ')';
+    } else {
+      note = 'usuário não encontrado';
+    }
+    if (user && obj.customer) user.stripeCustomerId = obj.customer;
+    if (paid && obj.amount_total) {
+      log.payments.push({ at: new Date(evt.created * 1000).toISOString(), userId: user ? user.id : null, amount: obj.amount_total / 100, currency: obj.currency, kind: obj.mode === 'subscription' ? 'monthly' : 'lifetime' });
+    }
+  } else if (evt.type === 'customer.subscription.updated' || evt.type === 'customer.subscription.deleted') {
+    user = findUserForStripe(store, { subscriptionId: obj.id, customerId: obj.customer });
+    if (user) {
+      const item = obj.items && obj.items.data && obj.items.data[0];
+      const periodEnd = obj.current_period_end || (item && item.current_period_end);
+      user.stripeSubscriptionId = obj.id;
+      user.planStatus = evt.type.endsWith('deleted') ? 'canceled' : obj.status;
+      user.currentPeriodEnd = toIso(periodEnd);
+      user.cancelAtPeriodEnd = Boolean(obj.cancel_at_period_end);
+      if (user.plan !== 'lifetime') user.plan = evt.type.endsWith('deleted') ? 'expired' : 'monthly';
+      note = 'assinatura ' + user.planStatus;
+    } else note = 'usuário não encontrado';
+  } else if (evt.type === 'invoice.payment_failed') {
+    user = findUserForStripe(store, { customerId: obj.customer, email: obj.customer_email });
+    if (user && user.plan === 'monthly') user.planStatus = 'past_due';
+    note = 'falha no pagamento';
+  } else if (evt.type === 'invoice.paid') {
+    user = findUserForStripe(store, { customerId: obj.customer, email: obj.customer_email });
+    if (obj.billing_reason === 'subscription_cycle' && obj.amount_paid) {
+      log.payments.push({ at: new Date(evt.created * 1000).toISOString(), userId: user ? user.id : null, amount: obj.amount_paid / 100, currency: obj.currency, kind: 'monthly' });
+    }
+    note = 'fatura paga';
+  } else {
+    note = 'ignorado';
+  }
+
+  if (user) {
+    store.users = store.users.map((u) => (u.id === user.id ? user : u));
+    writeUsersStore(store);
+  }
+  log.events.push({ id: evt.id, type: evt.type, at: new Date((evt.created || Date.now() / 1000) * 1000).toISOString(), userId: user ? user.id : null, email: user ? user.email : null, note, livemode: Boolean(evt.livemode) });
+  writeStripeEvents(log);
+  return { ok: true, note };
+}
+
+function buildAdminOverview() {
+  const store = readUsersStore();
+  const log = readStripeEvents();
+  const now = Date.now();
+  const users = store.users.map((u) => {
+    const acc = computeAccess(u);
+    return {
+      id: u.id, name: u.name || '', email: u.email || '', role: u.role || 'member',
+      createdAt: u.createdAt || null, lastAccessAt: u.lastAccessAt || null,
+      plan: acc.plan, reason: acc.reason, entitled: acc.entitled, status: u.planStatus || null,
+      trialEndsAt: acc.trialEndsAt, currentPeriodEnd: u.currentPeriodEnd || null,
+      disabled: Boolean(u.disabled), tasksCount: Array.isArray(u.tasks) ? u.tasks.length : 0,
+      hasTodoist: Boolean(u.todoistToken), stripeCustomer: Boolean(u.stripeCustomerId)
+    };
+  });
+  const count = (fn) => users.filter(fn).length;
+  const monthly = count((u) => u.reason === 'monthly');
+  const lifetime = count((u) => u.reason === 'lifetime');
+  const totalRevenue = log.payments.reduce((a, p) => a + Number(p.amount || 0), 0);
+  const days = {};
+  for (let i = 29; i >= 0; i--) days[new Date(now - i * 86400000).toISOString().slice(0, 10)] = 0;
+  users.forEach((u) => { const d = String(u.createdAt || '').slice(0, 10); if (d in days) days[d]++; });
+  return {
+    kpis: {
+      totalUsers: users.length,
+      activeTrials: count((u) => u.reason === 'trial'),
+      expiredTrials: count((u) => u.reason === 'expired'),
+      payingMonthly: monthly,
+      lifetime,
+      mrr: monthly * PRICE_MONTHLY_BRL,
+      totalRevenue,
+      disabled: count((u) => u.disabled)
+    },
+    signups: Object.entries(days).map(([date, n]) => ({ date, n })),
+    users,
+    events: log.events.slice(-50).reverse(),
+    billing: publicBillingInfo()
+  };
+}
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -1451,7 +1764,9 @@ const server = http.createServer(async (req, res) => {
           pulseIntervalMinutes: 5,
           soundEnabled: true
         },
-        tasks: onboardingTasks
+        tasks: onboardingTasks,
+        plan: 'trial',
+        trialEndsAt: new Date(Date.now() + TRIAL_MS).toISOString()
       };
 
       store.users.push(newUser);
@@ -1611,6 +1926,24 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+
+    // 5C. Billing (public info + Stripe webhook)
+    if (pathname === '/api/billing/info' && req.method === 'GET') {
+      return sendJson(res, 200, { ok: true, ...publicBillingInfo() });
+    }
+    if (pathname === '/api/stripe/webhook' && req.method === 'POST') {
+      const raw = await readRawBody(req);
+      const secret = billingConfig().webhookSecret;
+      if (!secret) return sendJson(res, 503, { ok: false, error: 'webhook not configured' });
+      if (!verifyStripeSignature(raw, req.headers['stripe-signature'], secret)) {
+        return sendJson(res, 400, { ok: false, error: 'invalid signature' });
+      }
+      let evt;
+      try { evt = JSON.parse(raw.toString('utf8')); } catch (_) { return sendJson(res, 400, { ok: false }); }
+      const r = handleStripeEvent(evt);
+      return sendJson(res, 200, { received: true, ...r });
+    }
+
     // 6. Auth Guard for all /api/* routes
     let currentUser = null;
     if (pathname.startsWith('/api/')) {
@@ -1622,6 +1955,81 @@ const server = http.createServer(async (req, res) => {
           authRequired: true,
           error: 'Sessao expirada ou nao autenticada. Entre na sua conta Lightfocus.'
         });
+      }
+      if (currentUser.disabled) {
+        return sendJson(res, 403, { ok: false, disabled: true, error: 'Conta desativada. Fale com o suporte.' });
+      }
+      // last access (throttled to 5 min)
+      if (!currentUser.lastAccessAt || Date.now() - Date.parse(currentUser.lastAccessAt) > 5 * 60 * 1000) {
+        const nowIso = new Date().toISOString();
+        updateUserRecord(currentUser.id, (u) => ({ ...u, lastAccessAt: nowIso }));
+        currentUser.lastAccessAt = nowIso;
+      }
+    }
+
+    // 6B. Billing routes for the signed-in user
+    if (pathname === '/api/billing/status' && req.method === 'GET') {
+      return sendJson(res, 200, { ok: true, billing: computeAccess(currentUser), info: publicBillingInfo(), email: currentUser.email || '' });
+    }
+    if (pathname === '/api/billing/checkout' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const plan = body.plan === 'monthly' ? 'monthly' : 'lifetime';
+      const proto = req.headers['x-forwarded-proto'] || 'https';
+      const origin = `${proto}://${req.headers.host || 'lightfocus.0loicj.easypanel.host'}`;
+      let url = null;
+      try { url = await createPlanCheckout(currentUser, plan, origin); } catch (_) { url = null; }
+      if (!url) return sendJson(res, 200, { ok: false, unavailable: true, message: 'Pagamento em breve.' });
+      return sendJson(res, 200, { ok: true, checkoutUrl: url });
+    }
+    if (pathname === '/api/billing/portal' && req.method === 'POST') {
+      const proto = req.headers['x-forwarded-proto'] || 'https';
+      const origin = `${proto}://${req.headers.host || 'lightfocus.0loicj.easypanel.host'}`;
+      const url = await createPortalUrl(currentUser, origin);
+      if (!url) return sendJson(res, 200, { ok: false, unavailable: true, message: 'Portal em breve.' });
+      return sendJson(res, 200, { ok: true, portalUrl: url });
+    }
+
+    // 6C. Admin (server-side authorization on every route)
+    if (pathname.startsWith('/api/admin/')) {
+      if (!isAdminUser(currentUser)) return sendJson(res, 403, { ok: false, error: 'Acesso restrito.' });
+      if (pathname === '/api/admin/overview' && req.method === 'GET') {
+        return sendJson(res, 200, { ok: true, ...buildAdminOverview() });
+      }
+      if (pathname === '/api/admin/user-action' && req.method === 'POST') {
+        const body = await parseBody(req);
+        const target = getUserById(String(body.userId || ''));
+        if (!target) return sendJson(res, 404, { ok: false, error: 'Usuário não encontrado.' });
+        if (isAdminUser(target) && body.action === 'deactivate') return sendJson(res, 400, { ok: false, error: 'Não é possível desativar o admin.' });
+        const updated = updateUserRecord(target.id, (u) => {
+          if (body.action === 'extend_trial') {
+            const days = Math.min(365, Math.max(1, Number(body.days || 2)));
+            const base = Math.max(Date.now(), trialEndsAtOf(u));
+            u.trialEndsAt = new Date(base + days * 86400000).toISOString();
+          } else if (body.action === 'grant_lifetime') {
+            u.plan = 'lifetime'; u.planStatus = 'active'; u.lifetimeSince = new Date().toISOString(); u.grantedByAdmin = true;
+          } else if (body.action === 'revoke_plan') {
+            u.plan = 'expired'; u.planStatus = null;
+          } else if (body.action === 'deactivate') {
+            u.disabled = true;
+          } else if (body.action === 'reactivate') {
+            u.disabled = false;
+          }
+          return u;
+        });
+        const log = readStripeEvents();
+        log.events.push({ id: 'adm_' + crypto.randomUUID().slice(0, 8), type: 'admin.' + body.action, at: new Date().toISOString(), userId: target.id, email: target.email, note: 'ação do admin', livemode: false });
+        writeStripeEvents(log);
+        return sendJson(res, 200, { ok: true, user: sanitizeUserForClient(updated) });
+      }
+      return sendJson(res, 404, { ok: false });
+    }
+
+    // 6D. Paywall: expired trial blocks the app data routes (data is kept)
+    if (pathname.startsWith('/api/') && currentUser) {
+      const acc = computeAccess(currentUser);
+      const open = ['/api/settings', '/api/config/token', '/api/todoist/token'];
+      if (!acc.entitled && !open.includes(pathname)) {
+        return sendJson(res, 402, { ok: false, paywall: true, billing: acc, user: sanitizeUserForClient(currentUser), error: 'Seu teste grátis terminou. Escolha um plano para continuar.' });
       }
     }
 
@@ -2185,6 +2593,7 @@ const server = http.createServer(async (req, res) => {
 
 // 16B. POST /api/config/stripe — Save Stripe Secret Key, Payment Link, or PIX Key
     if (pathname === '/api/config/stripe' && req.method === 'POST') {
+      if (!isAdminUser(currentUser)) return sendJson(res, 403, { ok: false, error: 'Acesso restrito.' });
       const body = await parseBody(req);
       const saved = writeStripeConfig({
         secretKey: body.secretKey,
