@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=20261028v6" />
+  <link rel="stylesheet" href="/styles.css?v=20261028v7" />
 </head>
 <body>
   <!-- Ambient Optical Canvas & Refractive Light Pulse Overlay -->
@@ -200,9 +200,16 @@
                 <strong class="lofi-pop-title">Lo-Fi & Ambiente Opcional</strong>
                 <span class="lofi-pop-sub">Sintese acustica em tempo real para imersao</span>
               </div>
-              <button type="button" id="lofiPlayMasterBtn" class="lofi-play-master-btn">
-                <span id="lofiPlayMasterLabel">Tocar</span>
-              </button>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <button type="button" id="lofiPlayMasterBtn" class="lofi-play-master-btn">
+                  <span id="lofiPlayMasterLabel">Tocar</span>
+                </button>
+                <button type="button" id="lofiClosePopoverBtn" class="glass-icon-btn-sm" title="Fechar painel Lo-Fi" style="width:28px;height:28px;">
+                  <svg class="icon-14" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
             </div>
             <div class="lofi-stations-list">
               <button type="button" class="lofi-station-btn active" data-lofi-station="lofi_chill">
@@ -1036,7 +1043,7 @@
     <span id="glassToastText" class="toast-text">Pronto</span>
   </div>
 
-  <script src="/tasks-seed.js?v=20261028v6"></script>
-  <script src="/app.js?v=20261028v6"></script>
+  <script src="/tasks-seed.js?v=20261028v7"></script>
+  <script src="/app.js?v=20261028v7"></script>
 </body>
 </html>

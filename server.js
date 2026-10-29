@@ -619,10 +619,41 @@ function updateUserRecord(userId, updaterFn) {
   return updatedUser;
 }
 
+function isWalaceFounderAccount(user) {
+  if (!user) return true;
+  const id = String(user.id || "").toLowerCase();
+  const email = String(user.email || "").toLowerCase();
+  const name = String(user.name || "").toLowerCase();
+  return (
+    id === "usr_walace" ||
+    email.includes("walace") ||
+    email.includes("tubalabs") ||
+    email.includes("shark") ||
+    email.includes("brandmarket") ||
+    name.includes("walace")
+  );
+}
+
 function getUserTasksSnapshot(user) {
-  const isFounder = !user || user.id === 'usr_walace' || String(user.email || '').toLowerCase() === 'walacetkwl@gmail.com';
+  const isFounder = isWalaceFounderAccount(user);
   if (isFounder) {
-    return readSnapshot();
+    const baseSnap = readSnapshot();
+    const baseTasks = Array.isArray(baseSnap.tasks) ? [...baseSnap.tasks] : [];
+    const seenIds = new Set(baseTasks.map((t) => String(t.id)));
+    if (user && Array.isArray(user.tasks)) {
+      user.tasks.forEach((ut) => {
+        const uid = String(ut.id || "");
+        if (!uid.startsWith("lf_sample_") && !seenIds.has(uid)) {
+          baseTasks.unshift(ut);
+          seenIds.add(uid);
+        }
+      });
+    }
+    return {
+      ...baseSnap,
+      totalToday: baseTasks.length,
+      tasks: baseTasks
+    };
   }
   const { dateStr, isoStr } = getSaoPauloNow();
   if (!Array.isArray(user.tasks)) {
@@ -648,7 +679,7 @@ function getUserTasksSnapshot(user) {
 }
 
 function saveUserTasksSnapshot(user, snapshot) {
-  const isFounder = !user || user.id === 'usr_walace' || String(user.email || '').toLowerCase() === 'walacetkwl@gmail.com';
+  const isFounder = isWalaceFounderAccount(user);
   if (isFounder) {
     writeSnapshot(snapshot);
     return;

@@ -932,12 +932,20 @@
   }
 
   function ensureValidCurrentTask() {
-    const list = getFilteredTasks();
+    let list = getFilteredTasks();
+    if (list.length === 0 && state.filter === "pending") {
+      const allToday = getCombinedTodayTasks();
+      if (allToday.length > 0 && allToday.every((t) => t.checked)) {
+        // Keep pending view showing 00/00 until user clicks arrows or switches to Agenda do Dia
+        state.currentTaskId = null;
+        return;
+      }
+    }
     if (list.length === 0) {
       state.currentTaskId = null;
       return;
     }
-    const exists = list.some((t) => t.id === state.currentTaskId);
+    const exists = list.some((t) => String(t.id) === String(state.currentTaskId));
     if (!exists) {
       state.currentTaskId = list[0].id;
     }
@@ -1565,15 +1573,61 @@
   }
 
   function stepTask(delta) {
-    const list = getFilteredTasks();
-    if (list.length === 0) return;
-    const cur = getCurrentTask();
-    const curIdx = cur ? list.findIndex((t) => t.id === cur.id) : 0;
+    if (state.filter === "calendar") {
+      const curDate = state.calSelectedDate || getTodayDateStr();
+      const nextDate = addDaysDateStr(delta, curDate);
+      state.calSelectedDate = nextDate;
+      const parts = nextDate.split("-").map(Number);
+      if (parts.length === 3) {
+        state.calYear = parts[0];
+        state.calMonth = parts[1] - 1;
+      }
+      renderGeneralCalendar();
+      return;
+    }
+
+    let list = getFilteredTasks();
+    if (list.length <= 1) {
+      const allToday = getCombinedTodayTasks();
+      if (allToday.length > 1) {
+        state.filter = "all";
+        document.querySelectorAll(".filter-pill").forEach((b) => {
+          b.classList.toggle("active", b.getAttribute("data-filter") === "all");
+        });
+        list = allToday;
+      } else if (state.tasks.length > 1) {
+        state.filter = "all";
+        document.querySelectorAll(".filter-pill").forEach((b) => {
+          b.classList.toggle("active", b.getAttribute("data-filter") === "all");
+        });
+        list = state.tasks;
+      }
+    }
+
+    if (list.length === 0) {
+      showToast("Nenhuma atividade na fila — pressione Q para criar uma nova tarefa.");
+      return;
+    }
+
+    const curId = state.currentTaskId || (getCurrentTask() && getCurrentTask().id);
+    let curIdx = curId ? list.findIndex((t) => String(t.id) === String(curId)) : 0;
+    if (curIdx < 0) curIdx = 0;
     const nextIdx = (curIdx + delta + list.length) % list.length;
     state.currentTaskId = list[nextIdx].id;
     state.descExpanded = false;
     resetTimer();
     renderAll();
+
+    const card = document.getElementById("focusTaskCard");
+    if (card) {
+      card.classList.remove("task-step-anim");
+      void card.offsetWidth;
+      card.classList.add("task-step-anim");
+    }
+    const activeRow = document.querySelector("#agendaQueueList .queue-item-row.active-focus");
+    if (activeRow && activeRow.scrollIntoView) {
+      activeRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
   }
 
   // ==========================================================================
@@ -1945,7 +1999,7 @@
   }
 
   function closeAllModals() {
-    ['quickAddModal', 'spotlightModal', 'reportsModal', 'settingsModal', 'tutorialModal'].forEach((id) => {
+    ['quickAddModal', 'spotlightModal', 'reportsModal', 'settingsModal', 'tutorialModal', 'lofiStudioPopover'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.classList.add('hidden');
     });
@@ -2989,13 +3043,43 @@
     const lofiSlider = document.getElementById('lofiVolumeSlider');
 
     if (lofiPill && lofiPop) {
-      lofiPill.addEventListener('click', (e) => {
+      if (lofiPop.parentElement !== document.body) {
+        document.body.appendChild(lofiPop);
+      }
+      const positionLofiPopover = () => {
+        const rect = lofiPill.getBoundingClientRect();
+        const popW = 310;
+        const topPx = Math.max(64, Math.round(rect.bottom + 10));
+        const leftPx = Math.max(12, Math.min(window.innerWidth - popW - 16, Math.round(rect.right - popW)));
+        lofiPop.style.position = "fixed";
+        lofiPop.style.top = topPx + "px";
+        lofiPop.style.left = leftPx + "px";
+        lofiPop.style.right = "auto";
+        lofiPop.style.zIndex = "9950";
+      };
+      lofiPill.addEventListener("click", (e) => {
         e.stopPropagation();
-        lofiPop.classList.toggle('hidden');
+        const willOpen = lofiPop.classList.contains("hidden");
+        if (willOpen) {
+          positionLofiPopover();
+          lofiPop.classList.remove("hidden");
+        } else {
+          lofiPop.classList.add("hidden");
+        }
       });
-      document.addEventListener('click', (e) => {
-        if (!lofiPop.classList.contains('hidden') && !lofiPop.contains(e.target) && e.target !== lofiPill) {
-          lofiPop.classList.add('hidden');
+      window.addEventListener("resize", () => {
+        if (!lofiPop.classList.contains("hidden")) positionLofiPopover();
+      });
+      const lofiCloseBtn = document.getElementById("lofiClosePopoverBtn");
+      if (lofiCloseBtn) {
+        lofiCloseBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          lofiPop.classList.add("hidden");
+        });
+      }
+      document.addEventListener("click", (e) => {
+        if (!lofiPop.classList.contains("hidden") && !lofiPop.contains(e.target) && !lofiPill.contains(e.target)) {
+          lofiPop.classList.add("hidden");
         }
       });
     }
